@@ -1,10 +1,10 @@
 """Optional-dependency helpers with friendly error messages.
 
 The heavy third-party packages (``trafilatura``, ``tiktoken``, ``pyperclip``,
-``watchdog``, ``pymupdf4llm``, ``pathspec``) are imported lazily so the tool
-loads even when one is missing. When a feature actually needs a missing
-package, :func:`require` raises a clear :class:`MissingDependencyError` instead
-of a bare ``ModuleNotFoundError``.
+``watchdog``, ``pymupdf4llm``, ``pathspec``, ``sumy``) are imported lazily so
+the tool loads even when one is missing. When a feature actually needs a
+missing package, :func:`require` raises a clear :class:`MissingDependencyError`
+instead of a bare ``ModuleNotFoundError``.
 """
 
 from __future__ import annotations
