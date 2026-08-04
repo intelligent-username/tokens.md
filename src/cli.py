@@ -381,13 +381,18 @@ def ui(
     chosen = _find_free_port(host, port)
     settings = Settings(host=host, port=chosen)
     app = create_app(settings)
+    
+    target_url = f"http://{host}:{chosen}"
+    if settings.ui_dir is None:
+        target_url = "http://localhost:3000"
+
     if browser:
         threading.Timer(
-            1.0, lambda: webbrowser.open(f"http://{host}:{chosen}")
+            1.0, lambda: webbrowser.open(target_url)
         ).start()
     console.print(
-        f"[green]tokens.md UI[/green] -> http://{host}:{chosen} "
-        f"(API: /api, docs: /docs)"
+        f"[green]tokens.md UI[/green] -> {target_url} "
+        f"(API: http://{host}:{chosen}/api, docs: http://{host}:{chosen}/docs)"
     )
     uvicorn.run(app, host=host, port=chosen, log_level="info")
 

@@ -42,7 +42,7 @@ export function BudgetInput({
   const stepSlider = unit === "MB" ? 1 : unit === "KB" ? 100 : 1000;
 
   return (
-    <div className={cn("flex flex-col gap-2.5 rounded-card bg-card/60 p-4 border border-emerald-500/20", className)}>
+    <div className={cn("flex flex-col gap-2.5 rounded-card bg-card/60 p-4 border border-border/60", className)}>
       <div className="flex items-center justify-between gap-2">
         <label htmlFor="budget-number-input" className="text-xs font-semibold text-foreground">
           Target Size Budget

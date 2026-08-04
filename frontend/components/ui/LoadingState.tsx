@@ -10,10 +10,12 @@ const containerStyle: CSSProperties = {
   alignItems: 'center',
   justifyContent: 'center',
   gap: '10px',
-  padding: '32px 20px',
+  minHeight: '80px',
+  padding: '16px 24px',
   borderRadius: 'var(--radius-card)',
   border: '1px solid var(--color-border)',
   background: 'var(--color-card)',
+  width: '100%',
 };
 
 const labelStyle: CSSProperties = {

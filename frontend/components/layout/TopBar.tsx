@@ -32,9 +32,7 @@ export function TopBar({ active, onChange, health }: TopBarProps) {
           <Wordmark />
         </a>
 
-        <div className="min-w-0 flex-1">
-          <CommandNav active={active} onChange={onChange} />
-        </div>
+        <div className="flex-1" />
 
         <div className="flex shrink-0 items-center gap-3">
           <span

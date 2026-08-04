@@ -53,7 +53,7 @@ export function TokenFlowMeter({ state, sourceTokens = 0, targetTokens = 0, prog
         </div>
 
         <div
-          className="relative h-2 overflow-hidden rounded-full bg-muted"
+          className="relative h-3.5 overflow-hidden rounded-full bg-muted border border-border/40"
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={100}

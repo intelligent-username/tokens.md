@@ -26,7 +26,7 @@ export function ProgressBar({ value = 0, max = 100, indeterminate = false, label
         aria-valuemin={0}
         aria-valuemax={max}
         aria-valuenow={indeterminate ? undefined : Math.round(value)}
-        className="h-1.5 w-full overflow-hidden rounded-full bg-muted"
+        className="h-3 w-full overflow-hidden rounded-full bg-muted border border-border/40"
       >
         {indeterminate ? (
           <motion.div

@@ -1,6 +1,7 @@
 "use client";
 
-import { Moon, Sun } from "@phosphor-icons/react";
+import { Moon, SunDim } from "@phosphor-icons/react";
+import { motion, AnimatePresence } from "motion/react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 export type Theme = "dark" | "light";
@@ -16,7 +17,13 @@ const STORAGE_KEY = "tmd-theme";
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function applyTheme(theme: Theme) {
-  document.documentElement.classList.toggle("dark", theme === "dark");
+  if (typeof document !== "undefined" && "startViewTransition" in document) {
+    (document as any).startViewTransition(() => {
+      document.documentElement.classList.toggle("dark", theme === "dark");
+    });
+  } else {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+  }
 }
 
 /**
@@ -68,21 +75,38 @@ export function useTheme(): ThemeContextValue {
   return ctx;
 }
 
-/** Accessible theme switch: sun in light mode, moon in dark mode. */
+/** Accessible theme switch: animated sun in light mode, glowing moon in dark mode. */
 export function ThemeToggle() {
   const { theme, toggle } = useTheme();
   const isDark = theme === "dark";
 
   return (
-    <button
+    <motion.button
       type="button"
       role="switch"
       aria-checked={isDark}
       aria-label={isDark ? "Switch to light theme" : "Switch to dark theme"}
       onClick={toggle}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-control border border-border bg-secondary/60 text-secondary-foreground transition-colors hover:bg-secondary"
+      whileTap={{ scale: 0.88, rotate: isDark ? -15 : 15 }}
+      whileHover={{ scale: 1.08 }}
+      className="relative inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-control border border-border/80 bg-secondary/60 text-secondary-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 shadow-sm"
     >
-      {isDark ? <Moon size={18} weight="regular" /> : <Sun size={18} weight="regular" />}
-    </button>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={isDark ? "dark" : "light"}
+          initial={{ y: -16, opacity: 0, rotate: -90, scale: 0.5 }}
+          animate={{ y: 0, opacity: 1, rotate: 0, scale: 1 }}
+          exit={{ y: 16, opacity: 0, rotate: 90, scale: 0.5 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+          className="flex items-center justify-center"
+        >
+          {isDark ? (
+            <Moon size={18} weight="fill" className="text-amber-300 drop-shadow-[0_0_8px_rgba(252,211,77,0.6)]" />
+          ) : (
+            <SunDim size={19} weight="duotone" className="text-amber-500 drop-shadow-[0_0_6px_rgba(245,158,11,0.5)]" />
+          )}
+        </motion.div>
+      </AnimatePresence>
+    </motion.button>
   );
 }

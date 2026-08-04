@@ -286,18 +286,21 @@ def merge(req: MergeRequest, request: Request) -> MergeResponse:
 
     prune: PruneResult | None = None
     if opts.budget is not None:
-        result = prune_to_budget(
-            output_path.read_text(encoding="utf-8"), opts.budget, encoding
-        )
-        output_path.write_text(result.content, encoding="utf-8")
-        target_tokens = count_tokens(result.content, encoding)
-        prune = PruneResult(
-            fits=result.fits,
-            removed_tokens=result.removed_tokens,
-            removed_blocks=result.removed_blocks,
-            budget=opts.budget,
-            final_tokens=target_tokens,
-        )
+        try:
+            result = prune_to_budget(
+                output_path.read_text(encoding="utf-8"), opts.budget, encoding
+            )
+            output_path.write_text(result.content, encoding="utf-8")
+            target_tokens = count_tokens(result.content, encoding)
+            prune = PruneResult(
+                fits=result.fits,
+                removed_tokens=result.removed_tokens,
+                removed_blocks=result.removed_blocks,
+                budget=opts.budget,
+                final_tokens=target_tokens,
+            )
+        except Exception as exc:
+            logger.warning("Pruning error ignored during merge: %s", exc)
 
     delta_entries: list[DeltaEntry] | None = None
     if opts.delta:

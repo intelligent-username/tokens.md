@@ -67,7 +67,18 @@ export function FileChip({
   const failed = status === "failed" || status === "error" || status === "cancelled";
 
   return (
-    <div className="group flex items-center gap-3 rounded-chip border border-border bg-secondary/40 px-3 py-2 transition-colors hover:bg-secondary">
+    <div className="group flex items-center gap-2 rounded-chip border border-border bg-secondary/40 px-3 py-2 transition-colors hover:bg-secondary">
+      {onRemove ? (
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label={`Remove ${name}`}
+          className="-ml-1 rounded-chip p-1 text-destructive hover:bg-destructive/15 hover:text-destructive transition-colors"
+        >
+          <X size={14} weight="bold" aria-hidden="true" />
+        </button>
+      ) : null}
+
       <span
         role="img"
         aria-label={STATUS_LABEL[status]}
@@ -109,17 +120,6 @@ export function FileChip({
           className="rounded-chip p-1 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
         >
           <ArrowCounterClockwise size={14} weight="regular" aria-hidden="true" />
-        </button>
-      ) : null}
-
-      {onRemove ? (
-        <button
-          type="button"
-          onClick={onRemove}
-          aria-label={`Remove ${name}`}
-          className="rounded-chip p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-secondary hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
-        >
-          <X size={14} weight="regular" aria-hidden="true" />
         </button>
       ) : null}
     </div>

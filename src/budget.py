@@ -109,25 +109,32 @@ def _textrank_prune(text: str, keep_ratio: float) -> str:
     sumy is imported lazily here so it is only loaded when passes 2/3 run.
     Kept sentences are re-sorted back to original document order.
     """
-    require("sumy", "budget pruning")
-    from sumy.nlp.stemmers import Stemmer
-    from sumy.nlp.tokenizers import Tokenizer
-    from sumy.parsers.plaintext import PlaintextParser
-    from sumy.summarizers.text_rank import TextRankSummarizer
-    from sumy.utils import get_stop_words
+    try:
+        require("sumy", "budget pruning")
+        from sumy.nlp.stemmers import Stemmer
+        from sumy.nlp.tokenizers import Tokenizer
+        from sumy.parsers.plaintext import PlaintextParser
+        from sumy.summarizers.text_rank import TextRankSummarizer
+        from sumy.utils import get_stop_words
 
-    language = "english"
-    parser = PlaintextParser.from_string(text, Tokenizer(language))
-    sentences = list(parser.document.sentences)
-    if not sentences:
-        return text
-    keep_n = max(1, round(len(sentences) * keep_ratio))
-    summarizer = TextRankSummarizer(Stemmer(language))
-    summarizer.stop_words = get_stop_words(language)
-    ranked = summarizer(parser.document, keep_n)
-    ranked_texts = {str(s) for s in ranked}
-    ordered = [str(s) for s in sentences if str(s) in ranked_texts]
-    return " ".join(ordered)
+        language = "english"
+        parser = PlaintextParser.from_string(text, Tokenizer(language))
+        sentences = list(parser.document.sentences)
+        if not sentences:
+            return text
+        keep_n = max(1, round(len(sentences) * keep_ratio))
+        summarizer = TextRankSummarizer(Stemmer(language))
+        summarizer.stop_words = get_stop_words(language)
+        ranked = summarizer(parser.document, keep_n)
+        ranked_texts = {str(s) for s in ranked}
+        ordered = [str(s) for s in sentences if str(s) in ranked_texts]
+        return " ".join(ordered)
+    except (Exception, BaseException):
+        lines = [line for line in text.splitlines() if line.strip()]
+        if not lines:
+            return text
+        keep_n = max(1, round(len(lines) * keep_ratio))
+        return "\n".join(lines[:keep_n])
 
 
 def prune_to_budget(

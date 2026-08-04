@@ -84,6 +84,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             content=ErrorBody(code="unsupported_format", message=str(exc)).model_dump(),
         )
 
+    @app.exception_handler(Exception)
+    async def unhandled_exception_handler(
+        request: Request, exc: Exception
+    ) -> JSONResponse:
+        logger.error(f"Unhandled server error: {exc}", exc_info=exc)
+        return JSONResponse(
+            status_code=500,
+            content=ErrorBody(code="internal_error", message=str(exc)).model_dump(),
+        )
+
     if settings.ui_dir and settings.ui_dir.is_dir():
         app.mount(
             "/", StaticFiles(directory=str(settings.ui_dir), html=True), name="ui"
