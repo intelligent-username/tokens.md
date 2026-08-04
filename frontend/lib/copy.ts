@@ -64,8 +64,8 @@ export const showMore = 'Show more';
 export const dropFilesHere = 'Drop files here';
 export const dropFilesSubline =
   'PDF, DOCX, XLSX, PPTX, EPUB, HTML, images, JSON, CSV, TXT — or browse';
-export const dropFolderHere = 'Drop a folder here';
-export const dropFolderSubline = 'or pick a folder';
+export const dropFolderHere = 'Upload Files or Folders';
+export const dropFolderSubline = 'PDFs, Office Documents, Structured Data, Code, or Folders';
 export const releaseToConvert = 'Release to convert';
 export const releaseToBuildManifest = 'Release to build manifest';
 export const skippedUnsupported = (n: number) => `Skipped ${n} unsupported files`;

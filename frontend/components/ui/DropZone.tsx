@@ -86,8 +86,8 @@ export function DropZone({
   const [skipped, setSkipped] = useState<string[]>([]);
   const [announce, setAnnounce] = useState<string | null>(null);
 
-  const heading = label ?? (allowFolders ? copy.dropFolderHere : copy.dropFilesHere);
-  const body = sublabel ?? (allowFolders ? copy.dropFolderSubline : copy.dropFilesSubline);
+  const heading = label ?? copy.dropFolderHere;
+  const body = sublabel ?? copy.dropFolderSubline;
 
   const openPicker = () => {
     if (disabled) return;
