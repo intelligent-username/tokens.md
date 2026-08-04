@@ -1,1 +1,10 @@
+# NOTE: pyproject.toml is the source of truth for dependencies.
+# This file mirrors [project].dependencies for convenience installs.
 pymupdf4llm
+typer>=0.12
+rich
+pyperclip
+watchdog
+trafilatura
+pathspec
+tiktoken

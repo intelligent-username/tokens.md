@@ -1,7 +1,24 @@
-import pymupdf4llm
+"""Backward-compatible thin wrappers over the converter registry.
+
+The real conversion logic lives in ``src.handlers`` and ``src.registry``.
+These functions preserve the original public API so existing callers keep
+working unchanged.
+"""
+
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Union, List, Optional, Sequence
-from .file_selector import select_files, FileSelector
+from typing import Any, List, Optional, Sequence, Union
+
+from .file_selector import FileSelector, select_files
+from .handlers.pymupdf import PymupdfConverter, pdf_to_markdown
+from .registry import convert_file
+
+__all__ = [
+    "convert_pdf_to_markdown",
+    "run_pipeline",
+    "pdf_to_markdown",
+]
 
 
 def convert_pdf_to_markdown(
@@ -12,57 +29,22 @@ def convert_pdf_to_markdown(
     write_images: bool = False,
     image_path: Optional[Union[str, Path]] = None,
     pages: Optional[List[int]] = None,
-    **kwargs
+    **kwargs: Any,
 ) -> Path:
+    """Convert a single file to Markdown and save it into ``output_dir``.
+
+    Thin wrapper over :class:`PymupdfConverter` for backward compatibility.
     """
-    Converts a single PDF file to Markdown using pymupdf4llm and saves the output.
-
-    :param pdf_path: Path to the input PDF file.
-    :param output_dir: Directory where the converted markdown file will be saved.
-    :param strip_headers_footers: If True, excludes headers and footers from markdown.
-    :param page_chunks: If True, returns page chunks (handled separately if needed).
-    :param write_images: If True, extracts embedded images to disk.
-    :param image_path: Folder to save extracted images if write_images is True.
-    :param pages: Optional list of zero-based page indices to process.
-    :param kwargs: Additional arguments passed directly to pymupdf4llm.to_markdown.
-    :return: Path to the created output file.
-    """
-    pdf_path = Path(pdf_path)
-    output_dir = Path(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    markdown_kwargs = {
-        "header": not strip_headers_footers,
-        "footer": not strip_headers_footers,
-        "page_chunks": page_chunks,
-        "write_images": write_images,
-        **kwargs
-    }
-
-    if pages is not None:
-        markdown_kwargs["pages"] = pages
-
-    if write_images:
-        if image_path is None:
-            image_path = output_dir / f"{pdf_path.stem}_images"
-        else:
-            image_path = Path(image_path)
-        image_path.mkdir(parents=True, exist_ok=True)
-        markdown_kwargs["image_path"] = str(image_path)
-
-    md_content = pymupdf4llm.to_markdown(str(pdf_path), **markdown_kwargs)
-
-    output_path = output_dir / f"{pdf_path.stem}.md"
-    
-    if isinstance(md_content, str):
-        output_path.write_text(md_content, encoding="utf-8")
-    else:
-        # In case page_chunks=True, write string representation or handle json/structured output
-        import json
-        output_path = output_dir / f"{pdf_path.stem}_chunks.json"
-        output_path.write_text(json.dumps(md_content, indent=2, ensure_ascii=False), encoding="utf-8")
-
-    return output_path
+    return PymupdfConverter().convert(
+        Path(pdf_path),
+        Path(output_dir),
+        strip_headers_footers=strip_headers_footers,
+        page_chunks=page_chunks,
+        write_images=write_images,
+        image_path=image_path,
+        pages=pages,
+        **kwargs,
+    )
 
 
 def run_pipeline(
@@ -70,28 +52,27 @@ def run_pipeline(
     output_dir: Union[str, Path] = "output",
     strip_headers_footers: bool = False,
     write_images: bool = False,
-    **kwargs
+    extensions: Sequence[str] = (".pdf",),
+    recursive: bool = False,
+    **kwargs: Any,
 ) -> List[Path]:
-    """
-    Runs the PDF-to-Markdown conversion pipeline over all selected files.
+    """Run the conversion pipeline over all selected files.
 
-    :param source: Directory path, file path, list of paths, or FileSelector instance.
-    :param output_dir: Directory where markdown outputs will be stored.
-    :param strip_headers_footers: Exclude header/footer text.
-    :param write_images: Extract images to disk during conversion.
-    :param kwargs: Additional options for pymupdf4llm.to_markdown.
-    :return: List of created output file paths.
+    Selects files via :func:`select_files` and converts each through the
+    registry. Returns the list of written output paths.
     """
-    files_to_convert = select_files(source)
-    converted_files = []
+    files_to_convert = select_files(
+        source, extensions=extensions, recursive=recursive
+    )
+    converted_files: List[Path] = []
 
     for file_path in files_to_convert:
-        out_file = convert_pdf_to_markdown(
-            pdf_path=file_path,
-            output_dir=output_dir,
+        out_file = convert_file(
+            file_path,
+            Path(output_dir),
             strip_headers_footers=strip_headers_footers,
             write_images=write_images,
-            **kwargs
+            **kwargs,
         )
         converted_files.append(out_file)
 

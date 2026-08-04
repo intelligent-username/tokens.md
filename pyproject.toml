@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tokens-md"
+version = "0.1.0"
+description = "Convert files to token-efficient Markdown for LLM prompts."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "tokens.md" }]
+dependencies = [
+    "pymupdf4llm",
+    "typer>=0.12",
+    "rich",
+    "pyperclip",
+    "watchdog",
+    "trafilatura",
+    "pathspec",
+    "tiktoken",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "ruff",
+    "mypy",
+]
+
+[project.scripts]
+tmd = "src.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+select = ["E", "F", "I", "W", "B", "UP", "SIM"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
