@@ -1,0 +1,6 @@
+{
+  "name": "tokens.md",
+  "version": "0.1.0",
+  "description": "Convert files to token-efficient Markdown for LLM prompts.",
+  "features": ["convert", "merge", "budget", "delta", "fetch", "repo", "watch"]
+}

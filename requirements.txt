@@ -1,5 +1,7 @@
 # NOTE: pyproject.toml is the source of truth for dependencies.
 # This file mirrors [project].dependencies for convenience installs.
+# For the web UI (`tmd ui`), also install requirements-web.txt
+# (or the `web` extra:  pip install -e ".[web]").
 pymupdf4llm
 typer>=0.12
 rich

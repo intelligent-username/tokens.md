@@ -7,6 +7,8 @@ compatibility.
 
 from __future__ import annotations
 
+import threading
+import webbrowser
 from pathlib import Path
 from typing import Any, List, Optional, Sequence
 
@@ -345,6 +347,49 @@ def delta(
         raise typer.Exit(code=1)
     outputs = [Path(output) / f"{path.stem}.md" for path in files]
     print_delta_summary(files, outputs, encoding)
+
+
+def _find_free_port(host: str, port: int) -> int:
+    """Return ``port`` or the first free port up to ``port + 20``."""
+    import socket
+
+    for candidate in range(port, port + 21):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            try:
+                sock.bind((host, candidate))
+            except OSError:
+                continue
+        return candidate
+    return port
+
+
+@app.command()
+def ui(
+    host: str = typer.Option("127.0.0.1", "--host", help="Bind address (0.0.0.0 for LAN)."),
+    port: int = typer.Option(8642, "--port", help="Port; auto-increments if busy."),
+    browser: bool = typer.Option(True, "--no-browser", help="Do not auto-open the browser."),
+) -> None:
+    """Launch the local web UI (API + built frontend)."""
+    require("fastapi", "tmd ui")
+    require("uvicorn", "tmd ui")
+
+    from backend.app import create_app
+    from backend.config import Settings
+
+    import uvicorn
+
+    chosen = _find_free_port(host, port)
+    settings = Settings(host=host, port=chosen)
+    app = create_app(settings)
+    if browser:
+        threading.Timer(
+            1.0, lambda: webbrowser.open(f"http://{host}:{chosen}")
+        ).start()
+    console.print(
+        f"[green]tokens.md UI[/green] -> http://{host}:{chosen} "
+        f"(API: /api, docs: /docs)"
+    )
+    uvicorn.run(app, host=host, port=chosen, log_level="info")
 
 
 def main() -> None:

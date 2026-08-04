@@ -2,10 +2,29 @@
 
 from __future__ import annotations
 
+import tempfile
 import zipfile
 from pathlib import Path
 
 import pytest
+
+
+@pytest.fixture
+def tmd_workspace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Point the workspace temp dir at a per-test tmp_path."""
+    monkeypatch.setattr(tempfile, "gettempdir", lambda: str(tmp_path))
+    return tmp_path
+
+
+@pytest.fixture
+def client(tmd_workspace: Path):
+    """FastAPI TestClient with an isolated temp workspace."""
+    from backend.app import create_app
+    from fastapi.testclient import TestClient
+
+    app = create_app()
+    with TestClient(app) as test_client:
+        yield test_client
 
 
 @pytest.fixture

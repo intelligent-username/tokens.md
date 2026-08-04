@@ -18,6 +18,31 @@ def _source_tokens(path: Path, encoding: str) -> int:
     return count_raw_file_tokens(path)
 
 
+def compute_delta_summary(
+    sources: Sequence[Path],
+    outputs: Sequence[Path],
+    encoding: str = DEFAULT_ENCODING,
+) -> list[dict[str, object]]:
+    """Return per-file token delta entries as dicts.
+
+    Data-returning twin of :func:`print_delta_summary`; each entry has
+    ``name``, ``source_tokens``, ``target_tokens`` and ``percent``.
+    """
+    entries: list[dict[str, object]] = []
+    for source, output in zip(sources, outputs):
+        source_tokens = _source_tokens(source, encoding)
+        target_tokens = count_tokens_in_file(output, encoding)
+        entries.append(
+            {
+                "name": source.name,
+                "source_tokens": source_tokens,
+                "target_tokens": target_tokens,
+                "percent": delta_percent(source_tokens, target_tokens),
+            }
+        )
+    return entries
+
+
 def print_delta_summary(
     sources: Sequence[Path],
     outputs: Sequence[Path],

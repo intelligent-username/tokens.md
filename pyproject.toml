@@ -29,12 +29,17 @@ dev = [
     "ruff",
     "mypy",
 ]
+web = [
+    "fastapi",
+    "uvicorn[standard]",
+    "python-multipart",
+]
 
 [project.scripts]
 tmd = "src.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src"]
+packages = ["src", "backend"]
 
 [tool.ruff]
 line-length = 88

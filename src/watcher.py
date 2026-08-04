@@ -32,6 +32,7 @@ class WatcherHandler(FileSystemEventHandler):
         extensions: Sequence[str],
         poll_interval: float,
         clip: bool = False,
+        on_event: Callable[[dict[str, object]], None] | None = None,
         **convert_kwargs: Any,
     ) -> None:
         super().__init__()
@@ -39,6 +40,7 @@ class WatcherHandler(FileSystemEventHandler):
         self.extensions = extensions
         self.poll_interval = poll_interval
         self.clip = clip
+        self.on_event = on_event
         self.convert_kwargs = convert_kwargs
         self._queue: Queue[Path] = Queue()
         self._processed: set[str] = set()
@@ -54,10 +56,27 @@ class WatcherHandler(FileSystemEventHandler):
         self._enqueue(Path(str(event.src_path)))
 
     # -- processing ------------------------------------------------------
+    def _emit(
+        self,
+        event: str,
+        path: Path,
+        output: Path | None = None,
+        error: str | None = None,
+    ) -> None:
+        if self.on_event is None:
+            return
+        payload: dict[str, object] = {"event": event, "file": str(path)}
+        if output is not None:
+            payload["output"] = str(output)
+        if error is not None:
+            payload["error"] = error
+        self.on_event(payload)
+
     def _enqueue(self, path: Path) -> None:
         if _is_matching(path, self.extensions):
             logger.info("Queued %s", path.name)
             self._queue.put(path)
+            self._emit("queued", path)
 
     def _is_processed(self, path: Path) -> bool:
         key = str(path.resolve())
@@ -83,11 +102,14 @@ class WatcherHandler(FileSystemEventHandler):
     def process_one(self, path: Path) -> bool:
         """Convert one file; returns True on success. Never raises."""
         if self._is_processed(path):
+            self._emit("skipped", path, error="already processed")
             return False
         try:
             if not self._is_stable(path):
                 logger.warning("Skipping %s: still changing", path.name)
+                self._emit("skipped", path, error="still changing")
                 return False
+            self._emit("converting", path)
             markdown = pdf_to_markdown(path, **self.convert_kwargs)
             out_path = self.output_dir / f"{path.stem}.md"
             out_path.write_text(markdown, encoding="utf-8")
@@ -96,15 +118,18 @@ class WatcherHandler(FileSystemEventHandler):
 
                 copy_to_clipboard(markdown)
             self._processed.add(str(path.resolve()))
+            self._emit("done", path, output=out_path)
             logger.info("Converted %s -> %s", path.name, out_path.name)
             return True
         except UnsupportedFormatError as exc:
             logger.error("Skipping %s: %s", path.name, exc)
             self._processed.add(str(path.resolve()))
+            self._emit("error", path, error=str(exc))
             return False
         except Exception as exc:  # noqa: BLE001 - watcher must keep running
             logger.error("Failed %s: %s", path.name, exc)
             self._processed.add(str(path.resolve()))
+            self._emit("error", path, error=str(exc))
             return False
 
     def drain(self, stop_event: Optional[threading.Event] = None) -> None:
@@ -128,6 +153,7 @@ def run_watcher(
     once: bool = False,
     extensions: Sequence[str] = (".pdf",),
     stop_event: Optional[threading.Event] = None,
+    on_event: Callable[[dict[str, object]], None] | None = None,
     **convert_kwargs: Any,
 ) -> None:
     """Watch ``source`` and convert matching files into ``output``.
@@ -137,7 +163,9 @@ def run_watcher(
     """
     source.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
-    handler = WatcherHandler(output, extensions, poll_interval, clip, **convert_kwargs)
+    handler = WatcherHandler(
+        output, extensions, poll_interval, clip, on_event=on_event, **convert_kwargs
+    )
 
     if once:
         for path in sorted(source.iterdir()):

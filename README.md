@@ -47,6 +47,20 @@ tmd convert input/ -o output/
 
 Bare `tmd` runs `convert` with defaults for backward compatibility.
 
+### Web UI (`tmd ui`)
+
+The optional web interface wraps all seven commands (convert, merge, clip, fetch, repo, watch, delta) plus budget in a browser app — a Next.js frontend backed by a FastAPI server that imports `src/` in-process.
+
+```bash
+uv pip install -e ".[web]"     # or: uv pip install -r requirements-web.txt
+tmd ui                         # serves the API on http://127.0.0.1:8642
+```
+
+- REST API base: `http://127.0.0.1:8642` (configurable via `TMD_HOST`/`TMD_PORT` env vars; auto-increments the port if busy).
+- WebSocket: `/api/ws?session_id=...` for watch events and job progress.
+- Endpoints: health, config, samples, upload, list/download/download-all, convert, merge, clip, fetch, repo, delta, budget, watch start/stop/status, session close/cancel — see [`docs/WEBUI.md`](docs/WEBUI.md) (if present) or `backend/routes.py`.
+- Frontend lives in `frontend/` (Next.js App Router). To build it: `cd frontend && npm install && npm run build`, then point it at the API base above.
+
 The same CLI can also be run directly without installing:
 
 ```bash
