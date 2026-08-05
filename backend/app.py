@@ -7,6 +7,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -21,7 +22,11 @@ from .schemas import ErrorBody
 from .workspace import NotFoundError, cleanup_all, start_janitor
 from .ws import WsManager
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logging.getLogger("trafilatura").setLevel(logging.ERROR)
+logging.getLogger("urllib3").setLevel(logging.ERROR)
 logger = logging.getLogger("backend")
+logger.setLevel(logging.INFO)
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -52,11 +57,36 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.include_router(routes.router, prefix="/api")
 
+    cors_headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Allow-Methods": "*",
+    }
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(
+        request: Request, exc: RequestValidationError
+    ) -> JSONResponse:
+        client_ip = request.client.host if request.client else "unknown"
+        logger.warning(
+            f"[422 VALIDATION ERROR] Endpoint: {request.url.path} | Client: {client_ip} | Details: {exc.errors()}"
+        )
+        return JSONResponse(
+            status_code=422,
+            content=ErrorBody(code="unsupported_format", message=f"Invalid payload for {request.url.path}: {exc.errors()}").model_dump(),
+            headers=cors_headers,
+        )
+
     @app.exception_handler(routes.ApiError)
     async def api_error_handler(request: Request, exc: routes.ApiError) -> JSONResponse:
+        client_ip = request.client.host if request.client else "unknown"
+        logger.warning(
+            f"[API ERROR {exc.status_code}] Endpoint: {request.url.path} | Client: {client_ip} | Code: {exc.code} | Message: {exc.message}"
+        )
         return JSONResponse(
             status_code=exc.status_code,
             content=ErrorBody(code=exc.code, message=exc.message).model_dump(),
+            headers=cors_headers,
         )
 
     @app.exception_handler(NotFoundError)
@@ -64,6 +94,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return JSONResponse(
             status_code=404,
             content=ErrorBody(code="not_found", message=str(exc)).model_dump(),
+            headers=cors_headers,
         )
 
     @app.exception_handler(MissingDependencyError)
@@ -73,6 +104,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return JSONResponse(
             status_code=503,
             content=ErrorBody(code="missing_dependency", message=str(exc)).model_dump(),
+            headers=cors_headers,
         )
 
     @app.exception_handler(UnsupportedFormatError)
@@ -82,6 +114,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return JSONResponse(
             status_code=422,
             content=ErrorBody(code="unsupported_format", message=str(exc)).model_dump(),
+            headers=cors_headers,
         )
 
     @app.exception_handler(Exception)
@@ -92,6 +125,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return JSONResponse(
             status_code=500,
             content=ErrorBody(code="internal_error", message=str(exc)).model_dump(),
+            headers=cors_headers,
         )
 
     if settings.ui_dir and settings.ui_dir.is_dir():

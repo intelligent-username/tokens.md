@@ -60,8 +60,8 @@
 
 /* ---- Neon glow for the token glyph and logo image accents ---- */
 .glyph-glow {
-  filter: brightness(0) invert(68%) sepia(56%) saturate(1480%) hue-rotate(108deg) brightness(98%) contrast(92%)
-    drop-shadow(0 0 10px color-mix(in srgb, var(--color-emerald-500) 55%, transparent));
+  filter: invert(56%) sepia(85%) saturate(1350%) hue-rotate(105deg) brightness(95%) contrast(95%)
+    drop-shadow(0 0 8px rgba(22, 222, 129, 0.6));
 }
 
 /* ---- Global reduced-motion fallback ---- */

@@ -394,7 +394,14 @@ def ui(
         f"[green]tokens.md UI[/green] -> {target_url} "
         f"(API: http://{host}:{chosen}/api, docs: http://{host}:{chosen}/docs)"
     )
-    uvicorn.run(app, host=host, port=chosen, log_level="info")
+    uvicorn.run(
+        "backend.app:create_app",
+        factory=True,
+        host=host,
+        port=chosen,
+        log_level="info",
+        reload=True,
+    )
 
 
 def main() -> None:

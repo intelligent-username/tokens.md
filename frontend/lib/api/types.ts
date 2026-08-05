@@ -118,6 +118,7 @@ export interface DeltaResponse {
 }
 
 export interface FetchResponse {
+  session_id?: string;
   output_file_id: string;
   output_name: string;
   source_tokens: number;
@@ -223,6 +224,7 @@ export interface DeltaRequest {
 export interface FetchRequest {
   url: string;
   session_id?: string;
+  user_agent?: string;
 }
 
 export interface RepoRequest {

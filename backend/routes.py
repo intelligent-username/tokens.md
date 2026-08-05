@@ -8,10 +8,13 @@ WebSocket event loop responsive. They are thin wrappers over ``src.*`` and the
 from __future__ import annotations
 
 import json
+import logging
 import shutil
 import threading
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger("backend")
 
 from fastapi import APIRouter, File, Form, Request, UploadFile, WebSocket
 from fastapi import WebSocketDisconnect
@@ -367,15 +370,23 @@ def delta(req: DeltaRequest) -> DeltaResponse:
 
 # -- 8. fetch ------------------------------------------------------------
 @router.post("/fetch", response_model=FetchResponse)
-def fetch(req: FetchRequest) -> FetchResponse:
+def fetch(req: FetchRequest, request: Request) -> FetchResponse:
     ws = Workspace(req.session_id) if req.session_id else Workspace()
+    ua = req.user_agent or request.headers.get("user-agent")
+    client_ip = request.client.host if request.client else "unknown"
     try:
-        out = fetch_url(req.url, ws.output_dir)
-    except UnsupportedFormatError as exc:
-        raise ApiError(422, "unsupported_format", str(exc)) from exc
+        out = fetch_url(req.url, ws.output_dir, user_agent=ua)
+    except Exception as exc:
+        logger.warning(
+            f"[FETCH ERROR 422] Client: {client_ip} | Target URL: '{req.url}' | Reason: {exc}",
+            exc_info=True,
+        )
+        raise ApiError(422, "unsupported_format", f"Unreachable or invalid link '{req.url}': {exc}") from exc
+
     target_tokens = count_tokens_in_file(out)
     out_id = ws.register_output(out, target_tokens)
     return FetchResponse(
+        session_id=ws.sid,
         output_file_id=out_id,
         output_name=out.name,
         target_tokens=target_tokens,

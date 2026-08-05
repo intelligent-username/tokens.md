@@ -82,11 +82,11 @@ const URL_EXAMPLES = [
 function UrlInputCard({
   value,
   onChange,
-  onSelectExample,
+  onSubmit,
 }: {
   value: string;
   onChange: (val: string) => void;
-  onSelectExample: (url: string) => void;
+  onSubmit?: () => void;
 }) {
   const [index, setIndex] = useState(0);
 
@@ -100,19 +100,27 @@ function UrlInputCard({
   const currentExample = URL_EXAMPLES[index];
 
   return (
-    <div className="flex flex-col gap-3 rounded-card bg-card/60 p-5 border border-border/60">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (value.trim()) {
+          onSubmit?.();
+        }
+      }}
+      className="flex flex-col gap-3 rounded-card bg-card/60 p-5 border border-border/60"
+    >
       <label htmlFor="url-input" className="text-xs font-semibold text-foreground">
         Web Page or Git Repository URL
       </label>
       <input
         id="url-input"
-        type="url"
+        type="text"
         value={value}
         onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
         placeholder={currentExample}
         className="w-full rounded-chip border border-border bg-input px-3.5 py-2 font-mono text-sm text-foreground focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all placeholder:transition-opacity placeholder:duration-500"
       />
-    </div>
+    </form>
   );
 }
 
@@ -324,26 +332,37 @@ export function ConvertWorkspace() {
       setMergeResult(null);
       try {
         if (activeMode === 'input' && inputUrl.trim()) {
-          const res = await fetchUrl({ url: inputUrl.trim() });
-          setSessionId('fetch-session');
-          setResult({
-            results: [
-              {
-                file_id: 'fetch-1',
-                name: res.output_name || 'fetched_article.md',
-                source_tokens: res.source_tokens,
-                target_tokens: res.target_tokens,
-                percent: res.percent,
-                output_file_id: res.output_file_id,
-              },
-            ],
-            converted_count: 1,
-            failed_count: 0,
-            total_source_tokens: res.source_tokens,
-            total_target_tokens: res.target_tokens,
-            total_percent: res.percent,
-          });
-          toast('URL converted to Markdown', 'success');
+          const raw = inputUrl.trim();
+          const targetUrl = (raw.startsWith('http://') || raw.startsWith('https://')) ? raw : `https://${raw}`;
+          try {
+            const res = await fetchUrl({
+              url: targetUrl,
+              user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+            });
+            setSessionId(res.session_id || 'fetch-session');
+            setResult({
+              results: [
+                {
+                  file_id: 'fetch-1',
+                  name: res.output_name || 'fetched_article.md',
+                  source_tokens: res.source_tokens ?? 0,
+                  target_tokens: res.target_tokens ?? 0,
+                  percent: res.percent ?? 0,
+                  output_file_id: res.output_file_id,
+                },
+              ],
+              converted_count: 1,
+              failed_count: 0,
+              total_source_tokens: res.source_tokens ?? 0,
+              total_target_tokens: res.target_tokens ?? 0,
+              total_percent: res.percent ?? 0,
+            });
+            toast('URL converted to Markdown', 'success');
+          } catch (err) {
+            setError(err instanceof Error ? err.message : 'Unable to fetch or convert URL');
+          } finally {
+            setRunning(false);
+          }
           return;
         }
 
@@ -464,7 +483,7 @@ export function ConvertWorkspace() {
           <UrlInputCard
             value={inputUrl}
             onChange={setInputUrl}
-            onSelectExample={setInputUrl}
+            onSubmit={run}
           />
         )}
 
@@ -588,48 +607,34 @@ export function ConvertWorkspace() {
 
       {/* Input mode result row */}
       {activeMode === 'input' && result && sessionId ? (
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-4 rounded-card bg-card/60 p-4 border border-border/60">
+        <div className="flex items-center justify-between gap-4 rounded-card bg-card/60 p-4 border border-border/60">
           <div className="flex flex-col min-w-0">
             <span className="truncate font-mono text-sm font-semibold text-foreground">
-              {inputUrl}
+              {result.results[0]?.name || inputUrl}
             </span>
-            <span className="font-mono text-xs text-muted-foreground">URL Input</span>
-            {result.results[0]?.source_tokens ? (
-              <span className="font-mono text-[11px] text-muted-foreground">
-                {formatTokens(result.results[0].source_tokens)} tokens
-              </span>
-            ) : null}
+            <span className="font-mono text-xs text-emerald-400 font-semibold">
+              {formatTokens(result.results[0]?.target_tokens ?? 0)} tokens
+            </span>
           </div>
-          <FileFlowStream converting={running} done={true} percent={result.results[0]?.percent} />
-          <div className="flex items-center justify-between gap-2 min-w-0">
-            <div className="flex flex-col min-w-0">
-              <span className="truncate font-mono text-sm font-semibold text-foreground">
-                {result.results[0]?.name}
-              </span>
-              <span className="font-mono text-[11px] text-muted-foreground">
-                {formatTokens(result.results[0]?.target_tokens ?? 0)} tokens
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 shrink-0">
-              <ResultClipButton file={result.results[0]} sessionId={sessionId} />
-              {result.results[0]?.output_file_id ? (
-                <a
-                  href={downloadUrl(sessionId, result.results[0].output_file_id)}
-                  download
-                  className="inline-flex items-center gap-1 rounded-chip bg-emerald-500/20 px-2 py-1 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/30 transition-colors border border-emerald-500/30"
-                >
-                  <DownloadSimple size={14} />
-                </a>
-              ) : null}
-            </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <ResultClipButton file={result.results[0]} sessionId={sessionId} />
+            {result.results[0]?.output_file_id ? (
+              <a
+                href={downloadUrl(sessionId, result.results[0].output_file_id)}
+                download
+                className="inline-flex items-center gap-1.5 rounded-chip bg-emerald-500/20 px-3 py-1.5 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/30 transition-colors border border-emerald-500/30"
+              >
+                <DownloadSimple size={14} /> Download
+              </a>
+            ) : null}
           </div>
         </div>
       ) : null}
 
-      {/* Polymorphic Bottom Slot: LoadingState while processing, TotalCompressionPill when complete */}
+      {/* Polymorphic Bottom Slot: LoadingState while processing, TotalCompressionPill when complete (Upload mode only) */}
       {running ? (
-        <LoadingState label={copy.convertingBusy} />
-      ) : (result || mergeResult) && sessionId ? (
+        activeMode === 'upload' ? <LoadingState label={copy.convertingBusy} /> : null
+      ) : activeMode === 'upload' && (result || mergeResult) && sessionId ? (
         <TotalCompressionPill
           sourceTokens={sourceTokensTotal}
           targetTokens={targetTokensTotal}

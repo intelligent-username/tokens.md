@@ -37,15 +37,21 @@ export function parseError(status: number, text: string): ApiError {
   } catch {
     body = null;
   }
-  if (body && typeof body.error === 'string') {
+  const errCode = body?.code || body?.error;
+  if (errCode && typeof errCode === 'string') {
     return new ApiError(
-      typeof body.message === 'string' ? body.message : `HTTP ${status}`,
-      classifyError(body.error),
+      typeof body?.message === 'string' ? body.message : `HTTP ${status}`,
+      classifyError(errCode),
       status,
-      body,
+      body ?? undefined,
     );
   }
-  return new ApiError(`HTTP ${status}`, 'unknown', status);
+  return new ApiError(
+    body?.message ? body.message : `HTTP ${status}`,
+    'unknown',
+    status,
+    body ?? undefined,
+  );
 }
 
 async function responseError(res: Response): Promise<ApiError> {

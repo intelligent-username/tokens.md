@@ -32,20 +32,35 @@ def _strip_tags(html: str) -> str:
 
 
 class HtmlConverter(Converter):
-    """Converts HTML files to clean Markdown via trafilatura."""
+    """Converts HTML files to clean Markdown via trafilatura or stdlib fallback."""
 
     extensions = HTML_EXTENSIONS
     name = "html"
 
     def convert(self, input_path: Path, output_dir: Path, **kwargs: object) -> Path:
-        trafilatura = require("trafilatura", "HTML conversion")
-
         output_dir.mkdir(parents=True, exist_ok=True)
         html = input_path.read_text(encoding="utf-8", errors="replace")
+        content = ""
 
-        content = trafilatura.extract(html, output_format="markdown")
+        try:
+            import trafilatura
+            extracted = trafilatura.extract(
+                html,
+                output_format="markdown",
+                include_links=True,
+                include_images=True,
+                include_tables=True,
+                include_formatting=True,
+                favor_precision=True,
+            )
+            if extracted:
+                content = extracted
+        except Exception:
+            pass
+
         if not content:
             content = _strip_tags(html)
+
         if not content.strip():
             raise UnsupportedFormatError(f"No text could be extracted from {input_path.name}")
 

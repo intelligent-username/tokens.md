@@ -27,9 +27,7 @@ export const metadata: Metadata = {
   title: "tokens.md",
   description: "Shrink AI context. Convert, merge, and watch token budgets.",
   icons: {
-    icon: "/logo.svg",
-    shortcut: "/logo.svg",
-    apple: "/logo.svg",
+    icon: "/icon.svg",
   },
 };
 
@@ -48,6 +46,7 @@ export default function RootLayout({
       </head>
       <body
         className={`${spaceGrotesk.variable} ${manrope.variable} ${jetbrainsMono.variable} font-sans antialiased`}
+        suppressHydrationWarning
       >
         <div className="canvas-backdrop" aria-hidden="true" />
         {children}

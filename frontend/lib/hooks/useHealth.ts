@@ -5,7 +5,7 @@ import { API_BASE } from './apiBase';
 
 export type HealthStatus = 'booting' | 'online' | 'degraded' | 'offline';
 
-export const HEALTH_POLL_MS = 15_000;
+export const HEALTH_POLL_MS = 60_000;
 /** Response time above this marks the backend degraded. */
 export const HEALTH_SLOW_MS = 3_000;
 
@@ -23,14 +23,19 @@ export function markDegraded(): void {
   degradedListeners.forEach((listener) => listener());
 }
 
+let lastCheckTime = 0;
+
 /**
- * Backend health: polls GET /api/health every 15s, plus on job responses.
+ * Backend health: polls GET /api/health every 60s, plus on job responses.
  * offline = request failed; degraded = ok but slow.
  */
 export function useHealth(): { status: HealthStatus; retry: () => void } {
   const [status, setStatus] = useState<HealthStatus>('booting');
 
   const check = useCallback(async () => {
+    const now = Date.now();
+    if (now - lastCheckTime < 15_000) return;
+    lastCheckTime = now;
     const started = Date.now();
     try {
       const res = await fetch(`${API_BASE}/api/health`, { cache: 'no-store' });

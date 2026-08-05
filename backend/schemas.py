@@ -147,9 +147,11 @@ class DeltaResponse(BaseModel):
 class FetchRequest(BaseModel):
     url: str
     session_id: str | None = None
+    user_agent: str | None = None
 
 
 class FetchResponse(BaseModel):
+    session_id: str
     output_file_id: str
     output_name: str
     target_tokens: int
