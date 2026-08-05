@@ -26,6 +26,11 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "tokens.md",
   description: "Shrink AI context. Convert, merge, and watch token budgets.",
+  icons: {
+    icon: "/logo.svg",
+    shortcut: "/logo.svg",
+    apple: "/logo.svg",
+  },
 };
 
 // Applies the stored (or system) theme before first paint. Dark is the default.

@@ -23,7 +23,7 @@ export function WorkbenchShell() {
       <TopBar active={active} onChange={setActive} health={status} />
 
       {offline || degraded ? (
-        <div className="mx-auto w-full max-w-6xl px-4 pt-4 sm:px-6">
+        <div className="mx-auto w-full max-w-7xl px-4 pt-4 sm:px-6">
           <Banner
             message={offline ? copy.backendOffline : copy.connectionLost}
             retry={retry}
@@ -32,7 +32,7 @@ export function WorkbenchShell() {
         </div>
       ) : null}
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6">
         <ConvertWorkspace />
       </main>
     </div>

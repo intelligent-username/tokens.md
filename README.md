@@ -1,6 +1,6 @@
 # tokens.md
 
-![Moses on Mounta Sinai by Jean-Léon, 1895](.github/Cover.jpg)
+![The Vision of the Colosseum. The last martyr by José Benlliure y Gil - 1885](docs/imgs/cover.jpg)
 
 Tokens.md is my tool for saving tokens when speaking to chatbots by converting files en-masse to Markdown. It turns PDFs, Office documents, e-books, structured data, HTML, web pages, and whole code repositories into clean, token-efficient Markdown you can paste straight into an LLM.
 

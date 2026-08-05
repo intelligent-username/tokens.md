@@ -58,9 +58,10 @@
   background-size: auto, auto, 44px 44px, 44px 44px, 180px 180px;
 }
 
-/* ---- Neon glow for the token glyph and meter accents ---- */
+/* ---- Neon glow for the token glyph and logo image accents ---- */
 .glyph-glow {
-  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--color-emerald-500) 55%, transparent));
+  filter: brightness(0) invert(68%) sepia(56%) saturate(1480%) hue-rotate(108deg) brightness(98%) contrast(92%)
+    drop-shadow(0 0 10px color-mix(in srgb, var(--color-emerald-500) 55%, transparent));
 }
 
 /* ---- Global reduced-motion fallback ---- */

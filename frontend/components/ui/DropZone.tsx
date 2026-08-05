@@ -171,10 +171,10 @@ export function DropZone({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={cn(
-        "group relative flex min-h-56 cursor-pointer flex-col items-center justify-center gap-3 rounded-card border border-dashed border-emerald-500/40 p-8 text-center transition-colors",
+        "group relative flex min-h-[280px] sm:min-h-[340px] cursor-pointer flex-col items-center justify-center gap-4 rounded-card border border-dashed border-border/80 p-10 sm:p-14 text-center transition-all",
         dragging
-          ? "border-solid border-emerald-500 bg-accent shadow-glow"
-          : "bg-card/60 hover:border-emerald-500/70 hover:bg-card",
+          ? "border-solid border-emerald-500 bg-emerald-500/10 shadow-glow"
+          : "bg-card/60 hover:border-emerald-500/60 hover:bg-card/80",
         disabled && "cursor-not-allowed opacity-50",
       )}
     >

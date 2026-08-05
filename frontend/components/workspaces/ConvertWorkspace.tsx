@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, type ChangeEvent } from 'react';
-import { motion } from 'motion/react';
+import { useState, useEffect, type ChangeEvent } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   CloudArrowUp,
   Link as LinkIcon,
@@ -72,6 +72,12 @@ function ModeSelector({
   );
 }
 
+const URL_EXAMPLES = [
+  'https://example.com/article',
+  'https://github.com/intelligent-username/tokens.md',
+  'https://docs.python.org/3/',
+];
+
 /** Unified link input box for Web Page URLs and Git Repository links. */
 function UrlInputCard({
   value,
@@ -82,6 +88,17 @@ function UrlInputCard({
   onChange: (val: string) => void;
   onSelectExample: (url: string) => void;
 }) {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIndex((prev) => (prev + 1) % URL_EXAMPLES.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const currentExample = URL_EXAMPLES[index];
+
   return (
     <div className="flex flex-col gap-3 rounded-card bg-card/60 p-5 border border-border/60">
       <label htmlFor="url-input" className="text-xs font-semibold text-foreground">
@@ -92,26 +109,9 @@ function UrlInputCard({
         type="url"
         value={value}
         onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
-        placeholder="https://example.com/article or https://github.com/user/repo"
-        className="w-full rounded-chip border border-border bg-input px-3.5 py-2 font-mono text-sm text-foreground focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+        placeholder={currentExample}
+        className="w-full rounded-chip border border-border bg-input px-3.5 py-2 font-mono text-sm text-foreground focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all placeholder:transition-opacity placeholder:duration-500"
       />
-      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        <span>Examples:</span>
-        <button
-          type="button"
-          onClick={() => onSelectExample('https://example.com/article')}
-          className="rounded-chip bg-muted px-2 py-0.5 hover:text-emerald-400 transition-colors"
-        >
-          Web Page
-        </button>
-        <button
-          type="button"
-          onClick={() => onSelectExample('https://github.com/user/repo')}
-          className="rounded-chip bg-muted px-2 py-0.5 hover:text-emerald-400 transition-colors"
-        >
-          Git Repo
-        </button>
-      </div>
     </div>
   );
 }
@@ -453,7 +453,7 @@ export function ConvertWorkspace() {
   };
 
   return (
-    <div className="flex flex-col gap-6 max-w-5xl mx-auto">
+    <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto">
       <ModeSelector activeMode={activeMode} onChange={handleModeChange} />
 
       {/* Top Upload/Input Control Section */}
@@ -719,6 +719,7 @@ export function ConvertWorkspace() {
           </div>
         ) : null}
       </div>
+
     </div>
   );
 }
