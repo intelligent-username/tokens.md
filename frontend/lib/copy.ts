@@ -41,6 +41,7 @@ export const copyMarkdown = 'Copy markdown';
 export const copied = 'Copied.';
 
 export const preview = 'Preview';
+export const previewFailed = "Couldn't load the preview.";
 export const hidePreview = 'Hide preview';
 
 export const retry = 'Retry';
@@ -222,6 +223,7 @@ const copy = {
   copyMarkdown,
   copied,
   preview,
+  previewFailed,
   hidePreview,
   retry,
   remove,

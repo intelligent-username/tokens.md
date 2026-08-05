@@ -8,6 +8,8 @@ export interface FileMeta {
   file_id: string;
   name: string;
   size: number;
+  source_tokens?: number;
+  relpath?: string;
   target_tokens?: number;
   created?: string;
   path?: string;
@@ -45,6 +47,8 @@ export interface ConvertOptions {
 export interface ConvertItem {
   file_id: string;
   name: string;
+  output_name?: string;
+  output_size?: number;
   source_tokens: number;
   target_tokens: number;
   percent: number;

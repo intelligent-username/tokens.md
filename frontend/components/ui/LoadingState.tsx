@@ -3,6 +3,7 @@ import { SpinnerGap } from '@phosphor-icons/react';
 
 interface LoadingStateProps {
   label?: string;
+  spinner?: boolean;
 }
 
 const containerStyle: CSSProperties = {
@@ -27,11 +28,13 @@ const labelStyle: CSSProperties = {
  * Spinner + label for in-flight work. The spin keyframes are scoped to the
  * .tmd-spin class so reduced-motion (globals.css) can kill them.
  */
-export function LoadingState({ label }: LoadingStateProps) {
+export function LoadingState({ label, spinner = true }: LoadingStateProps) {
   return (
     <div style={containerStyle} role="status" aria-live="polite">
       <style>{'@keyframes tmd-spin{to{transform:rotate(360deg)}}.tmd-spin{animation:tmd-spin .9s linear infinite}'}</style>
-      <SpinnerGap size={20} weight="regular" className="tmd-spin" style={{ color: 'var(--color-primary)' }} />
+      {spinner ? (
+        <SpinnerGap size={20} weight="regular" className="tmd-spin" style={{ color: 'var(--color-primary)' }} />
+      ) : null}
       {label ? <span style={labelStyle}>{label}</span> : null}
     </div>
   );

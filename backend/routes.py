@@ -234,6 +234,7 @@ def convert(req: ConvertRequest, request: Request) -> ConvertResponse:
                     status="done",
                     output_file_id=out_id,
                     output_name=out.name,
+                    output_size=out.stat().st_size,
                     source_tokens=source_tokens,
                     target_tokens=target_tokens,
                     percent=delta_percent(source_tokens, target_tokens),

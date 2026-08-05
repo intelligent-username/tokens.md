@@ -14,7 +14,7 @@ const rowStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'space-between',
-  gap: '12px',
+  gap: '6px',
   cursor: 'pointer',
 };
 
@@ -85,7 +85,7 @@ export function Toggle({ checked, onChange, label, description, disabled }: Togg
         <span
           style={{
             ...thumbStyle,
-            transform: checked ? 'translateX(16px)' : 'translateX(0)',
+            transform: checked ? 'translateX(14px)' : 'translateX(0)',
             background: checked
               ? 'var(--color-primary-foreground)'
               : 'var(--color-secondary-foreground)',

@@ -44,6 +44,7 @@ class ConvertItem(BaseModel):
     status: str
     output_file_id: str | None = None
     output_name: str | None = None
+    output_size: int | None = None
     source_tokens: int = 0
     target_tokens: int = 0
     percent: float = 0.0

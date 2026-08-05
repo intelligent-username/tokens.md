@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, type ChangeEvent } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { useState, useEffect, useLayoutEffect, useRef, type ChangeEvent, type Ref, type CSSProperties } from 'react';
+import { motion } from 'motion/react';
 import {
   CloudArrowUp,
   Link as LinkIcon,
@@ -17,12 +17,14 @@ import {
 import copy from '@/lib/copy';
 import { convert, merge, fetchUrl, downloadUrl } from '@/lib/api/endpoints';
 import { uploadFiles } from '@/lib/api/upload';
-import type { ConvertResponse, UploadResponse, ConvertItem, MergeResponse } from '@/lib/api/types';
+import type { ConvertResponse, UploadResponse, ConvertItem, MergeResponse, FileMeta } from '@/lib/api/types';
 import { useWorkspaceState } from '@/lib/hooks/useWorkspaceState';
 import { useUpload } from '@/lib/hooks/useUpload';
 import { useJob } from '@/lib/hooks/useJob';
 import { useToast } from '@/lib/hooks/useToast';
 import { useClipboard } from '@/lib/hooks/useClipboard';
+import { useReducedMotion } from '@/lib/hooks/useReducedMotion';
+import type { PreviewableOutput } from '@/lib/hooks/useMarkdownPreview';
 import { DropZone } from '@/components/ui/DropZone';
 import { Toggle } from '@/components/ui/Toggle';
 import { MergeButton } from '@/components/ui/MergeButton';
@@ -30,6 +32,7 @@ import { DownloadAllButton } from '@/components/ui/DownloadAllButton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { LoadingState } from '@/components/ui/LoadingState';
 import { BudgetInput, type BudgetUnit } from '@/components/ui/BudgetInput';
+import { MarkdownPreviewButton } from '@/components/ui/MarkdownPreviewButton';
 import { formatBytes } from '@/components/ui/FileChip';
 import { formatTokens } from '@/lib/utils/format';
 import { cn } from '@/lib/utils/cn';
@@ -77,6 +80,9 @@ const URL_EXAMPLES = [
   'https://github.com/intelligent-username/tokens.md',
   'https://docs.python.org/3/',
 ];
+
+/** Sigmoid-ish S-curve (smoothstep) for the merge-convergence animation. */
+const sigmoidEase = (t: number) => t * t * (3 - 2 * t);
 
 /** Unified link input box for Web Page URLs and Git Repository links. */
 function UrlInputCard({
@@ -129,13 +135,21 @@ function FileFlowStream({
   converting,
   done,
   percent,
+  merged = false,
+  barRef,
 }: {
   converting: boolean;
   done: boolean;
   percent?: number;
+  /** the single converged merged bar: shows a "merged" badge */
+  merged?: boolean;
+  /** ref to the bar element, used to measure convergence midpoints */
+  barRef?: Ref<HTMLDivElement>;
 }) {
+  const reduced = useReducedMotion();
+
   return (
-    <div className="relative flex items-center justify-center w-full px-2 sm:px-4 select-none">
+    <div ref={barRef} className="relative flex items-center justify-center w-full px-2 sm:px-4 select-none">
       {/* Laser connector line / progress bar */}
       <div className="relative h-3.5 w-full rounded-full bg-muted/80 overflow-hidden border border-border/60">
         <div
@@ -150,7 +164,7 @@ function FileFlowStream({
         />
 
         {/* Dynamic traveling particle beam FX while converting */}
-        {converting ? (
+        {converting && !reduced ? (
           <>
             {[0, 1, 2, 3].map((i) => (
               <motion.span
@@ -172,9 +186,13 @@ function FileFlowStream({
 
       {/* Center Flow Badge */}
       <div className="absolute inset-auto flex items-center justify-center">
-        {done && percent !== undefined ? (
+        {done && percent !== undefined && !merged ? (
           <span className="inline-flex items-center gap-0.5 rounded-full bg-zinc-950/90 border border-emerald-500/40 px-2.5 py-0.5 text-xs font-mono font-bold text-emerald-400 shadow-glow backdrop-blur-md">
             −{Math.abs(percent).toFixed(1)}%
+          </span>
+        ) : done && merged ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-zinc-950/90 border border-emerald-500/40 px-2.5 py-0.5 text-xs font-mono font-bold text-emerald-400 shadow-glow backdrop-blur-md">
+            <Check size={12} /> merged
           </span>
         ) : converting ? (
           <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 shadow-[0_0_10px_#16DE81] border border-emerald-500/40">
@@ -186,6 +204,117 @@ function FileFlowStream({
           </span>
         )}
       </div>
+    </div>
+  );
+}
+
+/** Geometry of the merge funnel: x-range of the flow column, each row's start y,
+ *  the shared convergence y (midpoint), and the container height. */
+type FunnelGeom = {
+  x0: number;
+  x1: number;
+  y0s: number[];
+  midY: number;
+  height: number;
+};
+
+/**
+ * Merge funnel: X separate flow lines start parallel on the left and curve
+ * (sigmoid-shaped) toward the centre as they travel right, converging into a
+ * single end point. Particles fly along each curve while `active`; once the
+ * merge is done the animation stops and only the static curves remain.
+ */
+function MergeFunnel({
+  geom,
+  active,
+  reduced,
+}: {
+  geom: FunnelGeom;
+  active: boolean;
+  reduced: boolean;
+}) {
+  const W = geom.x1 - geom.x0;
+  const paths = geom.y0s.map((y, i) => ({
+    i,
+    d: `M 0 ${y} C ${W / 2} ${y}, ${W / 2} ${geom.midY}, ${W} ${geom.midY}`,
+  }));
+
+  return (
+    <div
+      className="pointer-events-none absolute"
+      style={{ left: geom.x0, top: 0, width: W, height: geom.height }}
+    >
+      <svg width={W} height={geom.height} className="overflow-visible">
+        <defs>
+          <linearGradient id="funnelGradient" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#34d399" stopOpacity="0.7" />
+            <stop offset="100%" stopColor="#16DE81" />
+          </linearGradient>
+        </defs>
+
+        {paths.map((p) => (
+          <g key={p.i}>
+            <path
+              d={p.d}
+              fill="none"
+              stroke="url(#funnelGradient)"
+              strokeWidth={5}
+              strokeLinecap="round"
+              opacity={0.85}
+            />
+            {active && !reduced ? (
+              <>
+                <motion.circle
+                  r={4}
+                  fill="#34d399"
+                  style={
+                    {
+                      offsetPath: `path("${p.d}")`,
+                      offsetDistance: '0%',
+                    } as CSSProperties
+                  }
+                  animate={{ offsetDistance: ['0%', '100%'] }}
+                  transition={{
+                    duration: 1.1,
+                    repeat: Infinity,
+                    ease: sigmoidEase,
+                    delay: (p.i % 4) * 0.22,
+                  }}
+                />
+                <motion.circle
+                  r={3}
+                  fill="#a7f3d0"
+                  style={
+                    {
+                      offsetPath: `path("${p.d}")`,
+                      offsetDistance: '0%',
+                    } as CSSProperties
+                  }
+                  animate={{ offsetDistance: ['0%', '100%'] }}
+                  transition={{
+                    duration: 1.1,
+                    repeat: Infinity,
+                    ease: sigmoidEase,
+                    delay: (p.i % 4) * 0.22 + 0.55,
+                  }}
+                />
+              </>
+            ) : null}
+          </g>
+        ))}
+
+        {/* The single end point every curve converges into */}
+        {active && !reduced ? (
+          <motion.circle
+            cx={W}
+            cy={geom.midY}
+            r={5}
+            fill="#16DE81"
+            animate={{ opacity: [0.4, 1, 0.4], scale: [1, 1.4, 1] }}
+            transition={{ duration: 1.2, repeat: Infinity }}
+          />
+        ) : null}
+      </svg>
     </div>
   );
 }
@@ -237,6 +366,8 @@ function TotalCompressionPill({
   percent,
   sessionId,
   isMerge,
+  mergeOutputFileId,
+  previewOutput,
   onCopyAll,
 }: {
   sourceTokens: number;
@@ -244,6 +375,10 @@ function TotalCompressionPill({
   percent: number;
   sessionId: string;
   isMerge?: boolean;
+  /** output_file_id of the merged file, used for the merge Download link */
+  mergeOutputFileId?: string;
+  /** merged file for the eye button */
+  previewOutput?: PreviewableOutput;
   onCopyAll: () => void;
 }) {
   const savedTokens = Math.max(0, sourceTokens - targetTokens);
@@ -273,13 +408,36 @@ function TotalCompressionPill({
           <span className="text-muted-foreground/60">→</span>
           <span className="font-bold text-emerald-400">{formatTokens(targetTokens)}</span>
         </div>
-        <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 font-mono text-xs font-bold text-emerald-400 border border-emerald-500/30">
-          −{Math.abs(percent).toFixed(1)}% saved
-        </span>
+        {isMerge ? (
+          <span
+            title="Merged output token count. Source totals are raw file-size estimates, so a % savings figure would be misleading."
+            className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 font-mono text-xs font-bold text-emerald-400 border border-emerald-500/30"
+          >
+            output ≈ {formatTokens(targetTokens)} tokens
+          </span>
+        ) : (
+          <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 font-mono text-xs font-bold text-emerald-400 border border-emerald-500/30">
+            −{Math.abs(percent).toFixed(1)}% saved
+          </span>
+        )}
       </div>
 
       <div className="flex items-center gap-2">
-        {!isMerge ? <DownloadAllButton sessionId={sessionId} /> : null}
+        {!isMerge ? (
+          <DownloadAllButton sessionId={sessionId} />
+        ) : mergeOutputFileId ? (
+          <>
+            {previewOutput ? <MarkdownPreviewButton output={previewOutput} /> : null}
+            <a
+              href={downloadUrl(sessionId, mergeOutputFileId)}
+              download
+              aria-label="Download merged Markdown file"
+              className="inline-flex items-center gap-1.5 rounded-chip bg-emerald-500/20 px-2.5 py-1 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/30 transition-colors border border-emerald-500/30"
+            >
+              <DownloadSimple size={14} /> Download
+            </a>
+          </>
+        ) : null}
         <button
           type="button"
           onClick={onCopyAll}
@@ -300,8 +458,12 @@ export function ConvertWorkspace() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [result, setResult] = useState<ConvertResponse | null>(null);
   const [mergeResult, setMergeResult] = useState<MergeResponse | null>(null);
+  const [uploadMeta, setUploadMeta] = useState<FileMeta[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
+  const [funnelGeom, setFunnelGeom] = useState<FunnelGeom | null>(null);
+  const rowsContainerRef = useRef<HTMLDivElement | null>(null);
+  const rowBarRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   // Settings State
   const [showSettings, setShowSettings] = useState(false);
@@ -319,10 +481,45 @@ export function ConvertWorkspace() {
   const { upload } = useUpload(files);
   const { subscribe } = useJob();
   const { copy: copyText } = useClipboard();
+  const reducedMotion = useReducedMotion();
 
   const sourceTokensTotal = mergeResult ? mergeResult.source_tokens : (result?.total_source_tokens ?? 0);
   const targetTokensTotal = mergeResult ? mergeResult.target_tokens : (result?.total_target_tokens ?? 0);
   const totalPercent = mergeResult ? mergeResult.percent : (result?.total_percent ?? 0);
+  const mergeMode = mergeEnabled || Boolean(mergeResult);
+
+  const mergedItem: ConvertItem | null = mergeResult
+    ? {
+        file_id: mergeResult.output_file_id,
+        name: mergeResult.output_name,
+        source_tokens: mergeResult.source_tokens,
+        target_tokens: mergeResult.target_tokens,
+        percent: mergeResult.percent,
+        output_file_id: mergeResult.output_file_id,
+      }
+    : null;
+
+  // In merge mode, measure each per-file flow bar to build the funnel geometry:
+  // X origins on the left (each row's y) curving toward a shared midpoint line.
+  useLayoutEffect(() => {
+    if (!mergeMode || files.length === 0) return;
+    const container = rowsContainerRef.current;
+    if (!container) return;
+    const bars = rowBarRefs.current
+      .map((el) => el?.getBoundingClientRect())
+      .filter((r): r is DOMRect => Boolean(r));
+    if (bars.length === 0) return;
+    const containerRect = container.getBoundingClientRect();
+    setFunnelGeom({
+      x0: bars[0].left - containerRect.left,
+      x1: bars[0].right - containerRect.left,
+      y0s: bars.map((r) => r.top + r.height / 2 - containerRect.top),
+      midY:
+        bars.reduce((a, r) => a + (r.top + r.height / 2), 0) / bars.length -
+        containerRect.top,
+      height: containerRect.height,
+    });
+  }, [mergeMode, files.length, mergeResult, running, uploadMeta]);
 
   const { queue, setQueue, run } = useWorkspaceState(files, {
     onRun: async () => {
@@ -330,6 +527,7 @@ export function ConvertWorkspace() {
       setError(null);
       setResult(null);
       setMergeResult(null);
+      setFunnelGeom(null);
       try {
         if (activeMode === 'input' && inputUrl.trim()) {
           const raw = inputUrl.trim();
@@ -378,6 +576,7 @@ export function ConvertWorkspace() {
         });
         const sid = up!.session_id;
         setSessionId(sid);
+        setUploadMeta(up.files);
 
         if (mergeEnabled) {
           const mres = await merge({
@@ -425,17 +624,29 @@ export function ConvertWorkspace() {
     },
   });
 
-  const onFiles = (next: File[]) => {
-    setFiles(next);
-    setQueue(next);
+  const resetOutputs = () => {
+    setUploadMeta(null);
     setResult(null);
     setMergeResult(null);
+    setFunnelGeom(null);
     setError(null);
+  };
+
+  const onFiles = (next: File[]) => {
+    const existing = new Set(files.map((f) => f.name));
+    const appended = next.filter((f) => !existing.has(f.name));
+    if (appended.length === 0) return;
+    const merged = [...files, ...appended];
+    setFiles(merged);
+    setQueue(merged);
+    resetOutputs();
   };
 
   const onRemoveFile = (index: number) => {
     const next = files.filter((_, i) => i !== index);
-    onFiles(next);
+    setFiles(next);
+    setQueue(next);
+    resetOutputs();
   };
 
   const handleCopyAll = async () => {
@@ -467,7 +678,9 @@ export function ConvertWorkspace() {
     setActiveMode(mode);
     setResult(null);
     setMergeResult(null);
+    setFunnelGeom(null);
     setSessionId(null);
+    setUploadMeta(null);
     setError(null);
   };
 
@@ -503,7 +716,7 @@ export function ConvertWorkspace() {
 
       {/* Side-by-Side Matched File Flow Rows (Y-Level Aligned) */}
       {files.length > 0 && activeMode === 'upload' ? (
-        <div className="flex flex-col gap-3">
+        <div ref={rowsContainerRef} className="relative flex flex-col gap-3">
           <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-muted-foreground px-1">
             <span>1. Input File ({files.length})</span>
             <span>2. Converted Markdown</span>
@@ -519,19 +732,23 @@ export function ConvertWorkspace() {
             return (
               <div
                 key={queueItem?.id ?? file.name ?? i}
-                className="grid grid-cols-[1fr_3fr_1fr] items-center gap-2 sm:gap-4 rounded-card bg-card/60 p-3 sm:p-4 border border-border/60 hover:border-border transition-colors"
+                className={cn(
+                  'relative grid items-center gap-2 sm:gap-4 rounded-card bg-card/60 p-3 sm:p-4 border border-border/60 hover:border-border transition-colors',
+                  mergeMode ? 'grid-cols-[1fr_3fr]' : 'grid-cols-[1fr_3fr_1fr]',
+                )}
               >
+                <button
+                  type="button"
+                  onClick={() => onRemoveFile(i)}
+                  disabled={running}
+                  aria-label={`Remove ${file.name}`}
+                  className="absolute -left-2 -top-2 z-10 rounded-full p-0.5 text-destructive hover:bg-destructive/15 hover:text-destructive transition-colors disabled:opacity-50"
+                >
+                  <X size={14} weight="bold" />
+                </button>
+
                 {/* Left Card: Input File */}
-                <div className="flex items-center gap-2 min-w-0">
-                  <button
-                    type="button"
-                    onClick={() => onRemoveFile(i)}
-                    disabled={running}
-                    aria-label={`Remove ${file.name}`}
-                    className="-ml-1 rounded-chip p-1 text-destructive hover:bg-destructive/15 hover:text-destructive transition-colors disabled:opacity-50"
-                  >
-                    <X size={14} weight="bold" />
-                  </button>
+                <div className="flex items-center gap-2 min-w-0 min-h-[52px] pl-8">
                   <span
                     className={cn(
                       'h-2 w-2 shrink-0 rounded-full',
@@ -549,59 +766,100 @@ export function ConvertWorkspace() {
                     <span className="font-mono text-[11px] text-muted-foreground">
                       {formatBytes(file.size)}
                     </span>
-                    {resultItem?.source_tokens ? (
+                    {uploadMeta?.[i]?.source_tokens ? (
                       <span className="font-mono text-[11px] text-muted-foreground">
-                        {formatTokens(resultItem.source_tokens)} tokens
+                        {formatTokens(uploadMeta[i].source_tokens)} tokens
                       </span>
                     ) : null}
                   </div>
                 </div>
 
-                {/* Center: Particle Beam Flow Stream Animation */}
-                <FileFlowStream
-                  converting={isConverting}
-                  done={isDone}
-                  percent={resultItem?.percent ?? mergeResult?.percent}
-                />
+                {/* Center: in merge mode the converging funnel (drawn once over
+                    the whole rows container) replaces the straight flow bars;
+                    this spacer anchors the row's start position for measurement. */}
+                {mergeMode ? (
+                  <div
+                    ref={(el) => {
+                      rowBarRefs.current[i] = el;
+                    }}
+                    className="h-3.5 w-full"
+                  />
+                ) : (
+                  <FileFlowStream
+                    converting={isConverting}
+                    done={isDone}
+                    percent={resultItem?.percent}
+                    barRef={(el) => {
+                      rowBarRefs.current[i] = el;
+                    }}
+                  />
+                )}
 
-                {/* Right Card: Output Converted Result */}
-                <div className="flex items-center justify-between gap-2 min-w-0">
-                  {resultItem ? (
-                    <>
-                      <div className="flex flex-col min-w-0">
-                        <span className="truncate font-mono text-xs sm:text-sm font-semibold text-foreground">
-                          {resultItem.name}
-                        </span>
-                        <span className="font-mono text-[11px] text-muted-foreground">
-                          {formatTokens(resultItem.target_tokens)} tokens
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <ResultClipButton file={resultItem} sessionId={sessionId!} />
-                        {resultItem.output_file_id ? (
-                          <a
-                            href={downloadUrl(sessionId!, resultItem.output_file_id)}
-                            download
-                            className="inline-flex items-center gap-1 rounded-chip bg-emerald-500/20 px-2 py-1 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/30 transition-colors border border-emerald-500/30"
-                          >
-                            <DownloadSimple size={14} />
-                          </a>
-                        ) : null}
-                      </div>
-                    </>
-                  ) : isConverting ? (
-                    <span className="font-mono text-xs text-amber-400 animate-pulse">
-                      Converting...
-                    </span>
-                  ) : (
-                    <span className="font-mono text-xs text-muted-foreground/60 italic">
-                      Awaiting convert
-                    </span>
-                  )}
-                </div>
+                {/* Right Card: Output Converted Result — hidden in merge mode (single merged file, no per-file outputs) */}
+                {!mergeMode ? (
+                  <div className="flex items-center justify-between gap-2 min-w-0 min-h-[52px]">
+                    {resultItem ? (
+                      <>
+                        <div className="flex flex-col min-w-0">
+                          <span className="truncate font-mono text-xs sm:text-sm font-semibold text-foreground">
+                            {resultItem.output_name ?? resultItem.name}
+                          </span>
+                          <span className="font-mono text-[11px] text-muted-foreground">
+                            {formatTokens(resultItem.target_tokens)} tokens
+                          </span>
+                          {resultItem.output_size ? (
+                            <span className="font-mono text-[11px] text-muted-foreground">
+                              {formatBytes(resultItem.output_size)}
+                            </span>
+                          ) : null}
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <ResultClipButton file={resultItem} sessionId={sessionId!} />
+                          {resultItem.output_file_id ? (
+                            <>
+                              <a
+                                href={downloadUrl(sessionId!, resultItem.output_file_id)}
+                                download
+                                className="inline-flex items-center gap-1 rounded-chip bg-emerald-500/20 px-2 py-1 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/30 transition-colors border border-emerald-500/30"
+                              >
+                                <DownloadSimple size={14} />
+                              </a>
+                              <MarkdownPreviewButton
+                                output={{
+                                  sessionId: sessionId!,
+                                  fileId: resultItem.output_file_id,
+                                  name: resultItem.output_name ?? resultItem.name,
+                                }}
+                              />
+                            </>
+                          ) : null}
+                        </div>
+                      </>
+                    ) : isConverting ? (
+                      <span className="font-mono text-xs text-amber-400 animate-pulse">
+                        Converting...
+                      </span>
+                    ) : (
+                      <span className="font-mono text-xs text-muted-foreground/60 italic">
+                        Awaiting convert
+                      </span>
+                    )}
+                  </div>
+                ) : null}
               </div>
             );
           })}
+
+          {/* Merge funnel + merged output overlay — both inside the positioned rows container */}
+          {funnelGeom && mergeMode ? (
+            <MergeFunnel
+              geom={funnelGeom}
+              active={running && !mergeResult}
+              reduced={reducedMotion}
+            />
+          ) : null}
+
+
         </div>
       ) : null}
 
@@ -610,7 +868,7 @@ export function ConvertWorkspace() {
         <div className="flex items-center justify-between gap-4 rounded-card bg-card/60 p-4 border border-border/60">
           <div className="flex flex-col min-w-0">
             <span className="truncate font-mono text-sm font-semibold text-foreground">
-              {result.results[0]?.name || inputUrl}
+              {(result.results[0]?.output_name ?? result.results[0]?.name) || inputUrl}
             </span>
             <span className="font-mono text-xs text-emerald-400 font-semibold">
               {formatTokens(result.results[0]?.target_tokens ?? 0)} tokens
@@ -619,28 +877,73 @@ export function ConvertWorkspace() {
           <div className="flex items-center gap-2 shrink-0">
             <ResultClipButton file={result.results[0]} sessionId={sessionId} />
             {result.results[0]?.output_file_id ? (
-              <a
-                href={downloadUrl(sessionId, result.results[0].output_file_id)}
-                download
-                className="inline-flex items-center gap-1.5 rounded-chip bg-emerald-500/20 px-3 py-1.5 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/30 transition-colors border border-emerald-500/30"
-              >
-                <DownloadSimple size={14} /> Download
-              </a>
+              <>
+                <a
+                  href={downloadUrl(sessionId, result.results[0].output_file_id)}
+                  download
+                  className="inline-flex items-center gap-1.5 rounded-chip bg-emerald-500/20 px-3 py-1.5 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/30 transition-colors border border-emerald-500/30"
+                >
+                  <DownloadSimple size={14} /> Download
+                </a>
+                <MarkdownPreviewButton
+                  output={{
+                    sessionId,
+                    fileId: result.results[0].output_file_id,
+                    name: result.results[0].output_name ?? result.results[0].name,
+                  }}
+                />
+              </>
             ) : null}
           </div>
         </div>
       ) : null}
 
-      {/* Polymorphic Bottom Slot: LoadingState while processing, TotalCompressionPill when complete (Upload mode only) */}
+      {/* Polymorphic Bottom Slot: LoadingState while processing, result pill when complete (Upload mode only) */}
       {running ? (
-        activeMode === 'upload' ? <LoadingState label={copy.convertingBusy} /> : null
-      ) : activeMode === 'upload' && (result || mergeResult) && sessionId ? (
+        activeMode === 'upload' ? <LoadingState label={copy.convertingBusy} spinner={false} /> : null
+      ) : activeMode === 'upload' && mergeResult && sessionId ? (
+        <div
+          className="flex flex-wrap items-center justify-between gap-3 transition-all"
+          style={{
+            minHeight: '80px',
+            padding: '16px 24px',
+            borderRadius: 'var(--radius-card)',
+            border: '1px solid var(--color-border)',
+            background: 'var(--color-card)',
+            width: '100%',
+          }}
+        >
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Merge Result</span>
+            <div className="flex items-baseline gap-1.5 font-mono text-xs sm:text-sm">
+              <span className="text-muted-foreground">{formatBytes(files.reduce((sum, f) => sum + f.size, 0))}</span>
+              <span className="text-muted-foreground/60">→</span>
+              <span className="font-bold text-emerald-400">{mergeResult.output_name}</span>
+            </div>
+            <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 font-mono text-xs font-bold text-emerald-400 border border-emerald-500/30">
+              output ≈ {formatTokens(mergeResult.target_tokens)} tokens
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {mergedItem ? <ResultClipButton file={mergedItem} sessionId={sessionId} /> : null}
+            <MarkdownPreviewButton output={{ sessionId, fileId: mergeResult.output_file_id, name: mergeResult.output_name }} />
+            <a
+              href={downloadUrl(sessionId, mergeResult.output_file_id)}
+              download
+              aria-label="Download merged Markdown file"
+              className="inline-flex items-center gap-1.5 rounded-chip bg-emerald-500/20 px-2.5 py-1 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/30 transition-colors border border-emerald-500/30"
+            >
+              <DownloadSimple size={14} /> Download
+            </a>
+          </div>
+        </div>
+      ) : activeMode === 'upload' && result && !mergeResult && sessionId ? (
         <TotalCompressionPill
           sourceTokens={sourceTokensTotal}
           targetTokens={targetTokensTotal}
           percent={totalPercent}
           sessionId={sessionId}
-          isMerge={mergeEnabled || Boolean(mergeResult)}
+          isMerge={false}
           onCopyAll={handleCopyAll}
         />
       ) : null}
