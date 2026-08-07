@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useLayoutEffect, useRef, type ChangeEvent, type Ref, type CSSProperties } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   CloudArrowUp,
   Link as LinkIcon,
@@ -46,31 +46,47 @@ function ModeSelector({
   onChange: (mode: 'upload' | 'input') => void;
 }) {
   return (
-    <div className="flex items-center gap-1 rounded-full bg-card/80 p-1 border border-border/60 w-full max-w-sm mx-auto mb-4">
-      <button
+    <div className="relative flex items-center gap-1 rounded-full bg-card/80 p-1 border border-border/60 w-full max-w-sm mx-auto mb-4">
+      <motion.button
         type="button"
         onClick={() => onChange('upload')}
+        whileTap={{ scale: 0.96 }}
         className={cn(
-          'flex-1 flex items-center justify-center gap-2 rounded-full py-1.5 px-3 text-xs font-semibold transition-all',
-          activeMode === 'upload'
-            ? 'bg-emerald-500 text-zinc-950 font-bold shadow-glow'
-            : 'text-muted-foreground hover:text-foreground',
+          'relative flex-1 flex items-center justify-center gap-2 rounded-full py-1.5 px-3 text-xs font-semibold transition-colors z-10 select-none cursor-pointer',
+          activeMode === 'upload' ? 'text-zinc-950 font-bold' : 'text-muted-foreground hover:text-foreground',
         )}
       >
-        <CloudArrowUp size={16} /> Upload
-      </button>
-      <button
+        {activeMode === 'upload' && (
+          <motion.div
+            layoutId="activeModePill"
+            className="absolute inset-0 rounded-full bg-emerald-500 shadow-glow"
+            transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+          />
+        )}
+        <span className="relative z-10 flex items-center gap-2">
+          <CloudArrowUp size={16} /> Upload
+        </span>
+      </motion.button>
+      <motion.button
         type="button"
         onClick={() => onChange('input')}
+        whileTap={{ scale: 0.96 }}
         className={cn(
-          'flex-1 flex items-center justify-center gap-2 rounded-full py-1.5 px-3 text-xs font-semibold transition-all',
-          activeMode === 'input'
-            ? 'bg-emerald-500 text-zinc-950 font-bold shadow-glow'
-            : 'text-muted-foreground hover:text-foreground',
+          'relative flex-1 flex items-center justify-center gap-2 rounded-full py-1.5 px-3 text-xs font-semibold transition-colors z-10 select-none cursor-pointer',
+          activeMode === 'input' ? 'text-zinc-950 font-bold' : 'text-muted-foreground hover:text-foreground',
         )}
       >
-        <LinkIcon size={16} /> Input
-      </button>
+        {activeMode === 'input' && (
+          <motion.div
+            layoutId="activeModePill"
+            className="absolute inset-0 rounded-full bg-emerald-500 shadow-glow"
+            transition={{ type: 'spring', stiffness: 450, damping: 32 }}
+          />
+        )}
+        <span className="relative z-10 flex items-center gap-2">
+          <LinkIcon size={16} /> Input
+        </span>
+      </motion.button>
     </div>
   );
 }
@@ -690,15 +706,33 @@ export function ConvertWorkspace() {
 
       {/* Top Upload/Input Control Section */}
       <div className="flex flex-col gap-4">
-        {activeMode === 'upload' ? (
-          <DropZone onFiles={onFiles} multiple allowFolders disabled={running} />
-        ) : (
-          <UrlInputCard
-            value={inputUrl}
-            onChange={setInputUrl}
-            onSubmit={run}
-          />
-        )}
+        <AnimatePresence mode="wait" initial={false}>
+          {activeMode === 'upload' ? (
+            <motion.div
+              key="upload"
+              initial={{ opacity: 0, y: 10, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.99 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+            >
+              <DropZone onFiles={onFiles} multiple allowFolders disabled={running} />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="input"
+              initial={{ opacity: 0, y: 10, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.99 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+            >
+              <UrlInputCard
+                value={inputUrl}
+                onChange={setInputUrl}
+                onSubmit={run}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <MergeButton
           onClick={run}
@@ -959,73 +993,83 @@ export function ConvertWorkspace() {
           {showSettings ? <CaretUp size={18} /> : <CaretDown size={18} />}
         </button>
 
-        {showSettings ? (
-          <div className="mt-4 flex flex-col gap-4 border-t border-border/40 pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="extensions-input" className="text-xs font-semibold text-foreground">
-                  Extensions (comma-separated)
-                </label>
-                <input
-                  id="extensions-input"
-                  type="text"
-                  value={extensions}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => setExtensions(e.target.value)}
-                  placeholder="pdf, docx, md, py"
-                  className="rounded-chip border border-border bg-input px-3 py-2 text-xs text-foreground focus:border-emerald-500 focus:outline-none"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="pages-input" className="text-xs font-semibold text-foreground">
-                  Pages Selection
-                </label>
-                <input
-                  id="pages-input"
-                  type="text"
-                  value={pages}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => setPages(e.target.value)}
-                  placeholder="0,2,4 or 1-10"
-                  className="rounded-chip border border-border bg-input px-3 py-2 text-xs text-foreground focus:border-emerald-500 focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <BudgetInput
-              value={budgetValue}
-              unit={budgetUnit}
-              onChange={(val, unit) => {
-                setBudgetValue(val);
-                setBudgetUnit(unit);
-              }}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-card bg-card/60 p-4 border border-border/60">
-              <div className="flex flex-col gap-3">
-                <Toggle checked={recursive} onChange={setRecursive} label="Recursive subfolders" />
-                <Toggle checked={stripHeadersFooters} onChange={setStripHeadersFooters} label="Strip headers & footers" />
-              </div>
-
-              <div className="flex flex-col gap-3">
-                <Toggle checked={writeImages} onChange={setWriteImages} label="Write images" />
-                <Toggle
-                  checked={mergeEnabled}
-                  onChange={setMergeEnabled}
-                  label="Merge all into single Markdown file"
-                />
-                {mergeEnabled ? (
-                  <div className="pl-4 pt-1 border-l-2 border-emerald-500/30 ml-2">
-                    <Toggle
-                      checked={includeToc}
-                      onChange={setIncludeToc}
-                      label="Include Table of Contents"
+        <AnimatePresence initial={false}>
+          {showSettings ? (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.25, ease: 'easeInOut' }}
+              className="overflow-hidden"
+            >
+              <div className="mt-4 flex flex-col gap-4 border-t border-border/40 pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="extensions-input" className="text-xs font-semibold text-foreground">
+                      Extensions (comma-separated)
+                    </label>
+                    <input
+                      id="extensions-input"
+                      type="text"
+                      value={extensions}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) => setExtensions(e.target.value)}
+                      placeholder="pdf, docx, md, py"
+                      className="rounded-chip border border-border bg-input px-3 py-2 text-xs text-foreground focus:border-emerald-500 focus:outline-none"
                     />
                   </div>
-                ) : null}
+
+                  <div className="flex flex-col gap-1.5">
+                    <label htmlFor="pages-input" className="text-xs font-semibold text-foreground">
+                      Pages Selection
+                    </label>
+                    <input
+                      id="pages-input"
+                      type="text"
+                      value={pages}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) => setPages(e.target.value)}
+                      placeholder="0,2,4 or 1-10"
+                      className="rounded-chip border border-border bg-input px-3 py-2 text-xs text-foreground focus:border-emerald-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <BudgetInput
+                  value={budgetValue}
+                  unit={budgetUnit}
+                  onChange={(val, unit) => {
+                    setBudgetValue(val);
+                    setBudgetUnit(unit);
+                  }}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-card bg-card/60 p-4 border border-border/60">
+                  <div className="flex flex-col gap-3">
+                    <Toggle checked={recursive} onChange={setRecursive} label="Recursive subfolders" />
+                    <Toggle checked={stripHeadersFooters} onChange={setStripHeadersFooters} label="Strip headers & footers" />
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    <Toggle checked={writeImages} onChange={setWriteImages} label="Write images" />
+                    <Toggle
+                      checked={mergeEnabled}
+                      onChange={setMergeEnabled}
+                      label="Merge all into single Markdown file"
+                    />
+                    {mergeEnabled ? (
+                      <div className="pl-4 pt-1 border-l-2 border-emerald-500/30 ml-2">
+                        <Toggle
+                          checked={includeToc}
+                          onChange={setIncludeToc}
+                          label="Include Table of Contents"
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        ) : null}
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </div>
 
     </div>
