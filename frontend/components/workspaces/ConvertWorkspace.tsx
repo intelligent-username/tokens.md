@@ -485,6 +485,7 @@ export function ConvertWorkspace() {
   const [showSettings, setShowSettings] = useState(false);
   const [mergeEnabled, setMergeEnabled] = useState(false);
   const [includeToc, setIncludeToc] = useState(true);
+  const [budgetEnabled, setBudgetEnabled] = useState(false);
   const [budgetValue, setBudgetValue] = useState(100);
   const [budgetUnit, setBudgetUnit] = useState<BudgetUnit>('KB');
   const [recursive, setRecursive] = useState(true);
@@ -601,7 +602,13 @@ export function ConvertWorkspace() {
             options: {
               recursive,
               no_toc: !includeToc,
-              budget: budgetValue > 0 ? budgetValue : undefined,
+              budget: (budgetEnabled && budgetValue > 0)
+                ? (budgetUnit === 'Tokens'
+                    ? budgetValue
+                    : budgetUnit === 'MB'
+                      ? Math.round(budgetValue * 1024 * 250)
+                      : Math.round(budgetValue * 250))
+                : undefined,
             },
           });
           setMergeResult(mres);
@@ -1033,13 +1040,20 @@ export function ConvertWorkspace() {
                   </div>
                 </div>
 
-                <BudgetInput
-                  value={budgetValue}
-                  unit={budgetUnit}
-                  onChange={(val, unit) => {
-                    setBudgetValue(val);
-                    setBudgetUnit(unit);
-                  }}
+                {budgetEnabled ? (
+                  <BudgetInput
+                    value={budgetValue}
+                    unit={budgetUnit}
+                    onChange={(val, unit) => {
+                      setBudgetValue(val);
+                      setBudgetUnit(unit);
+                    }}
+                  />
+                ) : null}
+                <Toggle
+                  checked={budgetEnabled}
+                  onChange={setBudgetEnabled}
+                  label="Token budget ceiling"
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-card bg-card/60 p-4 border border-border/60">
