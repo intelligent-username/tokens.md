@@ -13,6 +13,7 @@ import {
   X,
   ArrowRight,
   Sparkle,
+  Info,
 } from '@phosphor-icons/react';
 import copy from '@/lib/copy';
 import { convert, merge, fetchUrl, downloadUrl } from '@/lib/api/endpoints';
@@ -87,6 +88,39 @@ function ModeSelector({
           <LinkIcon size={16} /> Input
         </span>
       </motion.button>
+    </div>
+  );
+}
+
+function SettingLabel({ htmlFor, label, tooltip }: { htmlFor: string; label: string; tooltip: string }) {
+  const [showHover, setShowHover] = useState(false);
+  return (
+    <div
+      className="relative flex items-center gap-1.5 cursor-help w-fit select-none"
+      onMouseEnter={() => setShowHover(true)}
+      onMouseLeave={() => setShowHover(false)}
+    >
+      <label htmlFor={htmlFor} className="text-xs font-semibold text-foreground cursor-pointer">
+        {label}
+      </label>
+      <Info size={14} className="text-muted-foreground/60 hover:text-emerald-400 transition-colors shrink-0" />
+
+      <AnimatePresence>
+        {showHover ? (
+          <motion.div
+            initial={{ opacity: 0, y: 4, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 4, scale: 0.96 }}
+            transition={{ duration: 0.15 }}
+            className="absolute bottom-full left-0 mb-2 z-50 w-72 rounded-card border border-emerald-500/40 bg-zinc-950/95 p-3 text-xs text-foreground shadow-2xl backdrop-blur-md pointer-events-none"
+          >
+            <div className="font-bold text-emerald-400 mb-1 flex items-center gap-1.5">
+              <Info size={14} /> {label}
+            </div>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">{tooltip}</p>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }
@@ -1007,14 +1041,16 @@ export function ConvertWorkspace() {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.25, ease: 'easeInOut' }}
-              className="overflow-hidden"
+              className="overflow-visible"
             >
-              <div className="mt-4 flex flex-col gap-4 border-t border-border/40 pt-4">
+              <div className="mt-5 flex flex-col gap-4 border-t border-border/40 pt-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label htmlFor="extensions-input" className="text-xs font-semibold text-foreground">
-                      Extensions (comma-separated)
-                    </label>
+                    <SettingLabel
+                      htmlFor="extensions-input"
+                      label="Extensions (comma-separated)"
+                      tooltip="Filter input files by extension (e.g. pdf, docx, py). Only matching files will be converted."
+                    />
                     <input
                       id="extensions-input"
                       type="text"
@@ -1026,9 +1062,11 @@ export function ConvertWorkspace() {
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label htmlFor="pages-input" className="text-xs font-semibold text-foreground">
-                      Pages Selection
-                    </label>
+                    <SettingLabel
+                      htmlFor="pages-input"
+                      label="Pages Selection"
+                      tooltip="Convert specific page ranges for PDFs and documents (e.g. '1-5, 8, 10-12'). Leave blank to convert all pages."
+                    />
                     <input
                       id="pages-input"
                       type="text"
@@ -1050,35 +1088,73 @@ export function ConvertWorkspace() {
                     }}
                   />
                 ) : null}
-                <Toggle
-                  checked={budgetEnabled}
-                  onChange={setBudgetEnabled}
-                  label="Token budget ceiling"
-                />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-card bg-card/60 p-4 border border-border/60">
-                  <div className="flex flex-col gap-3">
-                    <Toggle checked={recursive} onChange={setRecursive} label="Recursive subfolders" />
-                    <Toggle checked={stripHeadersFooters} onChange={setStripHeadersFooters} label="Strip headers & footers" />
-                  </div>
-
-                  <div className="flex flex-col gap-3">
-                    <Toggle checked={writeImages} onChange={setWriteImages} label="Write images" />
-                    <Toggle
-                      checked={mergeEnabled}
-                      onChange={setMergeEnabled}
-                      label="Merge all into single Markdown file"
-                    />
-                    {mergeEnabled ? (
-                      <div className="pl-4 pt-1 border-l-2 border-emerald-500/30 ml-2">
-                        <Toggle
-                          checked={includeToc}
-                          onChange={setIncludeToc}
-                          label="Include Table of Contents"
-                        />
-                      </div>
-                    ) : null}
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 w-full rounded-card bg-card/60 p-4 border border-border/60">
+                  {[
+                    {
+                      id: 'budget',
+                      label: 'Token budget ceiling',
+                      checked: budgetEnabled,
+                      onChange: setBudgetEnabled,
+                      tooltip: 'Enforce a maximum token ceiling on the generated output. The AST pruner trims lower-priority content to fit your limit.',
+                    },
+                    {
+                      id: 'recursive',
+                      label: 'Recursive subfolders',
+                      checked: recursive,
+                      onChange: setRecursive,
+                      tooltip: 'Scan all nested subdirectories inside uploaded folder structures to discover and convert files recursively.',
+                    },
+                    {
+                      id: 'stripHeadersFooters',
+                      label: 'Strip headers & footers',
+                      checked: stripHeadersFooters,
+                      onChange: setStripHeadersFooters,
+                      tooltip: 'Detect and remove repetitive running headers, footers, and page numbers from document pages.',
+                    },
+                    {
+                      id: 'writeImages',
+                      label: 'Write images',
+                      checked: writeImages,
+                      onChange: setWriteImages,
+                      tooltip: 'Extract embedded images from PDFs/documents and save them alongside the generated Markdown file.',
+                    },
+                    {
+                      id: 'merge',
+                      label: 'Merge all into single Markdown file',
+                      checked: mergeEnabled,
+                      onChange: setMergeEnabled,
+                      tooltip: 'Combine all converted files into a single unified Markdown document with clear file section headers.',
+                      subToggle: mergeEnabled
+                        ? {
+                            id: 'toc',
+                            label: 'Include Table of Contents',
+                            checked: includeToc,
+                            onChange: setIncludeToc,
+                            tooltip: 'Generate an automated Table of Contents with jump links at the top of the merged document.',
+                          }
+                        : null,
+                    },
+                  ].map((item) => (
+                    <div key={item.id} className="flex flex-col gap-2 min-w-0">
+                      <Toggle
+                        checked={item.checked}
+                        onChange={item.onChange}
+                        label={item.label}
+                        tooltip={item.tooltip}
+                      />
+                      {item.subToggle ? (
+                        <div className="pl-4 pt-1 border-l-2 border-emerald-500/30 ml-2">
+                          <Toggle
+                            checked={item.subToggle.checked}
+                            onChange={item.subToggle.onChange}
+                            label={item.subToggle.label}
+                            tooltip={item.subToggle.tooltip}
+                          />
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
                 </div>
               </div>
             </motion.div>

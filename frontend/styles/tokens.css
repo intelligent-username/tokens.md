@@ -47,24 +47,24 @@
   --shadow-glow-soft: 0 0 80px -30px rgba(22, 222, 129, 0.35);
   --shadow-glow: 0 0 24px -8px rgba(22, 222, 129, 0.6);
 
-  /* ---- Semantic tokens, light mode (default) ----
+  /* ---- Semantic tokens, light mode (studio cool slate + navy complementary) ----
      Every background token is paired with a foreground token. */
-  --color-background: #F3F7F5;
-  --color-foreground: var(--color-navy-950);
-  --color-card: rgba(255, 255, 255, 0.72);
-  --color-card-foreground: var(--color-navy-900);
-  --color-muted: var(--color-emerald-50);
-  --color-muted-foreground: var(--color-navy-700);
-  --color-primary: var(--color-emerald-500);
-  --color-primary-foreground: var(--color-navy-950);
-  --color-secondary: var(--color-navy-100);
-  --color-secondary-foreground: var(--color-navy-900);
-  --color-accent: var(--color-emerald-100);
-  --color-accent-foreground: var(--color-emerald-900);
+  --color-background: #E8EEF5;
+  --color-foreground: #0F172A;
+  --color-card: rgba(255, 255, 255, 0.85);
+  --color-card-foreground: #0F172A;
+  --color-muted: #F1F5F9;
+  --color-muted-foreground: #475569;
+  --color-primary: #10B981;
+  --color-primary-foreground: #0B1428;
+  --color-secondary: #E2E8F0;
+  --color-secondary-foreground: #0F172A;
+  --color-accent: #D1FAE5;
+  --color-accent-foreground: #065F46;
   --color-destructive: #DC2626;
   --color-destructive-foreground: #FDFBFA;
-  --color-border: rgba(12, 21, 38, 0.1);
-  --color-ring: var(--color-emerald-700);
+  --color-border: rgba(148, 163, 184, 0.45);
+  --color-ring: #10B981;
 }
 
 /* ---- Semantic tokens, dark mode (default theme) ---- */

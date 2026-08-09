@@ -16,11 +16,25 @@ const STORAGE_KEY = "tmd-theme";
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-function applyTheme(theme: Theme) {
-  if (typeof document !== "undefined" && "startViewTransition" in document) {
-    (document as any).startViewTransition(() => {
+function applyTheme(theme: Theme, animate = true) {
+  if (typeof document === "undefined") return;
+  
+  if (animate && "startViewTransition" in document) {
+    try {
+      const transition = (document as any).startViewTransition(() => {
+        document.documentElement.classList.toggle("dark", theme === "dark");
+      });
+      if (transition) {
+        if (typeof transition.ready?.catch === "function") {
+          transition.ready.catch(() => {});
+        }
+        if (typeof transition.finished?.catch === "function") {
+          transition.finished.catch(() => {});
+        }
+      }
+    } catch {
       document.documentElement.classList.toggle("dark", theme === "dark");
-    });
+    }
   } else {
     document.documentElement.classList.toggle("dark", theme === "dark");
   }
@@ -32,30 +46,30 @@ function applyTheme(theme: Theme) {
  * prefers-color-scheme, then dark). Children only, no DOM shell.
  */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dark");
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window !== "undefined") {
+      const stored = window.localStorage.getItem(STORAGE_KEY);
+      if (stored === "dark" || stored === "light") return stored;
+      if (window.matchMedia("(prefers-color-scheme: light)").matches) return "light";
+      return document.documentElement.classList.contains("dark") ? "dark" : "light";
+    }
+    return "dark";
+  });
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    const initial: Theme =
-      stored === "dark" || stored === "light"
-        ? stored
-        : window.matchMedia("(prefers-color-scheme: light)").matches
-          ? "light"
-          : "dark";
-    setThemeState(initial);
-    applyTheme(initial);
+    applyTheme(theme, false);
   }, []);
 
   const setTheme = useCallback((next: Theme) => {
     setThemeState(next);
-    applyTheme(next);
+    applyTheme(next, true);
     window.localStorage.setItem(STORAGE_KEY, next);
   }, []);
 
   const toggle = useCallback(() => {
     setThemeState((prev) => {
       const next = prev === "dark" ? "light" : "dark";
-      applyTheme(next);
+      applyTheme(next, true);
       window.localStorage.setItem(STORAGE_KEY, next);
       return next;
     });
@@ -78,7 +92,33 @@ export function useTheme(): ThemeContextValue {
 /** Accessible theme switch: animated sun in light mode, glowing moon in dark mode. */
 export function ThemeToggle() {
   const { theme, toggle } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const isDark = theme === "dark";
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    const isDocDark = typeof document !== "undefined" ? document.documentElement.classList.contains("dark") : true;
+    return (
+      <button
+        type="button"
+        role="switch"
+        aria-checked={isDocDark}
+        aria-label="Theme toggle"
+        className="relative inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-control border border-border/80 bg-secondary/60 text-secondary-foreground shadow-sm"
+      >
+        <span className="flex items-center justify-center">
+          {isDocDark ? (
+            <Moon size={18} weight="fill" className="text-amber-300 drop-shadow-[0_0_8px_rgba(252,211,77,0.6)]" />
+          ) : (
+            <SunDim size={19} weight="duotone" className="text-amber-500 drop-shadow-[0_0_6px_rgba(245,158,11,0.5)]" />
+          )}
+        </span>
+      </button>
+    );
+  }
 
   return (
     <motion.button
@@ -97,7 +137,7 @@ export function ThemeToggle() {
           initial={{ y: -16, opacity: 0, rotate: -90, scale: 0.5 }}
           animate={{ y: 0, opacity: 1, rotate: 0, scale: 1 }}
           exit={{ y: 16, opacity: 0, rotate: 90, scale: 0.5 }}
-          transition={{ duration: 0.25, ease: "easeOut" }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
           className="flex items-center justify-center"
         >
           {isDark ? (

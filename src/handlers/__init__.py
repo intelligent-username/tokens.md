@@ -7,6 +7,7 @@ Importing this package registers every built-in handler into
 from __future__ import annotations
 
 from ..registry import DEFAULT_REGISTRY
+from .archive import ArchiveConverter
 from .html import HtmlConverter
 from .office import OfficeConverter
 from .pymupdf import PymupdfConverter
@@ -15,6 +16,7 @@ from .structured import StructuredConverter
 from .unsupported import UnsupportedConverter
 
 __all__ = [
+    "ArchiveConverter",
     "HtmlConverter",
     "OfficeConverter",
     "PymupdfConverter",
@@ -23,6 +25,7 @@ __all__ = [
     "UnsupportedConverter",
 ]
 
+DEFAULT_REGISTRY.register(ArchiveConverter())
 DEFAULT_REGISTRY.register(PymupdfConverter())
 DEFAULT_REGISTRY.register(OfficeConverter())
 DEFAULT_REGISTRY.register(HtmlConverter())

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { ThemeToggle } from "@/app/theme";
 import type { HealthStatus } from "@/lib/hooks/useHealth";
 import { cn } from "@/lib/utils/cn";
@@ -11,6 +12,24 @@ export interface TopBarProps {
 }
 
 export function TopBar({ health }: TopBarProps) {
+  const [showOffline, setShowOffline] = useState(false);
+
+  useEffect(() => {
+    if (health === 'offline') {
+      setShowOffline(true);
+      return;
+    }
+    const timer = setTimeout(() => {
+      if (health !== 'online') {
+        setShowOffline(true);
+      }
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }, [health]);
+
+  const isOffline = health === 'offline' || (showOffline && health !== 'online');
+
   return (
     <header className="sticky top-0 z-30 border-b border-border/80 bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6">
@@ -29,18 +48,12 @@ export function TopBar({ health }: TopBarProps) {
 
         {/* Right Status Controls */}
         <div className="flex items-center gap-3.5">
-          <div className="flex items-center gap-2 rounded-full border border-border/80 bg-card/60 px-3 py-1 text-xs font-semibold text-muted-foreground">
-            <span
-              className={cn(
-                "h-2 w-2 rounded-full",
-                health === "online" && "bg-emerald-500 shadow-[0_0_8px_#16DE81]",
-                health === "booting" && "bg-muted-foreground/50 animate-pulse",
-                health === "degraded" && "bg-amber-400",
-                health === "offline" && "bg-destructive"
-              )}
-            />
-            <span className="capitalize">{health}</span>
-          </div>
+          {isOffline ? (
+            <div className="flex items-center gap-2 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1 text-xs font-semibold text-destructive animate-pulse">
+              <span className="h-2 w-2 rounded-full bg-destructive" />
+              <span>API offline</span>
+            </div>
+          ) : null}
 
           <ThemeToggle />
         </div>
