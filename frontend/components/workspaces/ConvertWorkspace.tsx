@@ -94,11 +94,20 @@ function ModeSelector({
 
 function SettingLabel({ htmlFor, label, tooltip }: { htmlFor: string; label: string; tooltip: string }) {
   const [showHover, setShowHover] = useState(false);
+  const tooltipId = `label-tooltip-${htmlFor}`;
+
   return (
     <div
-      className="relative flex items-center gap-1.5 cursor-help w-fit select-none"
+      tabIndex={0}
+      aria-describedby={showHover ? tooltipId : undefined}
+      className="relative flex items-center gap-1.5 cursor-help w-fit select-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none rounded-sm px-0.5"
       onMouseEnter={() => setShowHover(true)}
       onMouseLeave={() => setShowHover(false)}
+      onFocus={() => setShowHover(true)}
+      onBlur={() => setShowHover(false)}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') setShowHover(false);
+      }}
     >
       <label htmlFor={htmlFor} className="text-xs font-semibold text-foreground cursor-pointer">
         {label}
@@ -108,6 +117,8 @@ function SettingLabel({ htmlFor, label, tooltip }: { htmlFor: string; label: str
       <AnimatePresence>
         {showHover ? (
           <motion.div
+            id={tooltipId}
+            role="tooltip"
             initial={{ opacity: 0, y: 4, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.96 }}
@@ -812,18 +823,17 @@ export function ConvertWorkspace() {
                   mergeMode ? 'grid-cols-[1fr_3fr]' : 'grid-cols-[1fr_3fr_1fr]',
                 )}
               >
-                <button
-                  type="button"
-                  onClick={() => onRemoveFile(i)}
-                  disabled={running}
-                  aria-label={`Remove ${file.name}`}
-                  className="absolute -left-2 -top-2 z-10 rounded-full p-0.5 text-destructive hover:bg-destructive/15 hover:text-destructive transition-colors disabled:opacity-50"
-                >
-                  <X size={14} weight="bold" />
-                </button>
-
-                {/* Left Card: Input File */}
-                <div className="flex items-center gap-2 min-w-0 min-h-[52px] pl-8">
+                {/* Left Card: Input File with clean accessible remove button */}
+                <div className="flex items-center gap-2.5 min-w-0 min-h-[52px]">
+                  <button
+                    type="button"
+                    onClick={() => onRemoveFile(i)}
+                    disabled={running}
+                    aria-label={`Remove ${file.name}`}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-2 focus-visible:ring-destructive focus-visible:outline-none transition-all disabled:opacity-50"
+                  >
+                    <X size={14} weight="bold" />
+                  </button>
                   <span
                     className={cn(
                       'h-2 w-2 shrink-0 rounded-full',

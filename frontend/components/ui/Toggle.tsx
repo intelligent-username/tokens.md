@@ -19,36 +19,43 @@ interface ToggleProps {
  */
 export function Toggle({ checked, onChange, label, description, tooltip, disabled }: ToggleProps) {
   const [showHover, setShowHover] = useState(false);
+  const tooltipId = `toggle-tooltip-${label.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
 
   return (
     <div
+      tabIndex={disabled ? -1 : 0}
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      aria-describedby={tooltip ? tooltipId : undefined}
       onMouseEnter={() => setShowHover(true)}
       onMouseLeave={() => setShowHover(false)}
+      onFocus={() => setShowHover(true)}
+      onBlur={() => setShowHover(false)}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          setShowHover(false);
+        } else if ((e.key === ' ' || e.key === 'Enter') && !disabled) {
+          e.preventDefault();
+          onChange(!checked);
+        }
+      }}
       onClick={() => !disabled && onChange(!checked)}
-      className="relative flex items-center justify-between gap-3 p-2.5 rounded-control bg-secondary/30 hover:bg-secondary/60 border border-border/40 hover:border-border/80 transition-all cursor-pointer select-none group w-full"
+      className="relative flex items-center justify-between gap-3 p-2.5 rounded-control bg-secondary/30 hover:bg-secondary/60 border border-border/40 hover:border-border/80 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none transition-all cursor-pointer select-none group w-full"
     >
       <div className="flex flex-col min-w-0 flex-1">
         <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
           <span className="truncate">{label}</span>
           {tooltip ? (
-            <Info size={13} className="text-muted-foreground/60 group-hover:text-emerald-400 transition-colors shrink-0" />
+            <Info size={13} className="text-muted-foreground/60 group-hover:text-emerald-400 group-focus-visible:text-emerald-400 transition-colors shrink-0" />
           ) : null}
         </span>
         {description ? <span className="text-[11px] text-muted-foreground leading-tight mt-0.5">{description}</span> : null}
       </div>
 
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        aria-label={label}
-        disabled={disabled}
-        onClick={(e) => {
-          e.stopPropagation();
-          onChange(!checked);
-        }}
+      <div
         className={cn(
-          'relative flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full p-0.5 transition-all border',
+          'relative flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-all border',
           checked
             ? 'bg-emerald-500 border-emerald-400/60 shadow-[0_0_10px_rgba(22,222,129,0.35)]'
             : 'bg-muted border-border/80',
@@ -63,11 +70,13 @@ export function Toggle({ checked, onChange, label, description, tooltip, disable
               : 'translate-x-0 bg-muted-foreground/80',
           )}
         />
-      </button>
+      </div>
 
       <AnimatePresence>
         {showHover && tooltip ? (
           <motion.div
+            id={tooltipId}
+            role="tooltip"
             initial={{ opacity: 0, y: 4, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.96 }}
