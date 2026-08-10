@@ -51,7 +51,7 @@ const retryStyle: CSSProperties = {
  */
 export function ErrorState({ title, message, onRetry }: ErrorStateProps) {
   return (
-    <div style={containerStyle} role="alert">
+    <div style={containerStyle}>
       <div style={headerStyle}>
         <WarningCircle size={18} weight="regular" aria-hidden="true" />
         <span>{title ?? copy.backendOffline}</span>

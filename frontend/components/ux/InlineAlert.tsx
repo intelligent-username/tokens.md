@@ -16,7 +16,6 @@ interface InlineAlertProps {
 export function InlineAlert({ message, retry, className }: InlineAlertProps) {
   return (
     <div
-      role="alert"
       className={className}
       style={{
         display: 'flex',
