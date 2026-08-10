@@ -4,6 +4,8 @@
 
 Tokens.md is my tool for saving tokens when speaking to chatbots by converting files en-masse to Markdown. It turns PDFs, Office documents, e-books, structured data, HTML, web pages, and whole code repositories into clean, token-efficient Markdown you can paste straight into an LLM.
 
+OpenAI's `tiktoken` is used to estimate how many tokens are saved (pretty accurately). In some preliminary results, this conversion is usually anywhere between 60% and 95% of tokens saved (smaller files benefit "more" since a larger proportion of their data is overhead).
+
 ## Outline
 
 - [Features](#features)
@@ -15,21 +17,34 @@ Tokens.md is my tool for saving tokens when speaking to chatbots by converting f
 - [Supported Formats](#supported-formats)
 - [Development](#development)
 - [Documentation](#documentation)
+- [License](#license)
 
 ## Features
 
-- **`tmd convert`** — batch-convert files to Markdown (PDF, DOCX, PPTX, XLSX, EPUB, images, HTML, JSON, XML, CSV, TXT, and more).
-- **`tmd clip`** — convert on the fly and copy the Markdown to your clipboard, skipping the disk.
-- **`tmd watch`** — watch a hot folder and auto-convert new files as they appear.
-- **`tmd fetch`** — pull a web page and save clean article Markdown.
-- **`tmd repo`** — collapse an entire code repository into a single Markdown manifest.
-- **`tmd merge`** — combine many files into one master document with a Table of Contents.
-- **`tmd delta`** — see how many tokens you saved by converting.
-- **`--budget`** — force output to fit a hard token budget.
+The features of this tool are all encompassed by the `tmd` CLI commands. The front end displays this with an accessible GUI. 
+
+- **`tmd convert`**: convert files to Markdown.
+- **`tmd clip`**: convert files to markdown and copy the result to your clipboard.
+- **`tmd watch`**: watch a hot folder and auto-convert new files as they appear.
+- **`tmd fetch`**: pull a web page and save clean article Markdown.
+- **`tmd repo`**: collapse an entire code repository into a single Markdown manifest.
+- **`tmd merge`**: combine many files into one master document with a Table of Contents.
+- **`tmd delta`**: show how many tokens were saved.
+- **`--budget`**: an extra argument to force output size in tokens.
+
+See [the usage guide](#running) for examples
 
 ## Install
 
-The project uses `uv` (or `pip`) and installs a `tmd` console command.
+### Pre-Game
+
+First, make sure you have Python 3.13+, uv, and TypeScript support on your machine. Clone this repository:
+
+```
+git clone https://github.com/intelligent-username/tokens.md
+```
+
+And create the environment:
 
 ```bash
 uv venv --python=3.13 .venv
@@ -43,36 +58,21 @@ source .venv/bin/activate
 uv pip install -e .               # editable install (provides `tmd`)
 ```
 
+To update dependencies, just run `uv sync`.
+
 Or install the runtime dependencies directly:
 
 ```bash
 uv pip install -r requirements.txt
 ```
 
-> `pyproject.toml` is the source of truth for dependencies; `requirements.txt` mirrors the runtime set.
-
 ## Running
 
-You can run `tokens.md` in three distinct ways depending on your workflow preference:
+![Quick lil demo](docs/imgs/example.webp)
 
-### 1. CLI Usage (`tmd`)
+You can run `tokens.md` in three distinct ways depending on your workflow preference. Here they are, ordered from easiest to hardest to use.
 
-After installing via `pip install -e .`, the `tmd` command is registered in your environment.
-
-```bash
-# Convert a folder or file to Markdown
-tmd convert input/ -o output/
-
-# Bare `tmd` command uses default input/ and output/ directories
-tmd
-
-# Other CLI subcommands
-tmd merge input/ -o output/merged.md
-tmd fetch https://example.com/article -o output/article.md
-tmd repo . -o output/repo.md
-```
-
-### 2. Simple Script Execution (`python src/main.py`)
+### 1. Simple Script Execution (`python src/main.py`)
 
 If you want to run the program directly without installing it as a package, run `src/main.py` using your Python interpreter:
 
@@ -88,7 +88,8 @@ python src/main.py convert input/ -o output/
 
 Both bare `tmd` and `python src/main.py` automatically resolve default `input/` and `output/` folders relative to the project root.
 
-### 3. Web Front End (`tmd ui` & Next.js)
+
+### 2. Web Front End (`tmd ui` & Next.js)
 
 The single-page web interface wraps all `tmd` capabilities into an intuitive side-by-side visual workbench featuring drag-and-drop file upload, URL fetching, clipboard copying, and live token compression flow meters.
 
@@ -112,6 +113,25 @@ This launches the backend API on `http://127.0.0.1:8642` and opens the browser i
    ```
 3. Open `http://localhost:3000` in your web browser.
 
+### 3. CLI Usage (`tmd`)
+
+After installing via `pip install -e .`, the `tmd` command is registered in your environment.
+
+Navigate to the folder containing the files you want to convert and run the following commands. You may manipulate sub-folders and file names, or omit them to use the defaults.
+
+```bash
+# Convert a folder or file to Markdown
+tmd convert input/ -o output/
+
+# Bare `tmd` command uses default input/ and output/ directories
+tmd
+
+# Other CLI subcommands
+tmd merge input/ -o output/merged.md
+tmd fetch https://example.com/article -o output/article.md
+tmd repo . -o output/repo.md
+```
+
 ## Development
 
 Install dev dependencies and run the checks:
@@ -125,5 +145,9 @@ mypy src
 
 ## Documentation
 
-- [`docs/USAGE.md`](docs/USAGE.md) — full usage guide for every `tmd` subcommand.
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how the converter registry works and how to add new formats.
+- [`docs/USAGE.md`](docs/USAGE.md): full usage guide for every `tmd` subcommand.
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md): how the converter registry works and how to add new formats.
+
+## License
+
+This project is licensed under the GNU AFFERO GENERAL PUBLIC LICENSE. See more [here](LICENSE)
