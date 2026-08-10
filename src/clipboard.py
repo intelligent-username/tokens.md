@@ -4,6 +4,12 @@ from __future__ import annotations
 
 from .deps import require
 
+# Optional dependency - imported at module level for test patching
+try:
+    import pyperclip
+except ImportError:
+    pyperclip = None
+
 
 def copy_to_clipboard(text: str) -> None:
     """Copy ``text`` to the system clipboard.
@@ -12,11 +18,13 @@ def copy_to_clipboard(text: str) -> None:
     platform. The ``pyperclip`` import is isolated here so the rest of the
     tool works even when the clipboard is unavailable.
     """
-    pyperclip = require("pyperclip", "clipboard")
+    global pyperclip
+    if pyperclip is None:
+        pyperclip = require("pyperclip", "clipboard")
 
     try:
         pyperclip.copy(text)
-    except pyperclip.PyperclipException as exc:
+    except Exception as exc:  # Catch any error from pyperclip
         raise RuntimeError(
             "Clipboard is not available on this platform. "
             "Install xclip/xsel (Linux) or use a supported desktop session."

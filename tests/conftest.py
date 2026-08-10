@@ -233,7 +233,8 @@ def _inject_docx_math(tmp_path: Path, omml: str) -> Path:
                     '<w:p><m:oMathPara xmlns:m="http://schemas.openxmlformats.org/'
                     f'officeDocument/2006/math">{omml}</m:oMathPara></w:p>'
                 )
-                xml = xml.replace("<w:p>", omml_xml, 1)
+                # Insert OMML paragraph AFTER the first paragraph (after first </w:p>)
+                xml = xml.replace("</w:p>", "</w:p>" + omml_xml, 1)
                 data = xml.encode("utf-8")
             zout.writestr(item, data)
     shutil.move(tmp, path)

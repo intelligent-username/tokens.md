@@ -52,17 +52,37 @@ def _convert_children(node: ET.Element) -> str:
             parts.append(_text_of(child))
         elif tag == _m("sSup"):  # x^y
             base, sup = _child(child, "e"), _child(child, "sup")
-            parts.append(f"{{{_convert(base)}}}^{{{_convert(sup)}}}")
+            base_latex = _convert(base)
+            sup_latex = _convert(sup)
+            # Only add braces when needed (multi-char or special chars)
+            if len(base_latex) > 1 or (base_latex and not base_latex.isalnum()):
+                base_latex = f"{{{base_latex}}}"
+            if len(sup_latex) > 1 or (sup_latex and not sup_latex.isalnum()):
+                sup_latex = f"{{{sup_latex}}}"
+            parts.append(f"{base_latex}^{sup_latex}")
         elif tag == _m("sSub"):  # x_y
             base, sub = _child(child, "e"), _child(child, "sub")
-            parts.append(f"{{{_convert(base)}}}_{{{_convert(sub)}}}")
+            base_latex = _convert(base)
+            sub_latex = _convert(sub)
+            if len(base_latex) > 1 or (base_latex and not base_latex.isalnum()):
+                base_latex = f"{{{base_latex}}}"
+            if len(sub_latex) > 1 or (sub_latex and not sub_latex.isalnum()):
+                sub_latex = f"{{{sub_latex}}}"
+            parts.append(f"{base_latex}_{sub_latex}")
         elif tag == _m("sSubSup"):  # x_y^z
             base = _child(child, "e")
             sub = _child(child, "sub")
             sup = _child(child, "sup")
-            parts.append(
-                f"{{{_convert(base)}}}_{{{_convert(sub)}}}^{{{_convert(sup)}}}"
-            )
+            base_latex = _convert(base)
+            sub_latex = _convert(sub)
+            sup_latex = _convert(sup)
+            if len(base_latex) > 1 or (base_latex and not base_latex.isalnum()):
+                base_latex = f"{{{base_latex}}}"
+            if len(sub_latex) > 1 or (sub_latex and not sub_latex.isalnum()):
+                sub_latex = f"{{{sub_latex}}}"
+            if len(sup_latex) > 1 or (sup_latex and not sup_latex.isalnum()):
+                sup_latex = f"{{{sup_latex}}}"
+            parts.append(f"{base_latex}_{sub_latex}^{sup_latex}")
         elif tag == _m("f"):  # fraction
             num, den = _child(child, "num"), _child(child, "den")
             parts.append(f"\\frac{{{_convert(num)}}}{{{_convert(den)}}}")

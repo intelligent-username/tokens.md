@@ -38,7 +38,12 @@ class TooLargeError(WorkspaceError):
 
 
 def sanitize_name(name: str) -> str:
-    """Keep ``[A-Za-z0-9._ -]``, collapse runs, cap at 120 chars."""
+    """Keep ``[A-Za-z0-9._ -]``, collapse runs, cap at 120 chars.
+
+    Also removes ``..`` sequences and path separators to prevent path traversal via filenames.
+    """
+    # Remove parent directory references and path separators
+    name = name.replace("..", "").replace("/", "").replace("\\", "")
     cleaned = _SAFE_RE.sub("_", name)
     cleaned = cleaned.strip(" .")
     if not cleaned:
@@ -54,8 +59,10 @@ def sanitize_relpath(relpath: str) -> Path:
     """
     parts: list[str] = []
     for part in relpath.replace("\\", "/").split("/"):
+        if part == "..":
+            continue  # Drop parent directory references entirely
         part = sanitize_name(part)
-        if part in {"", "."} or part == "..":
+        if part in {"", "."}:
             continue
         parts.append(part)
     if not parts:

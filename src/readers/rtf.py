@@ -19,9 +19,10 @@ class RtfReader(Reader):
     name = "rtf"
 
     def read(self, input_path: Path) -> Document:
-        striprtf = require("striprtf", "RTF conversion")
+        require("striprtf", "RTF conversion")
+        from striprtf.striprtf import rtf_to_text
         raw = input_path.read_text(encoding="utf-8", errors="replace")
-        text = striprtf.rtf_to_text(raw)
+        text = rtf_to_text(raw)
         result = Document(title=input_path.stem)
         for line in text.splitlines():
             line = line.strip()

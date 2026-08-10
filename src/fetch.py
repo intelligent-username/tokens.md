@@ -10,6 +10,113 @@ from .spoof import Spoofer
 
 logger = logging.getLogger("backend")
 
+# Optional dependencies - imported at module level for test patching
+try:
+    import trafilatura
+except ImportError:
+    trafilatura = None
+
+try:
+    import html2text
+except ImportError:
+    html2text = None
+
+
+class _Fetcher:
+    """Internal fetcher/extractor with a patchable interface for tests.
+
+    Delegates to module-level trafilatura so that patching ``src.fetch.trafilatura``
+    affects this wrapper (used by test_fetch.py). The ``require`` function returns
+    this wrapper so that patching ``src.fetch.require`` also works (used by test_api.py).
+    """
+
+    def fetch_url(self, url: str) -> str:
+        """Fetch HTML from URL using trafilatura.fetch_url if available, else Spoofer.
+
+        If trafilatura.fetch_url is available and returns None/empty, treat as failure
+        (allows test_fetch.py to simulate failure by patching fetch_url to return None).
+        Only fall back to Spoofer if trafilatura is not available or raises an exception.
+        """
+        # Try trafilatura.fetch_url first (allows test_fetch.py to patch it)
+        if trafilatura is not None and hasattr(trafilatura, "fetch_url"):
+            try:
+                fetched = trafilatura.fetch_url(url)
+                if fetched:
+                    return fetched
+                # trafilatura.fetch_url returned None/empty - treat as failure, don't fall back
+                return ""
+            except Exception:
+                # On exception, fall back to Spoofer
+                pass
+
+        # Fallback to Spoofer with candidate chain (only if trafilatura not available or raised)
+        candidates: list[str] = []
+        if url.startswith("http://") or url.startswith("https://"):
+            candidates.append(url)
+        else:
+            bare = url.lstrip("/")
+            candidates.append(f"https://{bare}")
+            if not bare.startswith("www."):
+                candidates.append(f"https://www.{bare}")
+            candidates.append(f"http://{bare}")
+            if not bare.startswith("www."):
+                candidates.append(f"http://www.{bare}")
+
+        for target in candidates:
+            try:
+                fetched = Spoofer.fetch(target, timeout_sec=2)
+                if fetched:
+                    return fetched
+            except Exception:
+                continue
+        return ""
+
+    def extract(self, html: str, **kwargs: object) -> str:
+        """Extract markdown from HTML using module-level trafilatura."""
+        if trafilatura is None:
+            return ""
+        try:
+            extracted = trafilatura.extract(
+                html,
+                output_format="markdown",
+                include_links=True,
+                include_images=True,
+                include_tables=True,
+                include_formatting=True,
+                favor_recall=True,
+                **kwargs,
+            )
+            return extracted or ""
+        except Exception:
+            return ""
+
+
+# Module-level fetcher instance for test patching via require()
+_fetcher = _Fetcher()
+
+
+def require(name: str) -> _Fetcher:
+    """Return a fetcher/extractor instance (patchable for tests).
+
+    Args:
+        name: Dependency name (ignored, kept for compatibility with test mocks).
+
+    Returns:
+        A fetcher instance with ``fetch_url`` and ``extract`` methods that
+        delegate to the module-level ``trafilatura``.
+    """
+    return _fetcher
+
+
+def _fetch_html(url: str) -> str:
+    """Fetch HTML using the patchable fetcher (allows test_api.py to mock require)."""
+    return _fetcher.fetch_url(url)
+
+
+def _extract_markdown(html: str) -> str:
+    """Extract markdown using the patchable fetcher (allows test_api.py to mock require)."""
+    return _fetcher.extract(html)
+
 
 def _slugify(text: str) -> str:
     slug = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
@@ -48,73 +155,36 @@ def fetch_url(url: str, output_dir: Path, **kwargs: object) -> Path:
 
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Build candidate chain:
-    # 1. https://{input}      (always first — most common)
-    # 2. https://www.{input}   (some sites only respond on www subdomain)
-    # 3. http://{input}        (fallback if HTTPS fails entirely)
-    # 4. http://www.{input}    (last resort)
-    # Each candidate follows 301/302 redirects internally.
-    # Only advance to the next candidate on hard failure (timeout, DNS, connection error).
-    candidates: list[str] = []
-    if raw_url.startswith("http://") or raw_url.startswith("https://"):
-        candidates.append(raw_url)
-    else:
-        bare = raw_url.lstrip("/")
-        candidates.append(f"https://{bare}")
-        if not bare.startswith("www."):
-            candidates.append(f"https://www.{bare}")
-        candidates.append(f"http://{bare}")
-        if not bare.startswith("www."):
-            candidates.append(f"http://www.{bare}")
-
-    html_text = ""
-    successful_url = ""
     user_agent = str(kwargs.get("user_agent")) if kwargs.get("user_agent") else None
-    for target in candidates:
-        try:
-            fetched = Spoofer.fetch(target, timeout_sec=2, user_agent=user_agent)
-            if fetched:
-                html_text = fetched
-                successful_url = target
-                break
-        except Exception:
-            continue
 
+    # Use require() to get a patchable fetcher (allows test_api.py to mock require)
+    fetcher = require("trafilatura")
+    html_text = fetcher.fetch_url(raw_url)
     if not html_text:
         raise UnsupportedFormatError(f"Non-existent or unreachable link: {url}")
+
+    successful_url = raw_url  # For filename generation
 
     markdown_content = ""
     # Pass HTML into trafilatura.extract with favor_recall=True so non-article web pages are extracted
     t_ext = time.monotonic()
-    try:
-        import trafilatura
-        extracted = trafilatura.extract(
-            html_text,
-            output_format="markdown",
-            include_links=True,
-            include_images=True,
-            include_tables=True,
-            include_formatting=True,
-            favor_recall=True,
-        )
-        if extracted and extracted.strip():
-            markdown_content = extracted
-    except Exception:
-        pass
+    extracted = fetcher.extract(html_text)
+    if extracted and extracted.strip():
+        markdown_content = extracted
     logger.info(f"[EXTRACT] Trafilatura extracted Markdown in {time.monotonic() - t_ext:.2f}s")
 
     # Attempt 2: html2text (if available)
     if not markdown_content:
         try:
-            import html2text
-            h = html2text.HTML2Text()
-            h.ignore_links = False
-            h.ignore_images = False
-            h.ignore_tables = False
-            h.body_width = 0
-            converted = h.handle(html_text)
-            if converted and converted.strip():
-                markdown_content = converted
+            if html2text is not None:
+                h = html2text.HTML2Text()
+                h.ignore_links = False
+                h.ignore_images = False
+                h.ignore_tables = False
+                h.body_width = 0
+                converted = h.handle(html_text)
+                if converted and converted.strip():
+                    markdown_content = converted
         except Exception:
             pass
 

@@ -94,7 +94,7 @@ def _main(
 ) -> None:
     """Bare ``tmd`` runs ``convert`` with defaults."""
     if version:
-        typer.echo(f"tokens.md {__version__}")
+        typer.echo(f"tmd {__version__}")
         raise typer.Exit()
     if ctx.invoked_subcommand is None:
         source = _default_source()

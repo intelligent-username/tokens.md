@@ -149,15 +149,17 @@ def prune_to_budget(
     """
     result = PruneResult(content=content)
     original_tokens = count_tokens(content, encoding)
-    if original_tokens <= budget:
-        return result
 
     removed: list[str] = []
 
-    # Pass 1: boilerplate + image lines (free).
+    # Pass 1: boilerplate + image lines (free) - ALWAYS RUN.
     current = _pass1_boilerplate(content, removed)
     if count_tokens(current, encoding) <= budget:
         return _finalize(result, current, original_tokens, removed, budget, encoding)
+
+    # If content already fits budget and pass 1 didn't change anything, return early.
+    if original_tokens <= budget:
+        return result
 
     # Compute sections + densities once, after pass 1; reused in passes 2-4.
     sections = _split_sections(current)
@@ -226,6 +228,8 @@ def _pass4_drop_sections(sections, removed, encoding, budget) -> str:
         return len(m.group(0).strip()) if m else 0
     for s in sorted(sections, key=lambda s: (s.density, -depth(s))):
         if count_tokens(_rebuild(sections), encoding) <= budget:
+            break
+        if len(sections) == 1:  # Never drop the last section
             break
         removed.append(f"[dropped] {s.heading or 'intro'}")
         sections.remove(s)
