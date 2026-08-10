@@ -1,12 +1,5 @@
+# Core document parsing and LLM preparation
 pymupdf4llm
-typer>=0.12
-rich
-pyperclip
-watchdog
-trafilatura
-pathspec
-sumy
-tiktoken
 python-docx>=1.2
 python-pptx>=0.6.23
 openpyxl>=3.1
@@ -14,7 +7,27 @@ odfpy>=1.4
 striprtf>=0.0.26
 extract-msg>=0.48
 mobi>=0.3.3
+
+# Text extraction and processing
+trafilatura
+sumy
+tiktoken
+pathspec
+
+# CLI and user interface
+typer>=0.12
+rich
+pyperclip
+
+# File monitoring
+watchdog
+
+# Web server (for API endpoints)
 fastapi
 uvicorn[standard]
 python-multipart
 httpx2
+
+# Testing (optional, recommended)
+pytest-sugar
+pytest-instafail

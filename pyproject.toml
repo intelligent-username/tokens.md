@@ -37,6 +37,8 @@ dependencies = [
 dev = [
     "pytest",
     "pytest-cov",
+    "pytest-sugar",
+    "pytest-instafail",
     "ruff",
     "mypy",
     "httpx2",

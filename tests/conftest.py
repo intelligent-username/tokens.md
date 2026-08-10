@@ -10,6 +10,15 @@ from pathlib import Path
 import pytest
 
 
+# --- pytest plugins and output configuration --------------------------------
+# Install for better output:
+#   pip install pytest-sugar pytest-instafail
+# Run with:
+#   pytest -v --tb=short -ra        # verbose, short tracebacks, summary table
+#   pytest -x -v                    # stop at first failure
+#   pytest --instafail -v           # show failures as they happen
+
+
 @pytest.fixture
 def tmd_workspace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     """Point the workspace temp dir at a per-test tmp_path."""
