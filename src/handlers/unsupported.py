@@ -14,7 +14,10 @@ class UnsupportedConverter(Converter):
     name = "unsupported"
 
     def convert(self, input_path: Path, output_dir: Path, **kwargs: object) -> Path:
+        from ..registry import DEFAULT_REGISTRY
+
+        exts = ", ".join(sorted(ext.lstrip(".") for ext in DEFAULT_REGISTRY.extensions()))
+        ext_label = input_path.suffix.lower() or "<no extension>"
         raise UnsupportedFormatError(
-            f"Unsupported format '{input_path.suffix}'. Supported formats: "
-            f"pdf, epub, mobi, xps, docx, pptx, xlsx, html, json, xml, csv, txt, ..."
+            f"Unsupported format '{ext_label}'. Supported formats: {exts}"
         )

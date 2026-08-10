@@ -1,6 +1,0 @@
-# Web UI dependencies (for `tmd ui`). Install with:
-#   pip install -r requirements-web.txt
-# or the equivalent extra:  pip install -e ".[web]"
-fastapi
-uvicorn[standard]
-python-multipart

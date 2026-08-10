@@ -31,7 +31,7 @@ dependencies = [
     "fastapi",
     "uvicorn[standard]",
     "python-multipart",
-    "httpx2",
+    "httpx",
 ]
 
 [project.optional-dependencies]
@@ -42,7 +42,7 @@ dev = [
     "pytest-instafail",
     "ruff",
     "mypy",
-    "httpx2",
+    "httpx",
 ]
 web = [
     "fastapi",
@@ -54,7 +54,7 @@ web = [
 tmd = "src.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src", "backend"]
+packages = ["src", "backend", "tmd_ui_static"]
 
 [tool.ruff]
 line-length = 88

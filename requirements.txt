@@ -27,7 +27,7 @@ watchdog
 fastapi
 uvicorn[standard]
 python-multipart
-httpx2
+httpx
 
 # Testing (optional, recommended)
 pytest-sugar
