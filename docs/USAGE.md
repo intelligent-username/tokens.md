@@ -1,152 +1,135 @@
-# `tmd` Usage Guide
+# tmd usage
 
-`tmd` is the command-line interface for `tokens.md`. It converts files to
-token-efficient Markdown for LLM prompts, combines files into master documents,
-and reports how many tokens you saved.
+`tmd` converts documents to token-efficient Markdown for LLM context windows. It runs from the command line, or you can launch the web UI locally with `tmd ui`.
 
 ```bash
 tmd --help            # list all subcommands
 tmd <command> --help  # help for a specific subcommand
-tmd --version         # show version
+tmd --version
 ```
 
-Bare `tmd` runs `tmd convert` with defaults, preserving the original
-`python src/main.py` behavior. Both bare `tmd` and `python src/main.py`
-resolve the default `input/` and `output/` folders relative to the **project
-root**, so they work from any directory. (Explicit `tmd convert <path>` and
-`-o/--output` arguments are resolved relative to your current directory, as
-usual.)
+Bare `tmd` with no arguments runs `tmd convert` with default source/output directories (`in/` or `input/` relative to the project root).
 
-After converting, each file prints its token count — whole source file
-(raw size) → Markdown — plus a `TOTAL` line:
+After each conversion, the tool reports token counts:
 
 ```
 Converted report.pdf -> report.md (142,000 -> 12,400 tokens)
 TOTAL (142,000 tokens) -> (12,400 tokens) [-91.3%]
 ```
 
+The "before" count comes from the raw file size, not from parsing the file — it reflects the entire PDF/DOCX/etc. This is intentional: the number tells you how much context the original would have consumed.
+
 ---
 
-## `tmd convert` — batch conversion
+## `tmd convert` — batch file conversion
 
-Convert a file, a folder, or a glob pattern to Markdown.
+Convert a file, a folder, or a glob pattern.
 
 ```bash
-tmd convert input/                        # convert all supported files in input/
-tmd convert report.pdf -o out/            # single file
-tmd convert docs/ --recursive             # recurse into subdirectories
-tmd convert docs/ -e pdf,docx,html        # restrict to specific extensions
+tmd convert input/
+tmd convert report.pdf -o out/
+tmd convert docs/ --recursive
+tmd convert docs/ -e pdf,docx,html
 tmd convert report.pdf --strip-headers-footers
 tmd convert report.pdf --write-images --image-path imgs/
-tmd convert report.pdf --pages 0,1,2      # zero-based page indices
+tmd convert report.pdf --pages 0,1,2
+tmd convert docs/ --clip
 ```
 
-| Flag | Meaning |
-|---|---|
-| `SOURCE` | Directory, file path, or glob pattern (default `input`) |
-| `-o, --output DIR` | Output directory (default `output`) |
-| `-r, --recursive` | Recurse into subdirectories |
-| `-e, --extensions` | Comma-separated extension filter (default: all supported) |
-| `--strip-headers-footers` | Drop header/footer text |
-| `--write-images` | Extract embedded images to disk |
-| `--image-path DIR` | Where to write images |
-| `--pages` | Comma-separated zero-based page indices |
-| `--clip` | Also copy the combined Markdown to the clipboard |
+| Flag | Default | Meaning |
+|---|---|---|
+| `SOURCE` | `input` | Directory, file path, or glob pattern |
+| `-o, --output DIR` | `output` | Output directory |
+| `-r, --recursive` | off | Recurse into subdirectories |
+| `-e, --extensions` | all supported | Comma-separated extension filter (e.g. `pdf,docx`) |
+| `--strip-headers-footers` | off | Strip running headers and footers from each page |
+| `--write-images` | off | Extract embedded images to disk |
+| `--image-path DIR` | auto | Where to write extracted images |
+| `--pages` | all | Comma-separated zero-based page indices (e.g. `0,1,4`) |
+| `--clip` | off | Also copy combined output to the system clipboard |
 
-Unsupported formats produce a clear message and exit code `1`; they are never
-silently skipped. If a feature needs an optional package that isn't installed,
-you get a friendly hint instead of a traceback, e.g.:
-
-```
-'tmd fetch' requires the 'trafilatura' package, which is not installed.
-Install it with:  pip install -e .   (or: pip install trafilatura)
-```
+Unsupported formats exit with code `1` and print a clear message. If a required optional package is missing, the error tells you exactly what to install.
 
 ---
 
-## `tmd clip` — convert straight to the clipboard
+## `tmd clip` — convert to clipboard
 
-Convert on the fly and copy the Markdown to your system clipboard, skipping the
-disk entirely. Paste directly into ChatGPT, Claude, or Gemini. `clip` supports
-**every registered format** — PDFs, Office documents, e-books, email, subtitles,
-LaTeX, and more. Files that cannot be converted (e.g. DRM'd or corrupt) are
-skipped with a clear warning instead of aborting the whole operation.
+Converts a file or folder and copies the Markdown to your clipboard, no disk writes required.
 
 ```bash
-tmd clip report.pdf                  # file -> clipboard
-tmd clip docs/                       # folder -> clipboard (concatenated)
-tmd clip report.pdf --write          # also save the .md to -o/--output
+tmd clip report.pdf
+tmd clip docs/
+tmd clip report.pdf --write           # also save to disk
+tmd clip report.pdf --write -o out/
 ```
 
-| Flag | Meaning |
-|---|---|
-| `--write` | Additionally save `.md` files to the output directory |
-| `-o, --output DIR` | Output directory (only used with `--write`) |
-| `--strip-headers-footers`, `--write-images`, `--image-path`, `--pages` | Same as `convert` |
+| Flag | Default | Meaning |
+|---|---|---|
+| `SOURCE` | (required) | File or directory |
+| `--write` | off | Also save `.md` files to the output directory |
+| `-o, --output DIR` | `output` | Used only with `--write` |
+| `--strip-headers-footers`, `--write-images`, `--image-path`, `--pages` | | Same as `convert` |
 
-Prints a confirmation with the character/line count of what was copied.
+Prints the character and line count of what was copied.
 
 ---
 
 ## `tmd watch` — hot-folder daemon
 
-Watch a folder and auto-convert new files as they appear. Drop a PDF into the
-inbox and the `.md` appears in the output — optionally on the clipboard too.
+Watches a directory and converts new files as they appear.
 
 ```bash
-tmd watch -s inbox/ -o output/       # watch inbox/ (auto-created)
-tmd watch --clip                     # copy each result to the clipboard
-tmd watch --once                     # process existing files and exit
-tmd watch --poll-interval 3.0        # stability wait before processing
+tmd watch -s inbox/ -o output/
+tmd watch --clip                     # copy each result to clipboard
+tmd watch --once                     # convert existing files and exit
+tmd watch --poll-interval 3.0
 ```
 
-| Flag | Meaning |
-|---|---|
-| `-s, --source DIR` | Hot folder to monitor (default `inbox`, auto-created) |
-| `-o, --output DIR` | Output directory (default `output`) |
-| `--poll-interval SECONDS` | Wait before processing a file so in-progress copies finish (default `2.0`) |
-| `--clip` | Copy each converted result to the clipboard |
-| `--once` | Process files already in the source folder and exit |
-| `--strip-headers-footers`, `--write-images`, `--image-path`, `--pages` | Same as `convert` |
+| Flag | Default | Meaning |
+|---|---|---|
+| `-s, --source DIR` | `inbox` | Directory to monitor (created if missing) |
+| `-o, --output DIR` | `output` | Output directory |
+| `--poll-interval SECONDS` | `2.0` | Stability wait before converting a file (lets in-progress copies finish) |
+| `--clip` | off | Copy each result to the clipboard |
+| `--once` | off | Process existing files in the source folder and exit |
+| `--strip-headers-footers`, `--write-images`, `--image-path`, `--pages` | | Same as `convert` |
 
-Press `Ctrl+C` to stop cleanly (exit code `0`). Per-file failures are logged
-and never stop the watcher.
+`Ctrl+C` stops the watcher cleanly (exit code `0`). Per-file failures are logged and never stop the loop.
 
 ---
 
 ## `tmd fetch` — web page to Markdown
 
-Fetch a web page, strip navbars, footers, ads, and scripts, and save just the
-article's clean text as Markdown.
+Fetches a URL, strips navigation, ads, and boilerplate, and saves the article text as Markdown.
 
 ```bash
+tmd fetch https://example.com/article
 tmd fetch https://example.com/article -o output/
 ```
 
-| Flag | Meaning |
-|---|---|
-| `URL` | The page to fetch |
-| `-o, --output DIR` | Output directory (default `output`) |
+| Flag | Default | Meaning |
+|---|---|---|
+| `URL` | (required) | Web page URL |
+| `-o, --output DIR` | `output` | Output directory |
 
-The output file is named after the page's host/title.
+The output filename is derived from the page title or hostname.
 
 ---
 
-## `tmd repo` — repository to a single manifest
+## `tmd repo` — directory to a single manifest
 
-Collapse an entire code repository into a single Markdown file with clear file
-boundaries, respecting `.gitignore` rules.
+Collapses a repository or project directory into one Markdown file with a directory tree and per-file contents, respecting `.gitignore` rules.
 
 ```bash
 tmd repo ./my-project -o output/
 tmd repo ./my-project --exclude "*.lock" --exclude "build/"
 ```
 
-| Flag | Meaning |
-|---|---|
-| `DIRECTORY` | Repository root |
-| `-o, --output DIR` | Output directory (default `output`) |
-| `--exclude PATTERN` | Extra gitignore-style patterns to skip (repeatable) |
+| Flag | Default | Meaning |
+|---|---|---|
+| `DIRECTORY` | (required) | Repository root |
+| `-o, --output DIR` | `output` | Output directory |
+| `--exclude PATTERN` | none | Extra gitignore-style exclude pattern (repeatable) |
 
 Output structure:
 
@@ -154,7 +137,9 @@ Output structure:
 # Repository: my-project
 
 ## Tree
-<indented directory tree>
+  src/
+    main.py
+    registry.py
 
 ## Files
 
@@ -169,68 +154,52 @@ Binary files are skipped automatically.
 
 ---
 
-## `tmd merge` — combine files into one master document
+## `tmd merge` — combine files into one document
 
-Merge many files into a single structured document with a Table of Contents and
-`=== FILE: <name> ===` separators. Non-Markdown inputs are converted first.
-
-```bash
-tmd merge input/ -o mega.md            # merge a folder
-tmd merge a.md b.pdf -o mega.md        # merge explicit files
-tmd merge input/ --recursive           # recurse
-tmd merge input/ -o mega.md --dedup    # drop duplicate lines
-tmd merge input/ -o mega.md --no-toc   # skip the table of contents
-tmd merge input/ -o mega.md --no-convert  # merge raw contents as-is
-```
-
-| Flag | Meaning |
-|---|---|
-| `SOURCE` | Directory, file path, or glob pattern |
-| `-o, --output FILE` | Output file (default `merged.md`) |
-| `-r, --recursive` | Recurse into subdirectories |
-| `--dedup` | Remove exact duplicate lines (order preserved) |
-| `--no-toc` | Skip the generated Table of Contents |
-| `--no-convert` | Read raw file contents instead of converting first |
-| `--encoding NAME` | tiktoken encoding (default `o200k_base`) |
-| `--budget N` | Prune output to fit a hard token budget (see below) |
-| `--delta` | Print a token delta summary after merging |
-
-Files are merged in deterministic (path-sorted) order.
-
----
-
-## Token budgeting & delta inspection
-
-### `--budget N` — fit a hard token ceiling
-
-Force the merged document to fit within `N` tokens. Content is pruned in order:
-license/boilerplate lines, Markdown image references, then truncation from the
-end (preserving the most important, earliest content).
+Merges multiple files into a single Markdown document with a Table of Contents and `=== FILE: <name> ===` section separators. Non-Markdown inputs are converted first.
 
 ```bash
+tmd merge input/ -o mega.md
+tmd merge a.md b.pdf -o mega.md
+tmd merge input/ --recursive
+tmd merge input/ -o mega.md --no-toc
+tmd merge input/ -o mega.md --dedup
+tmd merge input/ -o mega.md --no-convert
 tmd merge input/ -o mega.md --budget 4000
-```
-
-The tool prints a report of exactly what was removed:
-
-```
-[budget] 12,400 -> 4,000 tokens
-  removed 3 blocks (-3,000 tokens)
-  final: 4,000 tokens (fits budget)
-```
-
-### `tmd delta` — token savings report
-
-Show how many tokens each conversion saved. The "before" count is the whole
-source file estimated from its raw size (~4 bytes per token), so it reflects
-the entire PDF/DOCX/PPTX/etc. rather than just its extracted text:
-
-```bash
-tmd delta input/ -o output/
 tmd merge input/ -o mega.md --delta
 ```
 
-Output format, one line per file plus a total:
+| Flag | Default | Meaning |
+|---|---|---|
+| `SOURCE` | (required) | Directory, file, or glob pattern |
+| `-o, --output FILE` | `merged.md` | Output file |
+| `-r, --recursive` | off | Recurse into subdirectories |
+| `--no-toc` | off | Skip the generated Table of Contents |
+| `--dedup` | off | Remove exact duplicate lines (order preserved) |
+| `--no-convert` | off | Use raw file contents instead of converting first |
+| `--encoding NAME` | `o200k_base` | tiktoken encoding for token counting |
+| `--budget N` | off | Prune output to fit a hard token budget (see below) |
+| `--delta` | off | Print a per-file token delta summary after merging |
+
+Files are merged in sorted path order.
+
+---
+
+## `tmd delta` — token savings report
+
+Shows the token reduction for files already converted.
+
+```bash
+tmd delta input/ -o output/
+```
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `SOURCE` | (required) | Directory, file, or glob pattern of source files |
+| `-o, --output DIR` | `output` | Directory containing the converted `.md` files |
+| `--encoding NAME` | `o200k_base` | tiktoken encoding |
+
+Output, one line per file:
 
 ```
 PDF (142,000 tokens) -> Markdown (12,400 tokens) [-91.2%]
@@ -238,28 +207,91 @@ PDF (142,000 tokens) -> Markdown (12,400 tokens) [-91.2%]
 
 ---
 
+## `tmd ui` — local web UI
+
+Launches the FastAPI backend and serves the built frontend at `http://127.0.0.1:8642`. The browser opens automatically.
+
+```bash
+tmd ui
+tmd ui --host 0.0.0.0    # expose on LAN
+tmd ui --port 9000
+tmd ui --no-browser      # don't auto-open the browser
+```
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--host` | `127.0.0.1` | Bind address |
+| `--port` | `8642` | Port (auto-increments up to +20 if busy) |
+| `--no-browser` | off | Skip auto-opening the browser |
+
+The API is available at `http://127.0.0.1:8642/api`. Interactive docs at `/docs` (Swagger UI). The frontend must be built first (`cd frontend && npm run build`).
+
+---
+
+## Token budgeting
+
+`--budget N` forces the output to fit within `N` tokens. Pruning happens in order:
+
+1. License/boilerplate lines
+2. Markdown image references
+3. Truncation from the end (earliest/most important content preserved)
+
+Example output:
+
+```
+[budget] 12,400 -> 4,000 tokens
+  removed 3 blocks (-3,000 tokens)
+  final: 4,000 tokens (fits budget)
+```
+
+---
+
+## Exit codes
+
+| Code | Meaning |
+|---|---|
+| `0` | Success |
+| `1` | One or more files failed to convert, or no files found |
+
+---
+
 ## Supported formats
 
 | Family | Formats |
 |---|---|
-| Documents | PDF, DOCX, PPTX, XLSX, ODT/ODS/ODP (LibreOffice), RTF |
-| E-books | EPUB, MOBI, XPS/OpenXPS, FB2, CBZ, AZW3/AZW4 (Kindle) |
-| Email | Outlook MSG, EML |
+| Documents | DOCX, PPTX, ODT, ODS, ODP, RTF |
+| Spreadsheets | XLSX, CSV |
+| E-books | PDF, EPUB, MOBI, XPS/OXPS, FB2, CBZ, AZW3, AZW4 |
+| Email | EML, MSG |
 | Subtitles | SRT, VTT |
+| Plain text | TXT |
 | LaTeX | TEX |
-| Web | HTML/HTM, live URLs (`tmd fetch`) |
-| Structured data | JSON, XML, CSV, YAML, TOML, INI, LOG |
-| Images | PNG, JPG/JPEG, TIF/TIFF, GIF, BMP, SVG |
-| Text | TXT |
-| Code | Any repository directory (`tmd repo`) |
+| Markdown | MD, MARKDOWN, MDX |
+| Notebooks | IPYNB |
+| Web | HTML, HTM |
+| Structured data | JSON, XML, YAML, YML, TOML, INI, LOG |
+| Archives | ZIP, TAR, GZ, TGZ, BZ2 |
+| Repositories | Any directory via `tmd repo` |
 
-**Math fidelity:** equations are preserved as LaTeX wherever the source encodes
-them directly — DOCX/PPTX (OMML), ODF (MathML), and LaTeX source (verbatim).
-Formats that rasterize math (PDF, images) skip math fidelity by design.
+Math equations are preserved as LaTeX from DOCX/PPTX (OMML) and ODT/ODS/ODP (MathML). PDF and image math is rasterized and is not extracted.
 
-**Deliberately excluded** (no robust pure-Python parser): KFX, DJVU, Apple
-iWork (PAGES/NUMBERS/KEY), and legacy binary Office (DOC/XLS/PPT).
+Not supported by design: KFX, DJVU, Apple iWork (PAGES/NUMBERS/KEY), legacy binary Office (DOC/XLS/PPT).
 
-Office and structured formats use best-effort extraction; anything that cannot
-be meaningfully converted reports a clear "unsupported format" message instead
-of failing silently.
+---
+
+## Environment variables (web backend)
+
+These only apply when running `tmd ui` or the backend directly.
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `TMD_HOST` | `127.0.0.1` | Bind address |
+| `TMD_PORT` | `8642` | Port |
+| `TMD_MAX_UPLOAD_MB` | `100` | Per-file upload size limit |
+| `TMD_MAX_SESSION_MB` | `1000` | Total session size limit |
+| `TMD_SESSION_TTL_HOURS` | `24` | Session expiry |
+| `TMD_CORS_ORIGINS` | `http://localhost:3000,...` | Allowed CORS origins (comma-separated) |
+| `TMD_UI_DIR` | auto | Path to built frontend static files |
+| `TMD_ALLOW_LOCAL_PATHS` | `false` | Allow server-side file paths in API requests |
+| `TMD_LOCAL_PATHS_ROOT` | cwd | Root for server-side path access when enabled |
+| `TMD_LOG_LEVEL` | `info` | Logging level |

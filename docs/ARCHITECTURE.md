@@ -1,89 +1,282 @@
 # Architecture
 
-`tokens.md` is a small, pluggable toolkit that turns files into token-efficient
-Markdown for LLM prompts. This document explains how the pieces fit together and
-how to extend the tool.
+`tokens.md` is a conversion pipeline with a pluggable registry at its core. The CLI (`tmd`) and the FastAPI backend are both thin entry points into the same `src.*` modules. Neither entry point contains conversion logic.
+
+---
+
+## Layer overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Entry points                                               │
+│                                                             │
+│  tmd (CLI, Typer)          tmd ui (FastAPI + uvicorn)       │
+│  src/cli.py                backend/app.py + routes.py       │
+└─────────────┬───────────────────────────┬───────────────────┘
+              │                           │
+              ▼                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Orchestration layer                                        │
+│                                                             │
+│  src/registry.py      convert_file(), DEFAULT_REGISTRY      │
+│  src/merger.py        merge_files(), resolve_to_markdown()  │
+│  src/budget.py        prune_to_budget()                     │
+│  src/delta.py         compute_delta_summary()               │
+│  src/tokenizer.py     count_tokens(), delta_percent()       │
+│  src/file_selector.py select_files()                        │
+│  src/fetch.py         fetch_url()   (trafilatura)           │
+│  src/watcher.py       run_watcher() (watchdog)              │
+└─────────────┬───────────────────────────────────────────────┘
+              │  registry dispatch by extension
+              ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Converter layer                                            │
+│                                                             │
+│  src/handlers/pymupdf.py   PDF, EPUB, MOBI, XPS, FB2, ...  │
+│  src/handlers/office.py    DOCX, PPTX, XLSX  (thin facade) │
+│  src/handlers/structured.py  JSON, XML, CSV, YAML, ...     │
+│  src/handlers/html.py      HTML/HTM (trafilatura)           │
+│  src/handlers/repo.py      directory -> manifest            │
+│  src/handlers/archive.py   ZIP, TAR, GZ, TGZ, BZ2          │
+│  src/handlers/unsupported.py  catch-all, raises clearly     │
+└─────────────┬───────────────────────────────────────────────┘
+              │  office.py delegates to readers
+              ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Reader layer  (src/readers/)                               │
+│                                                             │
+│  docx.py   DOCX (python-docx, OMML math)                   │
+│  pptx.py   PPTX (python-pptx, OMML math)                   │
+│  xlsx.py   XLSX (openpyxl)                                  │
+│  odf.py    ODT/ODS/ODP (odfpy + MathML-to-LaTeX)           │
+│  rtf.py    RTF (striprtf)                                   │
+│  eml.py    EML (stdlib email)                               │
+│  msg.py    Outlook MSG (extract-msg)                        │
+│  ebook.py  AZW3/AZW4 (mobi + pymupdf)                      │
+│  subtitle.py  SRT/VTT                                       │
+│  tex.py    LaTeX (regex, math verbatim)                     │
+│  ipynb.py  Jupyter notebooks                                │
+│  markdown.py  MD/MDX pass-through                           │
+└─────────────┬───────────────────────────────────────────────┘
+              │  Reader.read() -> Document IR
+              ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Model + Renderer                                           │
+│                                                             │
+│  src/model.py      Document IR (Heading, Paragraph, Table,  │
+│                    CodeBlock, ListItem, RawMarkdown, ...)   │
+│  src/renderer.py   MarkdownRenderer: Document -> string     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Registry and dispatch
+
+Every file type is owned by a `Converter` subclass that declares a `frozenset` of extensions and implements `convert(input_path, output_dir, **kwargs) -> Path`.
+
+```python
+# src/registry.py  (simplified)
+class Converter(ABC):
+    extensions: frozenset[str]
+    name: str
+    def convert(self, input_path: Path, output_dir: Path, **kwargs) -> Path: ...
+
+class Registry:
+    def register(self, converter: Converter) -> None: ...
+    def convert_file(self, path: Path, output_dir: Path, **kwargs) -> Path: ...
+```
+
+`DEFAULT_REGISTRY` is populated in `src/handlers/__init__.py`. The CLI and API both call `convert_file()` — the single dispatch entry point.
+
+Handlers that use the reader layer wrap a `Reader` subclass in `ReaderConverter`:
+
+```python
+# src/readers/adapter.py
+class ReaderConverter(Converter):
+    def convert(self, input_path, output_dir, **kwargs) -> Path:
+        doc = self.reader.read(input_path)
+        md = MarkdownRenderer().render(doc)
+        out = output_dir / f"{input_path.stem}.md"
+        out.write_text(md, encoding="utf-8")
+        return out
+```
+
+---
+
+## Conversion flow
+
+```
+tmd convert report.pdf
+         │
+         ▼
+   select_files(source)
+         │
+         ▼
+   for each path:
+     convert_file(path, output_dir)
+         │
+         ├─ registry.dispatch(path.suffix) → Converter
+         │
+         ├─ (office) → Reader.read(path) → Document → MarkdownRenderer → .md
+         │
+         └─ (pymupdf) → pymupdf4llm.to_markdown(path) → .md
+         │
+         ▼
+   count_tokens(markdown)  [tiktoken, o200k_base]
+   print delta summary
+```
+
+```
+tmd merge docs/ --budget 4000
+         │
+         ▼
+   select_files()
+         │
+         ▼
+   for each: resolve_to_markdown()   [convert-first via registry]
+         │
+         ▼
+   merge_files()  [TOC + === FILE: name === separators]
+         │
+         ▼
+   prune_to_budget()  [if --budget]
+         │
+         ▼
+   write merged.md
+```
+
+---
+
+## Document IR
+
+Readers produce a `Document`; `MarkdownRenderer` renders it. Neither side knows about the other's concerns.
+
+```python
+# src/model.py  (abridged)
+Block = Heading | Paragraph | Table | CodeBlock | ListItem | Image | RawMarkdown | ...
+
+@dataclass
+class Document:
+    blocks: list[Block]
+    title: str
+    metadata: dict[str, str]
+```
+
+`RawMarkdown` is an escape hatch for content already in Markdown format (HTML passthrough, LaTeX equations, Jupyter markdown cells).
+
+---
+
+## Math extraction
+
+| Source | Mechanism | Output |
+|---|---|---|
+| DOCX | `m:oMath` / `m:oMathPara` XML via `src/omml.py` | `$…$` / `$$…$$` |
+| PPTX | Same OMML, unwrapped from `mc:AlternateContent` | `$…$` / `$$…$$` |
+| ODT/ODS/ODP | MathML sub-documents extracted from zip, converted via `mathml-to-latex` | `$$…$$` |
+| TEX | LaTeX source preserved verbatim | as-is |
+| PDF / images | Math is rasterized; not extracted | — |
+
+---
+
+## Backend session model
+
+```
+POST /api/uploads  →  Workspace(session_id)
+                          │
+                          ├── uploads/   ← incoming files
+                          ├── output/    ← converted .md files
+                          └── repo/      ← reconstructed repo tree (tmd repo)
+
+POST /api/convert  →  convert_file() per file_id
+POST /api/merge    →  merge_files() → prune_to_budget() → output/merged.md
+POST /api/fetch    →  fetch_url() → output/article.md
+WS   /api/ws       →  watch events pushed per converted file
+```
+
+Sessions are temporary directories on disk, keyed by UUID. A background janitor thread deletes sessions older than `session_ttl_hours` (default 24h). `POST /api/session/close` deletes immediately.
+
+---
+
+## Frontend
+
+```
+frontend/
+├── app/               Next.js App Router pages
+├── components/
+│   ├── layout/        Shell, TopBar, nav
+│   ├── ui/            Reusable primitives (DropZone, Toggle, etc.)
+│   └── workspaces/    ConvertWorkspace — main conversion flow
+├── lib/
+│   ├── api/           Typed wrappers over fetch (endpoints.ts, upload.ts)
+│   ├── hooks/         useHealth, useJob, useWorkspaceState, useUpload, ...
+│   └── utils/         cn, format, extensions
+└── public/
+```
+
+The frontend calls the FastAPI backend at `http://127.0.0.1:8642/api`. In development, `npm run dev` proxies to it. In production, `tmd ui` serves the built `frontend/out/` directory from the same process.
+
+---
 
 ## Module map
 
 ```
 src/
-├── cli.py            # Typer CLI: convert, clip, watch, fetch, repo, merge, delta
-├── registry.py       # Converter ABC, Registry, DEFAULT_REGISTRY, convert_file
-├── model.py          # Format-agnostic Document IR (Heading, Paragraph, Table, ...)
-├── renderer.py       # MarkdownRenderer: Document IR -> Markdown
-├── detector.py       # FormatDetector: magic-byte fallback for unknown extensions
-├── omml.py           # OMML -> LaTeX (DOCX/PPTX equations, vendored from docx-equation)
-├── mathml.py         # MathML -> LaTeX (ODF equations, stdlib-only)
-├── readers/          # Reader ABC + one Reader per format family
-│   ├── base.py       #   Reader ABC (read(Path) -> Document)
-│   ├── adapter.py    #   ReaderConverter: adapts Reader + Renderer into a Converter
-│   ├── docx.py       #   DOCX (python-docx, heading styles, OMML math)
-│   ├── pptx.py       #   PPTX (python-pptx, slide titles, notes, OMML math)
-│   ├── xlsx.py       #   XLSX (openpyxl, header row -> table)
-│   ├── odf.py        #   ODT/ODS/ODP (odfpy, outlinelevel -> headings)
-│   ├── rtf.py        #   RTF (striprtf)
-│   ├── msg.py        #   Outlook MSG (extract-msg)
-│   ├── eml.py        #   EML (stdlib email)
-│   ├── ebook.py      #   AZW3 (mobi) / AZW4 (pymupdf PDF wrapper)
-│   ├── subtitle.py   #   SRT/VTT (stdlib)
-│   └── tex.py        #   LaTeX (regex, math preserved verbatim)
-├── handlers/         # Built-in converters (one per format family)
-│   ├── pymupdf.py    #   PDF / e-books / images / text (pymupdf4llm)
-│   ├── office.py     #   thin facade over DocxReader/PptxReader/XlsxReader
-│   ├── structured.py #   JSON / XML / CSV / YAML / TOML / INI / LOG
-│   ├── html.py       #   HTML / HTM (trafilatura)
-│   ├── repo.py       #   directory -> single manifest (pathspec gitignore)
-│   └── unsupported.py#   catch-all that raises a clear error
-├── fetch.py          # `tmd fetch <url>` (trafilatura)
-├── converter.py      # Backward-compatible wrappers over the registry
-├── file_selector.py  # Strategy-based file selection (unchanged)
-├── tokenizer.py      # tiktoken token counting (shared)
-├── merger.py         # `tmd merge` (TOC + separators + dedup)
-├── budget.py         # `--budget` pruning
-├── delta.py          # `tmd delta` token savings report
-├── watcher.py        # `tmd watch` hot-folder daemon
-└── clipboard.py      # pyperclip wrapper
+├── cli.py            Typer CLI: convert, clip, watch, fetch, repo, merge, delta, ui
+├── registry.py       Converter ABC, Registry, DEFAULT_REGISTRY, convert_file()
+├── model.py          Document IR (Heading, Paragraph, Table, CodeBlock, ...)
+├── renderer.py       MarkdownRenderer: Document → Markdown string
+├── detector.py       Magic-byte fallback for unknown extensions
+├── omml.py           OMML → LaTeX (DOCX/PPTX equations)
+├── readers/          Reader ABC + one Reader per format family
+│   ├── base.py         Reader ABC: read(Path) → Document
+│   ├── adapter.py      ReaderConverter: Reader + Renderer → Converter
+│   ├── docx.py         DOCX
+│   ├── pptx.py         PPTX
+│   ├── xlsx.py         XLSX
+│   ├── odf.py          ODT/ODS/ODP (+ MathML extraction)
+│   ├── rtf.py          RTF
+│   ├── eml.py          EML
+│   ├── msg.py          Outlook MSG
+│   ├── ebook.py        AZW3/AZW4
+│   ├── subtitle.py     SRT/VTT
+│   ├── tex.py          LaTeX
+│   ├── ipynb.py        Jupyter notebooks
+│   └── markdown.py     MD/MDX pass-through
+├── handlers/         Converters registered in DEFAULT_REGISTRY
+│   ├── __init__.py     Registers all converters
+│   ├── pymupdf.py      PDF, EPUB, MOBI, XPS, OXPS, FB2, CBZ, SVG, TXT
+│   ├── office.py       DOCX, PPTX, XLSX (thin facade over readers)
+│   ├── structured.py   JSON, XML, CSV, YAML, TOML, INI, LOG
+│   ├── html.py         HTML/HTM
+│   ├── repo.py         Directory → manifest
+│   ├── archive.py      ZIP, TAR, GZ, TGZ, BZ2
+│   └── unsupported.py  Catch-all
+├── fetch.py          tmd fetch (trafilatura)
+├── tokenizer.py      tiktoken wrapper (o200k_base default)
+├── merger.py         merge_files(), resolve_to_markdown()
+├── budget.py         prune_to_budget()
+├── delta.py          compute_delta_summary()
+├── watcher.py        run_watcher() hot-folder daemon (watchdog)
+├── file_selector.py  select_files() with gitignore-style filtering
+├── clipboard.py      pyperclip wrapper
+├── converter.py      Backward-compatible wrappers (convert_pdf_to_markdown etc.)
+└── deps.py           require() — lazy import with friendly error messages
+
+backend/
+├── app.py            FastAPI factory, CORS, error handlers, static mount
+├── routes.py         All /api/* endpoints + WebSocket
+├── schemas.py        Pydantic v2 request/response models
+├── config.py         Settings from TMD_* env vars
+├── workspace.py      Workspace: per-session temp dir management
+└── ws.py             WsManager: WebSocket event bus
 ```
 
-## The converter registry
+---
 
-The heart of the tool is a pluggable **registry** (`src/registry.py`). Each file
-type is handled by a `Converter` subclass that declares which extensions it owns
-and how to turn one input file into a Markdown file on disk.
+## Adding a format
 
-```python
-from pathlib import Path
-from src.registry import Converter
-
-class MyConverter(Converter):
-    extensions = frozenset({".foo"})
-    name = "myformat"
-
-    def convert(self, input_path: Path, output_dir: Path, **kwargs) -> Path:
-        output_dir.mkdir(parents=True, exist_ok=True)
-        out = output_dir / f"{input_path.stem}.md"
-        out.write_text(extract_text(input_path), encoding="utf-8")
-        return out
-```
-
-Handlers are registered in `src/handlers/__init__.py`:
-
-```python
-DEFAULT_REGISTRY.register(MyConverter())
-```
-
-That's it — no changes to the CLI or pipeline are needed. The registry
-dispatches by file extension, and `convert_file()` is the single entry point
-used by the pipeline, `merge`, and the CLI.
-
-### Adding a new format
-
-There are two ways to add a format, depending on how much structure you need:
-
-**Reader-first (recommended for structured formats).** Create a `Reader`
-subclass in `src/readers/` that parses the file into the format-agnostic
-`Document` IR (`src/model.py`), then register it via `ReaderConverter`:
+**Reader-first (recommended for structured formats):**
 
 ```python
 # src/readers/myformat.py
@@ -101,90 +294,20 @@ class MyFormatReader(Reader):
         return doc
 ```
 
+Register in `src/handlers/__init__.py`:
+
 ```python
-# src/handlers/__init__.py
 from ..readers.adapter import ReaderConverter
 from ..readers.myformat import MyFormatReader
 DEFAULT_REGISTRY.register(ReaderConverter(MyFormatReader()))
 ```
 
-The `ReaderConverter` adapter handles the `Converter` contract (writing the
-`.md` file, wrapping parser errors in `UnsupportedFormatError`, rejecting empty
-documents). The shared `MarkdownRenderer` turns your `Document` blocks into
-Markdown, so output style is identical across all formats.
+**Converter-first (for formats that don't map to the IR):**
 
-**Converter-first (for simple/legacy formats).** Create `src/handlers/<name>.py`
-with a `Converter` subclass, declare its `extensions`, implement `convert()`,
-and register it in `src/handlers/__init__.py`.
+Implement `Converter` directly in `src/handlers/myformat.py`. Write the `.md` file to `output_dir`, return its `Path`, and raise `UnsupportedFormatError` on failure.
 
-The `Converter.convert()` contract: write a `.md` file into `output_dir` and
-return its `Path`. Raise `UnsupportedFormatError` if the file cannot be
-converted — the CLI reports a clear message instead of silently skipping.
-
-### Math fidelity
-
-Equations are preserved as LaTeX wherever the source format directly encodes
-them:
-
-| Source | Where math lives | Conversion |
-|---|---|---|
-| DOCX | OMML (`m:oMath` / `m:oMathPara`) | `src/omml.py` → `$…$` / `$$…$$` |
-| PPTX | OMML inside `mc:AlternateContent` | unwrap `mc:Choice`, then `src/omml.py` |
-| ODT/ODS/ODP | MathML (`<math:math>`) | `src/mathml.py` → `$$…$$` |
-| TEX | native LaTeX source | preserved verbatim |
-
-Formats that rasterize math (PDF, images) skip math fidelity by design; see
-`notes/format-expansion-plan.md` §5.4 for the full gap list.
-
-## Data flow
-
-```
-tmd convert input/ -o output/
-  select_files() -> [paths]
-  for each path: convert_file(path, output_dir)   # registry dispatch
-  -> .md files in output/
-
-tmd merge input/ -o mega.md --budget 4000 --delta
-  select_files() -> [paths]
-  for each: resolve_to_markdown()                 # convert-first via registry
-  -> merge + TOC + separators
-  -> if --budget: prune_to_budget() -> PruneResult
-  -> write output
-  -> if --delta: print_delta_summary()
-```
-
-## Token math
-
-`src/tokenizer.py` is the single source of truth for token counting (tiktoken,
-default encoding `o200k_base`). It is used by both the delta inspector and the
-budget allocator, so token numbers are always consistent.
+---
 
 ## Backward compatibility
 
-`src/converter.py` keeps the original public API (`convert_pdf_to_markdown`,
-`run_pipeline`) as thin wrappers over the registry, and `src/main.py` is a shim
-that invokes the Typer CLI. Existing callers keep working unchanged.
-
-## Entry points & modalities
-
-The core logic (registry, handlers, tokenizer, merger, budget) is fully
-decoupled from how it is invoked. Today there are two entry points to the same
-CLI:
-
-| Entry point | When to use |
-|---|---|
-| `tmd` (console script) | Installed globally via `pip install -e .` / `uv tool install .`; runnable from anywhere |
-| `python src/main.py` | No install needed; just the dependencies in the environment |
-
-Future modalities (a GUI, a web frontend, an API server, desktop app) can reuse
-the same modules without touching the conversion logic — a new modality only
-needs to call into `src/registry`, `src/merger`, etc.
-
-## Development
-
-```bash
-uv pip install -e ".[dev]"
-pytest          # run the test suite
-ruff check .    # lint
-mypy src        # type-check (strict)
-```
+`src/converter.py` exposes the original `convert_pdf_to_markdown` and `run_pipeline` functions as thin wrappers over the registry. `src/main.py` is a shim that calls the Typer CLI. Both exist so callers from before the registry refactor keep working unchanged.
