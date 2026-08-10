@@ -67,7 +67,10 @@ Install it with:  pip install -e .   (or: pip install trafilatura)
 ## `tmd clip` — convert straight to the clipboard
 
 Convert on the fly and copy the Markdown to your system clipboard, skipping the
-disk entirely. Paste directly into ChatGPT, Claude, or Gemini.
+disk entirely. Paste directly into ChatGPT, Claude, or Gemini. `clip` supports
+**every registered format** — PDFs, Office documents, e-books, email, subtitles,
+LaTeX, and more. Files that cannot be converted (e.g. DRM'd or corrupt) are
+skipped with a clear warning instead of aborting the whole operation.
 
 ```bash
 tmd clip report.pdf                  # file -> clipboard
@@ -239,13 +242,23 @@ PDF (142,000 tokens) -> Markdown (12,400 tokens) [-91.2%]
 
 | Family | Formats |
 |---|---|
-| Documents | PDF, DOCX, PPTX, XLSX |
-| E-books | EPUB, MOBI, XPS/OpenXPS, FB2, CBZ |
+| Documents | PDF, DOCX, PPTX, XLSX, ODT/ODS/ODP (LibreOffice), RTF |
+| E-books | EPUB, MOBI, XPS/OpenXPS, FB2, CBZ, AZW3/AZW4 (Kindle) |
+| Email | Outlook MSG, EML |
+| Subtitles | SRT, VTT |
+| LaTeX | TEX |
 | Web | HTML/HTM, live URLs (`tmd fetch`) |
 | Structured data | JSON, XML, CSV, YAML, TOML, INI, LOG |
 | Images | PNG, JPG/JPEG, TIF/TIFF, GIF, BMP, SVG |
 | Text | TXT |
 | Code | Any repository directory (`tmd repo`) |
+
+**Math fidelity:** equations are preserved as LaTeX wherever the source encodes
+them directly — DOCX/PPTX (OMML), ODF (MathML), and LaTeX source (verbatim).
+Formats that rasterize math (PDF, images) skip math fidelity by design.
+
+**Deliberately excluded** (no robust pure-Python parser): KFX, DJVU, Apple
+iWork (PAGES/NUMBERS/KEY), and legacy binary Office (DOC/XLS/PPT).
 
 Office and structured formats use best-effort extraction; anything that cannot
 be meaningfully converted reports a clear "unsupported format" message instead

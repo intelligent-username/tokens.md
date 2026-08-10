@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tokens-md"
-version = "0.1.0"
+version = "0.2.0"
 description = "Convert files to token-efficient Markdown for LLM prompts."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -20,6 +20,17 @@ dependencies = [
     "pathspec",
     "sumy",
     "tiktoken",
+    "python-docx>=1.2",
+    "python-pptx>=0.6.23",
+    "openpyxl>=3.1",
+    "odfpy>=1.4",
+    "striprtf>=0.0.26",
+    "extract-msg>=0.48",
+    "mobi>=0.3.3",
+    "fastapi",
+    "uvicorn[standard]",
+    "python-multipart",
+    "httpx2",
 ]
 
 [project.optional-dependencies]
@@ -28,6 +39,7 @@ dev = [
     "pytest-cov",
     "ruff",
     "mypy",
+    "httpx2",
 ]
 web = [
     "fastapi",

@@ -10,9 +10,27 @@ how to extend the tool.
 src/
 ├── cli.py            # Typer CLI: convert, clip, watch, fetch, repo, merge, delta
 ├── registry.py       # Converter ABC, Registry, DEFAULT_REGISTRY, convert_file
+├── model.py          # Format-agnostic Document IR (Heading, Paragraph, Table, ...)
+├── renderer.py       # MarkdownRenderer: Document IR -> Markdown
+├── detector.py       # FormatDetector: magic-byte fallback for unknown extensions
+├── omml.py           # OMML -> LaTeX (DOCX/PPTX equations, vendored from docx-equation)
+├── mathml.py         # MathML -> LaTeX (ODF equations, stdlib-only)
+├── readers/          # Reader ABC + one Reader per format family
+│   ├── base.py       #   Reader ABC (read(Path) -> Document)
+│   ├── adapter.py    #   ReaderConverter: adapts Reader + Renderer into a Converter
+│   ├── docx.py       #   DOCX (python-docx, heading styles, OMML math)
+│   ├── pptx.py       #   PPTX (python-pptx, slide titles, notes, OMML math)
+│   ├── xlsx.py       #   XLSX (openpyxl, header row -> table)
+│   ├── odf.py        #   ODT/ODS/ODP (odfpy, outlinelevel -> headings)
+│   ├── rtf.py        #   RTF (striprtf)
+│   ├── msg.py        #   Outlook MSG (extract-msg)
+│   ├── eml.py        #   EML (stdlib email)
+│   ├── ebook.py      #   AZW3 (mobi) / AZW4 (pymupdf PDF wrapper)
+│   ├── subtitle.py   #   SRT/VTT (stdlib)
+│   └── tex.py        #   LaTeX (regex, math preserved verbatim)
 ├── handlers/         # Built-in converters (one per format family)
 │   ├── pymupdf.py    #   PDF / e-books / images / text (pymupdf4llm)
-│   ├── office.py     #   DOCX / PPTX / XLSX (stdlib zipfile + XML)
+│   ├── office.py     #   thin facade over DocxReader/PptxReader/XlsxReader
 │   ├── structured.py #   JSON / XML / CSV / YAML / TOML / INI / LOG
 │   ├── html.py       #   HTML / HTM (trafilatura)
 │   ├── repo.py       #   directory -> single manifest (pathspec gitignore)
@@ -61,14 +79,62 @@ used by the pipeline, `merge`, and the CLI.
 
 ### Adding a new format
 
-1. Create `src/handlers/<name>.py` with a `Converter` subclass.
-2. Declare its `extensions` and implement `convert()`.
-3. Import and register it in `src/handlers/__init__.py`.
-4. Add a test in `tests/test_handlers.py`.
+There are two ways to add a format, depending on how much structure you need:
+
+**Reader-first (recommended for structured formats).** Create a `Reader`
+subclass in `src/readers/` that parses the file into the format-agnostic
+`Document` IR (`src/model.py`), then register it via `ReaderConverter`:
+
+```python
+# src/readers/myformat.py
+from pathlib import Path
+from ..model import Document, Paragraph
+from .base import Reader
+
+class MyFormatReader(Reader):
+    extensions = frozenset({".foo"})
+    name = "myformat"
+
+    def read(self, input_path: Path) -> Document:
+        doc = Document(title=input_path.stem)
+        doc.add(Paragraph("extracted text"))
+        return doc
+```
+
+```python
+# src/handlers/__init__.py
+from ..readers.adapter import ReaderConverter
+from ..readers.myformat import MyFormatReader
+DEFAULT_REGISTRY.register(ReaderConverter(MyFormatReader()))
+```
+
+The `ReaderConverter` adapter handles the `Converter` contract (writing the
+`.md` file, wrapping parser errors in `UnsupportedFormatError`, rejecting empty
+documents). The shared `MarkdownRenderer` turns your `Document` blocks into
+Markdown, so output style is identical across all formats.
+
+**Converter-first (for simple/legacy formats).** Create `src/handlers/<name>.py`
+with a `Converter` subclass, declare its `extensions`, implement `convert()`,
+and register it in `src/handlers/__init__.py`.
 
 The `Converter.convert()` contract: write a `.md` file into `output_dir` and
 return its `Path`. Raise `UnsupportedFormatError` if the file cannot be
 converted — the CLI reports a clear message instead of silently skipping.
+
+### Math fidelity
+
+Equations are preserved as LaTeX wherever the source format directly encodes
+them:
+
+| Source | Where math lives | Conversion |
+|---|---|---|
+| DOCX | OMML (`m:oMath` / `m:oMathPara`) | `src/omml.py` → `$…$` / `$$…$$` |
+| PPTX | OMML inside `mc:AlternateContent` | unwrap `mc:Choice`, then `src/omml.py` |
+| ODT/ODS/ODP | MathML (`<math:math>`) | `src/mathml.py` → `$$…$$` |
+| TEX | native LaTeX source | preserved verbatim |
+
+Formats that rasterize math (PDF, images) skip math fidelity by design; see
+`notes/format-expansion-plan.md` §5.4 for the full gap list.
 
 ## Data flow
 

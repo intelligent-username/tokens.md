@@ -34,6 +34,19 @@ export const SUPPORTED_EXTENSIONS = [
   'gif',
   'webp',
   'svg',
+  'odt',
+  'ods',
+  'odp',
+  'rtf',
+  'msg',
+  'eml',
+  'azw3',
+  'azw4',
+  'srt',
+  'vtt',
+  'tex',
+  'ipynb',
+  'mdx',
 ] as const;
 
 /** Lowercased extension of a file name, or '' when none. */

@@ -46,18 +46,20 @@ function applyTheme(theme: Theme, animate = true) {
  * prefers-color-scheme, then dark). Children only, no DOM shell.
  */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    if (typeof window !== "undefined") {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored === "dark" || stored === "light") return stored;
-      if (window.matchMedia("(prefers-color-scheme: light)").matches) return "light";
-      return document.documentElement.classList.contains("dark") ? "dark" : "light";
-    }
-    return "dark";
-  });
+  const [theme, setThemeState] = useState<Theme>("dark");
 
   useEffect(() => {
-    applyTheme(theme, false);
+    const stored = localStorage.getItem(STORAGE_KEY);
+    let initialTheme: Theme = "dark";
+    if (stored === "dark" || stored === "light") {
+      initialTheme = stored;
+    } else if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
+      initialTheme = "light";
+    } else if (document.documentElement.classList.contains("dark")) {
+      initialTheme = "dark";
+    }
+    setThemeState(initialTheme);
+    applyTheme(initialTheme, false);
   }, []);
 
   const setTheme = useCallback((next: Theme) => {
@@ -100,21 +102,17 @@ export function ThemeToggle() {
   }, []);
 
   if (!mounted) {
-    const isDocDark = typeof document !== "undefined" ? document.documentElement.classList.contains("dark") : true;
     return (
       <button
         type="button"
         role="switch"
-        aria-checked={isDocDark}
+        aria-checked={true}
         aria-label="Theme toggle"
         className="relative inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-control border border-border/80 bg-secondary/60 text-secondary-foreground shadow-sm"
+        suppressHydrationWarning
       >
         <span className="flex items-center justify-center">
-          {isDocDark ? (
-            <Moon size={18} weight="fill" className="text-amber-300 drop-shadow-[0_0_8px_rgba(252,211,77,0.6)]" />
-          ) : (
-            <SunDim size={19} weight="duotone" className="text-amber-500 drop-shadow-[0_0_6px_rgba(245,158,11,0.5)]" />
-          )}
+          <Moon size={18} weight="fill" className="text-amber-300 drop-shadow-[0_0_8px_rgba(252,211,77,0.6)]" />
         </span>
       </button>
     );

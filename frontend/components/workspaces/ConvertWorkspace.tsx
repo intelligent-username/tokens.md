@@ -38,6 +38,10 @@ import { formatBytes } from '@/components/ui/FileChip';
 import { formatTokens } from '@/lib/utils/format';
 import { cn } from '@/lib/utils/cn';
 
+export type ConvertItemWithSession = ConvertItem & {
+  session_id?: string;
+};
+
 /** Top segmented mode selector component (Upload vs Input). */
 function ModeSelector({
   activeMode,
@@ -282,8 +286,7 @@ type FunnelGeom = {
 /**
  * Merge funnel: X separate flow lines start parallel on the left and curve
  * (sigmoid-shaped) toward the centre as they travel right, converging into a
- * single end point. Particles fly along each curve while `active`; once the
- * merge is done the animation stops and only the static curves remain.
+ * single end point.
  */
 function MergeFunnel({
   geom,
@@ -364,7 +367,6 @@ function MergeFunnel({
           </g>
         ))}
 
-        {/* The single end point every curve converges into */}
         {active && !reduced ? (
           <motion.circle
             cx={W}
@@ -385,16 +387,17 @@ function ResultClipButton({
   file,
   sessionId,
 }: {
-  file: ConvertItem;
+  file: ConvertItemWithSession;
   sessionId: string;
 }) {
   const { copy: copyText, copied } = useClipboard();
   const { toast } = useToast();
 
   const handleClip = async () => {
-    if (!file.output_file_id) return;
+    const sid = file.session_id || sessionId;
+    if (!file.output_file_id || !sid) return;
     try {
-      const res = await fetch(downloadUrl(sessionId, file.output_file_id));
+      const res = await fetch(downloadUrl(sid, file.output_file_id));
       const text = await res.text();
       await copyText(text);
       toast('Markdown copied to clipboard', 'success');
@@ -436,14 +439,10 @@ function TotalCompressionPill({
   percent: number;
   sessionId: string;
   isMerge?: boolean;
-  /** output_file_id of the merged file, used for the merge Download link */
   mergeOutputFileId?: string;
-  /** merged file for the eye button */
   previewOutput?: PreviewableOutput;
   onCopyAll: () => void;
 }) {
-  const savedTokens = Math.max(0, sourceTokens - targetTokens);
-
   return (
     <div
       style={{
@@ -471,7 +470,7 @@ function TotalCompressionPill({
         </div>
         {isMerge ? (
           <span
-            title="Merged output token count. Source totals are raw file-size estimates, so a % savings figure would be misleading."
+            title="Merged output token count."
             className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 font-mono text-xs font-bold text-emerald-400 border border-emerald-500/30"
           >
             output ≈ {formatTokens(targetTokens)} tokens
@@ -511,15 +510,19 @@ function TotalCompressionPill({
   );
 }
 
-/** Single workspace wrapper: side-by-side Before/After matched rows and particle flow connectors. */
+/** Single workspace wrapper: side-by-side Before/After matched rows with incremental caching. */
 export function ConvertWorkspace() {
   const [activeMode, setActiveMode] = useState<'upload' | 'input'>('upload');
   const [inputUrl, setInputUrl] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [result, setResult] = useState<ConvertResponse | null>(null);
+
+  // Incremental cache mapping fileKey -> ConvertItemWithSession
+  const [convertedMap, setConvertedMap] = useState<Record<string, ConvertItemWithSession>>({});
+  const [uploadMetaMap, setUploadMetaMap] = useState<Record<string, FileMeta>>({});
+
   const [mergeResult, setMergeResult] = useState<MergeResponse | null>(null);
-  const [uploadMeta, setUploadMeta] = useState<FileMeta[] | null>(null);
+  const [inputResult, setInputResult] = useState<ConvertResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [funnelGeom, setFunnelGeom] = useState<FunnelGeom | null>(null);
@@ -545,9 +548,23 @@ export function ConvertWorkspace() {
   const { copy: copyText } = useClipboard();
   const reducedMotion = useReducedMotion();
 
-  const sourceTokensTotal = mergeResult ? mergeResult.source_tokens : (result?.total_source_tokens ?? 0);
-  const targetTokensTotal = mergeResult ? mergeResult.target_tokens : (result?.total_target_tokens ?? 0);
-  const totalPercent = mergeResult ? mergeResult.percent : (result?.total_percent ?? 0);
+  const getFileKey = (file: File) => `${file.name}_${file.size}_${file.lastModified}`;
+
+  const convertedItems = files.map((f) => convertedMap[getFileKey(f)]).filter(Boolean);
+  const unconvertedFiles = files.filter((f) => !convertedMap[getFileKey(f)]);
+
+  const sourceTokensTotal = mergeResult
+    ? mergeResult.source_tokens
+    : convertedItems.reduce((sum, item) => sum + (item.source_tokens ?? 0), 0);
+  const targetTokensTotal = mergeResult
+    ? mergeResult.target_tokens
+    : convertedItems.reduce((sum, item) => sum + (item.target_tokens ?? 0), 0);
+  const totalPercent = mergeResult
+    ? mergeResult.percent
+    : sourceTokensTotal > 0
+      ? ((sourceTokensTotal - targetTokensTotal) / sourceTokensTotal) * 100
+      : 0;
+
   const mergeMode = mergeEnabled || Boolean(mergeResult);
 
   const mergedItem: ConvertItem | null = mergeResult
@@ -561,8 +578,6 @@ export function ConvertWorkspace() {
       }
     : null;
 
-  // In merge mode, measure each per-file flow bar to build the funnel geometry:
-  // X origins on the left (each row's y) curving toward a shared midpoint line.
   useLayoutEffect(() => {
     if (!mergeMode || files.length === 0) return;
     const container = rowsContainerRef.current;
@@ -581,14 +596,12 @@ export function ConvertWorkspace() {
         containerRect.top,
       height: containerRect.height,
     });
-  }, [mergeMode, files.length, mergeResult, running, uploadMeta]);
+  }, [mergeMode, files.length, mergeResult, running]);
 
   const { queue, setQueue, run } = useWorkspaceState(files, {
     onRun: async () => {
       setRunning(true);
       setError(null);
-      setResult(null);
-      setMergeResult(null);
       setFunnelGeom(null);
       try {
         if (activeMode === 'input' && inputUrl.trim()) {
@@ -599,8 +612,9 @@ export function ConvertWorkspace() {
               url: targetUrl,
               user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
             });
-            setSessionId(res.session_id || 'fetch-session');
-            setResult({
+            const sid = res.session_id || 'fetch-session';
+            setSessionId(sid);
+            setInputResult({
               results: [
                 {
                   file_id: 'fetch-1',
@@ -626,21 +640,20 @@ export function ConvertWorkspace() {
           return;
         }
 
-        let up: UploadResponse | null = null;
-        await upload(async (report) => {
-          up = await uploadFiles(
-            files,
-            files.map((f) => f.name),
-            undefined,
-            (loaded) => report.advance(0, loaded),
-            report.signal,
-          );
-        });
-        const sid = up!.session_id;
-        setSessionId(sid);
-        setUploadMeta(up.files);
-
         if (mergeEnabled) {
+          let up: UploadResponse | null = null;
+          await upload(async (report) => {
+            up = await uploadFiles(
+              files,
+              files.map((f) => f.name),
+              undefined,
+              (loaded) => report.advance(0, loaded),
+              report.signal,
+            );
+          });
+          const sid = up!.session_id;
+          setSessionId(sid);
+
           const mres = await merge({
             session_id: sid,
             file_ids: up!.files.map((f) => f.file_id),
@@ -659,6 +672,29 @@ export function ConvertWorkspace() {
           setMergeResult(mres);
           toast(copy.mergedNFiles(files.length), 'success');
         } else {
+          // Convert ONLY unconverted files (or re-convert all if none unconverted)
+          const targetFiles = unconvertedFiles.length > 0 ? unconvertedFiles : files;
+          if (targetFiles.length === 0) return;
+
+          let up: UploadResponse | null = null;
+          await upload(async (report) => {
+            up = await uploadFiles(
+              targetFiles,
+              targetFiles.map((f) => f.name),
+              undefined,
+              (loaded) => report.advance(0, loaded),
+              report.signal,
+            );
+          });
+          const sid = up!.session_id;
+          setSessionId(sid);
+
+          // Update upload metadata cache
+          up!.files.forEach((fileMeta, i) => {
+            const key = getFileKey(targetFiles[i]);
+            setUploadMetaMap((prev) => ({ ...prev, [key]: fileMeta }));
+          });
+
           const res = await convert({
             session_id: sid,
             file_ids: up!.files.map((f) => f.file_id),
@@ -672,16 +708,25 @@ export function ConvertWorkspace() {
                 : undefined,
             },
           });
-          setResult(res);
+
           subscribe(`convert-${sid}`, sid);
-          setQueue(
-            queue.map((item, i) => ({
-              ...item,
-              status: 'done' as const,
-              sourceTokens: res.results[i]?.source_tokens,
-              targetTokens: res.results[i]?.target_tokens,
-            })),
-          );
+
+          // Cache newly converted items incrementally
+          setConvertedMap((prev) => {
+            const nextMap = { ...prev };
+            res.results.forEach((item, idx) => {
+              const fileObj = targetFiles[idx];
+              if (fileObj) {
+                const key = getFileKey(fileObj);
+                nextMap[key] = {
+                  ...item,
+                  session_id: sid,
+                };
+              }
+            });
+            return nextMap;
+          });
+
           toast(copy.convertedNFiles(res.results.length), 'success');
         }
       } catch (e) {
@@ -692,50 +737,62 @@ export function ConvertWorkspace() {
     },
   });
 
-  const resetOutputs = () => {
-    setUploadMeta(null);
-    setResult(null);
-    setMergeResult(null);
-    setFunnelGeom(null);
-    setError(null);
-  };
-
   const onFiles = (next: File[]) => {
-    const existing = new Set(files.map((f) => f.name));
-    const appended = next.filter((f) => !existing.has(f.name));
+    const existing = new Set(files.map((f) => getFileKey(f)));
+    const appended = next.filter((f) => !existing.has(getFileKey(f)));
     if (appended.length === 0) return;
     const merged = [...files, ...appended];
     setFiles(merged);
     setQueue(merged);
-    resetOutputs();
+    // Preserves existing convertedMap so previously converted files stay ready!
   };
 
   const onRemoveFile = (index: number) => {
-    const next = files.filter((_, i) => i !== index);
-    setFiles(next);
-    setQueue(next);
-    resetOutputs();
+    const fileToRemove = files[index];
+    const nextFiles = files.filter((_, i) => i !== index);
+    setFiles(nextFiles);
+    setQueue(nextFiles);
+
+    if (fileToRemove) {
+      const key = getFileKey(fileToRemove);
+      setConvertedMap((prev) => {
+        const nextMap = { ...prev };
+        delete nextMap[key];
+        return nextMap;
+      });
+      setUploadMetaMap((prev) => {
+        const nextMap = { ...prev };
+        delete nextMap[key];
+        return nextMap;
+      });
+    }
   };
 
   const handleCopyAll = async () => {
-    if (!sessionId) return;
-    const items = result?.results || [];
-    if (items.length === 0 && !mergeResult) return;
-    try {
-      if (mergeResult) {
+    if (mergeResult && sessionId) {
+      try {
         const res = await fetch(downloadUrl(sessionId, mergeResult.output_file_id));
         const text = await res.text();
         await copyText(text);
-      } else {
-        const texts = await Promise.all(
-          items.map(async (item) => {
-            if (!item.output_file_id) return '';
-            const res = await fetch(downloadUrl(sessionId, item.output_file_id));
-            return res.text();
-          }),
-        );
-        await copyText(texts.filter(Boolean).join('\n\n---\n\n'));
+        toast('Merged Markdown copied to clipboard', 'success');
+      } catch {
+        toast(copy.clipBlocked, 'error');
       }
+      return;
+    }
+
+    if (convertedItems.length === 0) return;
+
+    try {
+      const texts = await Promise.all(
+        convertedItems.map(async (item) => {
+          const sid = item.session_id || sessionId;
+          if (!item.output_file_id || !sid) return '';
+          const res = await fetch(downloadUrl(sid, item.output_file_id));
+          return res.text();
+        }),
+      );
+      await copyText(texts.filter(Boolean).join('\n\n---\n\n'));
       toast('All converted Markdown copied to clipboard', 'success');
     } catch {
       toast(copy.clipBlocked, 'error');
@@ -744,12 +801,20 @@ export function ConvertWorkspace() {
 
   const handleModeChange = (mode: 'upload' | 'input') => {
     setActiveMode(mode);
-    setResult(null);
-    setMergeResult(null);
-    setFunnelGeom(null);
-    setSessionId(null);
-    setUploadMeta(null);
+    setInputResult(null);
     setError(null);
+  };
+
+  const getButtonLabel = () => {
+    if (activeMode === 'input') return 'Fetch & Convert';
+    if (mergeEnabled) return 'Merge All Files';
+    if (unconvertedFiles.length > 0 && convertedItems.length > 0) {
+      return `Convert (${unconvertedFiles.length} new)`;
+    }
+    if (unconvertedFiles.length === 0 && convertedItems.length > 0) {
+      return 'Re-convert All';
+    }
+    return copy.convertIdle;
   };
 
   return (
@@ -794,7 +859,7 @@ export function ConvertWorkspace() {
             running
           }
           loading={running}
-          label={activeMode === 'input' ? 'Fetch & Convert' : copy.convertIdle}
+          label={getButtonLabel()}
         />
       </div>
 
@@ -809,15 +874,15 @@ export function ConvertWorkspace() {
           </div>
 
           {files.map((file, i) => {
-            const queueItem = queue[i];
-            const resultItem = result?.results[i];
-            const isConverting =
-              running || queueItem?.status === 'converting' || queueItem?.status === 'uploading';
+            const key = getFileKey(file);
+            const resultItem = convertedMap[key];
+            const meta = uploadMetaMap[key];
+            const isConverting = running && !resultItem && (unconvertedFiles.includes(file) || mergeEnabled);
             const isDone = Boolean(resultItem || mergeResult);
 
             return (
               <div
-                key={queueItem?.id ?? file.name ?? i}
+                key={key}
                 className={cn(
                   'relative grid items-center gap-2 sm:gap-4 rounded-card bg-card/60 p-3 sm:p-4 border border-border/60 hover:border-border transition-colors',
                   mergeMode ? 'grid-cols-[1fr_3fr]' : 'grid-cols-[1fr_3fr_1fr]',
@@ -851,17 +916,14 @@ export function ConvertWorkspace() {
                     <span className="font-mono text-[11px] text-muted-foreground">
                       {formatBytes(file.size)}
                     </span>
-                    {uploadMeta?.[i]?.source_tokens ? (
+                    {meta?.source_tokens ? (
                       <span className="font-mono text-[11px] text-muted-foreground">
-                        {formatTokens(uploadMeta[i].source_tokens)} tokens
+                        {formatTokens(meta.source_tokens)} tokens
                       </span>
                     ) : null}
                   </div>
                 </div>
 
-                {/* Center: in merge mode the converging funnel (drawn once over
-                    the whole rows container) replaces the straight flow bars;
-                    this spacer anchors the row's start position for measurement. */}
                 {mergeMode ? (
                   <div
                     ref={(el) => {
@@ -880,7 +942,7 @@ export function ConvertWorkspace() {
                   />
                 )}
 
-                {/* Right Card: Output Converted Result — hidden in merge mode (single merged file, no per-file outputs) */}
+                {/* Right Card: Output Converted Result */}
                 {!mergeMode ? (
                   <div className="flex items-center justify-between gap-2 min-w-0 min-h-[52px]">
                     {resultItem ? (
@@ -899,11 +961,11 @@ export function ConvertWorkspace() {
                           ) : null}
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">
-                          <ResultClipButton file={resultItem} sessionId={sessionId!} />
+                          <ResultClipButton file={resultItem} sessionId={resultItem.session_id || sessionId!} />
                           {resultItem.output_file_id ? (
                             <>
                               <a
-                                href={downloadUrl(sessionId!, resultItem.output_file_id)}
+                                href={downloadUrl(resultItem.session_id || sessionId!, resultItem.output_file_id)}
                                 download
                                 className="inline-flex items-center gap-1 rounded-chip bg-emerald-500/20 px-2 py-1 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/30 transition-colors border border-emerald-500/30"
                               >
@@ -911,7 +973,7 @@ export function ConvertWorkspace() {
                               </a>
                               <MarkdownPreviewButton
                                 output={{
-                                  sessionId: sessionId!,
+                                  sessionId: resultItem.session_id || sessionId!,
                                   fileId: resultItem.output_file_id,
                                   name: resultItem.output_name ?? resultItem.name,
                                 }}
@@ -935,7 +997,6 @@ export function ConvertWorkspace() {
             );
           })}
 
-          {/* Merge funnel + merged output overlay — both inside the positioned rows container */}
           {funnelGeom && mergeMode ? (
             <MergeFunnel
               geom={funnelGeom}
@@ -943,28 +1004,26 @@ export function ConvertWorkspace() {
               reduced={reducedMotion}
             />
           ) : null}
-
-
         </div>
       ) : null}
 
       {/* Input mode result row */}
-      {activeMode === 'input' && result && sessionId ? (
+      {activeMode === 'input' && inputResult && sessionId ? (
         <div className="flex items-center justify-between gap-4 rounded-card bg-card/60 p-4 border border-border/60">
           <div className="flex flex-col min-w-0">
             <span className="truncate font-mono text-sm font-semibold text-foreground">
-              {(result.results[0]?.output_name ?? result.results[0]?.name) || inputUrl}
+              {(inputResult.results[0]?.output_name ?? inputResult.results[0]?.name) || inputUrl}
             </span>
             <span className="font-mono text-xs text-emerald-400 font-semibold">
-              {formatTokens(result.results[0]?.target_tokens ?? 0)} tokens
+              {formatTokens(inputResult.results[0]?.target_tokens ?? 0)} tokens
             </span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <ResultClipButton file={result.results[0]} sessionId={sessionId} />
-            {result.results[0]?.output_file_id ? (
+            <ResultClipButton file={inputResult.results[0]} sessionId={sessionId} />
+            {inputResult.results[0]?.output_file_id ? (
               <>
                 <a
-                  href={downloadUrl(sessionId, result.results[0].output_file_id)}
+                  href={downloadUrl(sessionId, inputResult.results[0].output_file_id)}
                   download
                   className="inline-flex items-center gap-1.5 rounded-chip bg-emerald-500/20 px-3 py-1.5 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/30 transition-colors border border-emerald-500/30"
                 >
@@ -973,8 +1032,8 @@ export function ConvertWorkspace() {
                 <MarkdownPreviewButton
                   output={{
                     sessionId,
-                    fileId: result.results[0].output_file_id,
-                    name: result.results[0].output_name ?? result.results[0].name,
+                    fileId: inputResult.results[0].output_file_id,
+                    name: inputResult.results[0].output_name ?? inputResult.results[0].name,
                   }}
                 />
               </>
@@ -983,7 +1042,7 @@ export function ConvertWorkspace() {
         </div>
       ) : null}
 
-      {/* Polymorphic Bottom Slot: LoadingState while processing, result pill when complete (Upload mode only) */}
+      {/* Bottom Compression Summary Pill */}
       {running ? (
         activeMode === 'upload' ? <LoadingState label={copy.convertingBusy} spinner={false} /> : null
       ) : activeMode === 'upload' && mergeResult && sessionId ? (
@@ -1022,12 +1081,12 @@ export function ConvertWorkspace() {
             </a>
           </div>
         </div>
-      ) : activeMode === 'upload' && result && !mergeResult && sessionId ? (
+      ) : activeMode === 'upload' && convertedItems.length > 0 && !mergeResult ? (
         <TotalCompressionPill
           sourceTokens={sourceTokensTotal}
           targetTokens={targetTokensTotal}
           percent={totalPercent}
-          sessionId={sessionId}
+          sessionId={sessionId || convertedItems[0]?.session_id || ''}
           isMerge={false}
           onCopyAll={handleCopyAll}
         />

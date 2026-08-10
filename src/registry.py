@@ -12,6 +12,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Optional, Sequence
 
+from .detector import FormatDetector
+
 
 class UnsupportedFormatError(Exception):
     """Raised when no handler can convert a given file."""
@@ -40,6 +42,7 @@ class Registry:
 
     def __init__(self) -> None:
         self._handlers: dict[str, Converter] = {}
+        self._detector = FormatDetector()
 
     def register(self, converter: Converter) -> None:
         """Register a converter for all of its declared extensions."""
@@ -47,8 +50,20 @@ class Registry:
             self._handlers[ext] = converter
 
     def get_handler(self, path: Path) -> Optional[Converter]:
-        """Return the handler for ``path``'s suffix, or ``None`` if unknown."""
-        return self._handlers.get(path.suffix.lower())
+        """Return the handler for ``path``'s suffix, or ``None`` if unknown.
+
+        The extension is authoritative; the magic-byte detector only fires as a
+        fallback when the extension is unknown (e.g. mislabeled or extensionless
+        files).
+        """
+        ext = path.suffix.lower()
+        handler = self._handlers.get(ext)
+        if handler is not None:
+            return handler
+        detected = self._detector.detect(path)
+        if detected:
+            return self._handlers.get(detected)
+        return None
 
     def extensions(self) -> frozenset[str]:
         """Union of all registered extensions."""

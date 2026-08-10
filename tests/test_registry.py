@@ -63,3 +63,12 @@ def test_default_registry_has_builtin_handlers() -> None:
     assert ".docx" in exts
     assert ".html" in exts
     assert ".json" in exts
+
+
+def test_default_registry_has_new_formats() -> None:
+    from src.registry import DEFAULT_REGISTRY
+
+    exts = DEFAULT_REGISTRY.extensions()
+    for ext in (".docx", ".pptx", ".xlsx", ".odt", ".ods", ".odp",
+                ".rtf", ".msg", ".eml", ".azw3", ".azw4", ".srt", ".vtt", ".tex"):
+        assert ext in exts

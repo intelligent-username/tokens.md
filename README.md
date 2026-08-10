@@ -114,7 +114,11 @@ This launches the backend API on `http://127.0.0.1:8642` and opens the browser i
 
 ## Supported Formats
 
-PDF, EPUB, MOBI, XPS, FB2, CBZ, SVG, images (PNG/JPG/TIF/GIF/BMP), TXT, DOCX, PPTX, XLSX, HTML/HTM, JSON, XML, CSV, YAML, TOML, INI, LOG, and whole repositories via `tmd repo`.
+PDF, EPUB, MOBI, XPS, FB2, CBZ, SVG, images (PNG/JPG/TIF/GIF/BMP), TXT, DOCX, PPTX, XLSX, ODT/ODS/ODP (LibreOffice), RTF, Outlook MSG, EML, AZW3/AZW4 (Kindle), SRT/VTT subtitles, LaTeX (TEX), HTML/HTM, JSON, XML, CSV, YAML, TOML, INI, LOG, and whole repositories via `tmd repo`.
+
+Equations are preserved as LaTeX wherever the source encodes them directly (DOCX/PPTX via OMML, ODF via MathML, and LaTeX source verbatim). Formats that rasterize math (PDF, images) skip math fidelity by design.
+
+Deliberately **not** supported (no robust pure-Python parser): KFX (Kindle's proprietary format), DJVU, Apple iWork (PAGES/NUMBERS/KEY), and legacy binary Office (DOC/XLS/PPT).
 
 ## Development
 

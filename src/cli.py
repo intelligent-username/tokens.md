@@ -211,7 +211,7 @@ def clip(
 ) -> None:
     """Convert on the fly and copy Markdown to the clipboard."""
     from .clipboard import copy_to_clipboard
-    from .handlers.pymupdf import pdf_to_markdown
+    from .merger import resolve_to_markdown
 
     source_path = Path(source)
     if source_path.is_file():
@@ -225,11 +225,18 @@ def clip(
     kwargs = _convert_kwargs(strip_headers_footers, write_images, image_path, pages)
     parts: list[str] = []
     for path in paths:
-        parts.append(pdf_to_markdown(path, **kwargs))
+        try:
+            parts.append(resolve_to_markdown(path, **kwargs))
+        except UnsupportedFormatError as exc:
+            console.print(f"[yellow]Skipped[/yellow] {path.name}: {exc}")
+            continue
         if write:
             output_dir = Path(output)
             output_dir.mkdir(parents=True, exist_ok=True)
             (output_dir / f"{path.stem}.md").write_text(parts[-1], encoding="utf-8")
+
+    if not parts:
+        raise typer.Exit(code=1)
 
     combined = "\n\n".join(parts)
     copy_to_clipboard(combined)

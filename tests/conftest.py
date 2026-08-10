@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shutil
 import tempfile
 import zipfile
 from pathlib import Path
@@ -57,17 +58,112 @@ def sample_md(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def sample_docx(tmp_path: Path) -> Path:
+    """Regenerated with python-docx; keeps the strings the existing test asserts."""
+    from docx import Document
+
+    doc = Document()
+    doc.add_paragraph("Dear friend")
+    doc.add_paragraph("This is a letter.")
     path = tmp_path / "letter.docx"
-    document = (
-        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
-        '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
-        "<w:body>"
-        "<w:p><w:r><w:t>Dear friend</w:t></w:r></w:p>"
-        "<w:p><w:r><w:t>This is a letter.</w:t></w:r></w:p>"
-        "</w:body></w:document>"
+    doc.save(path)
+    return path
+
+
+@pytest.fixture
+def sample_docx_headed(tmp_path: Path) -> Path:
+    """A DOCX with a real Heading 1 style, for heading-inference tests."""
+    from docx import Document
+
+    doc = Document()
+    doc.add_heading("Chapter One", level=1)
+    doc.add_paragraph("Hello from python-docx.")
+    path = tmp_path / "headed.docx"
+    doc.save(path)
+    return path
+
+
+@pytest.fixture
+def sample_pptx(tmp_path: Path) -> Path:
+    """A minimal PPTX with one slide, a title, and body text."""
+    from pptx import Presentation
+
+    prs = Presentation()
+    slide = prs.slides.add_slide(prs.slide_layouts[0])
+    slide.shapes.title.text = "Hello slides"
+    slide.placeholders[1].text = "Body text here."
+    path = tmp_path / "deck.pptx"
+    prs.save(path)
+    return path
+
+
+@pytest.fixture
+def sample_xlsx(tmp_path: Path) -> Path:
+    """A minimal XLSX with a header row and one data row."""
+    from openpyxl import Workbook
+
+    wb = Workbook()
+    ws = wb.active
+    ws.append(["name", "age"])
+    ws.append(["alice", 30])
+    path = tmp_path / "data.xlsx"
+    wb.save(path)
+    return path
+
+
+@pytest.fixture
+def sample_odt(tmp_path: Path) -> Path:
+    """A minimal ODT with one paragraph."""
+    from odf.opendocument import OpenDocumentText
+    from odf.teletype import addTextToElement
+    from odf.text import P
+
+    doc = OpenDocumentText()
+    p = P()
+    addTextToElement(p, "Hello from ODF")
+    doc.text.addElement(p)
+    path = tmp_path / "sample.odt"
+    doc.save(path)
+    return path
+
+
+@pytest.fixture
+def sample_rtf(tmp_path: Path) -> Path:
+    path = tmp_path / "sample.rtf"
+    path.write_text(r"{\rtf1\ansi Hello {\b bold} RTF.}", encoding="utf-8")
+    return path
+
+
+@pytest.fixture
+def sample_eml(tmp_path: Path) -> Path:
+    path = tmp_path / "sample.eml"
+    path.write_text(
+        "From: a@example.com\nTo: b@example.com\nSubject: Hello\n\nBody text.\n",
+        encoding="utf-8",
     )
-    with zipfile.ZipFile(path, "w") as zf:
-        zf.writestr("word/document.xml", document)
+    return path
+
+
+@pytest.fixture
+def sample_srt(tmp_path: Path) -> Path:
+    path = tmp_path / "sample.srt"
+    path.write_text("1\n00:00:01,000 --> 00:00:03,000\nHello subtitle\n", encoding="utf-8")
+    return path
+
+
+@pytest.fixture
+def sample_tex(tmp_path: Path) -> Path:
+    path = tmp_path / "sample.tex"
+    path.write_text(
+        "\\section{Introduction}\nSome body text here.\n", encoding="utf-8"
+    )
+    return path
+
+
+@pytest.fixture
+def sample_azw4(tmp_path: Path, sample_pdf: Path) -> Path:
+    """AZW4 is a PDF wrapper; a copy of sample_pdf with a .azw4 suffix."""
+    path = tmp_path / "sample.azw4"
+    shutil.copyfile(sample_pdf, path)
     return path
 
 
@@ -97,6 +193,60 @@ def sample_html(tmp_path: Path) -> Path:
     path = tmp_path / "page.html"
     path.write_text(
         "<html><body><article><h1>Title</h1><p>Body text here.</p></article></body></html>",
+        encoding="utf-8",
+    )
+    return path
+
+
+# --- Math fixtures ---------------------------------------------------------
+
+
+def _inject_docx_math(tmp_path: Path, omml: str) -> Path:
+    """Build a docx with python-docx, then splice OMML into word/document.xml.
+
+    Rewrites the package preserving every other part ([Content_Types].xml,
+    rels, styles) so python-docx can still open the result.
+    """
+    from docx import Document
+
+    doc = Document()
+    doc.add_paragraph("Solve for x:")
+    path = tmp_path / "math.docx"
+    doc.save(path)
+
+    tmp = path.with_suffix(".tmp.docx")
+    with zipfile.ZipFile(path) as zin, zipfile.ZipFile(tmp, "w") as zout:
+        for item in zin.infolist():
+            data = zin.read(item.filename)
+            if item.filename == "word/document.xml":
+                xml = data.decode("utf-8")
+                omml_xml = (
+                    '<w:p><m:oMathPara xmlns:m="http://schemas.openxmlformats.org/'
+                    f'officeDocument/2006/math">{omml}</m:oMathPara></w:p>'
+                )
+                xml = xml.replace("<w:p>", omml_xml, 1)
+                data = xml.encode("utf-8")
+            zout.writestr(item, data)
+    shutil.move(tmp, path)
+    return path
+
+
+@pytest.fixture
+def sample_docx_math(tmp_path: Path) -> Path:
+    # x^2 + 1 as OMML: <m:sSup><m:e><m:r><m:t>x</m:t></m:r></m:e><m:sup><m:r><m:t>2</m:t></m:r></m:sup></m:sSup>
+    omml = (
+        '<m:sSup><m:e><m:r><m:t>x</m:t></m:r></m:e>'
+        '<m:sup><m:r><m:t>2</m:t></m:r></m:sup></m:sSup>'
+        '<m:r><m:t>+1</m:t></m:r>'
+    )
+    return _inject_docx_math(tmp_path, omml)
+
+
+@pytest.fixture
+def sample_tex_math(tmp_path: Path) -> Path:
+    path = tmp_path / "math.tex"
+    path.write_text(
+        "\\section{Derivation}\nThe energy is $E = mc^2$.\n\\begin{equation}\n\\int_0^1 x^2 dx\n\\end{equation}\n",
         encoding="utf-8",
     )
     return path
