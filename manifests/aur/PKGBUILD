@@ -1,6 +1,6 @@
 # Maintainer: intelligent-username
 pkgname=tmd
-pkgver=0.0.4
+pkgver=0.0.5
 pkgrel=1
 pkgdesc="Convert files to token-efficient Markdown for LLM prompts"
 arch=('x86_64' 'aarch64')
