@@ -143,6 +143,27 @@ ruff check .
 mypy src
 ```
 
+### Testing PyPI Releases in Isolated Docker Sandbox
+
+To test installed PyPI releases in an ephemeral, 100% isolated environment using `pipx` via Docker:
+
+```bash
+# Launch disposable Python container
+docker run --rm -it python:3.12-slim bash
+
+# Inside the container shell:
+pip install pipx
+pipx install tokens-md
+pipx ensurepath
+export PATH="$HOME/.local/bin:$PATH"
+
+# Test the tmd executable
+tmd --version
+tmd --help
+```
+Exiting the shell (`exit`) automatically destroys the container and leaves zero footprint on your system.
+
+
 ## Documentation
 
 - [`docs/USAGE.md`](docs/USAGE.md): full usage guide for every `tmd` subcommand.
