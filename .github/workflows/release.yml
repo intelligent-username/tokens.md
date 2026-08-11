@@ -9,9 +9,37 @@ permissions:
   id-token: write  # for PyPI trusted publishing
 
 jobs:
+  # ── Pre-flight Version Verification ───────────────────────────────────────
+  verify-version:
+    name: Verify Version Tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check version alignment & sync manifests
+        run: |
+          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          PYPROJECT_VERSION=$(python -c "import re, pathlib; print(re.search(r'version\s*=\s*[\"\\\']([^\"\\\']+)[\"\\\']', pathlib.Path('pyproject.toml').read_text()).group(1))")
+          
+          echo "Git Tag Version: $TAG_VERSION"
+          echo "pyproject.toml Version: $PYPROJECT_VERSION"
+          
+          if [ "$TAG_VERSION" != "$PYPROJECT_VERSION" ]; then
+            echo "::warning title=Version Mismatch::Git tag version ($TAG_VERSION) does not match pyproject.toml version ($PYPROJECT_VERSION)!"
+          else
+            echo "Version tag and pyproject.toml are aligned."
+          fi
+
+          python scripts/sync_version.py
+
   # ── Binary builds ────────────────────────────────────────────────────────────
   build:
     name: Build (${{ matrix.os }} / ${{ matrix.arch }})
+    needs: verify-version
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -49,7 +77,7 @@ jobs:
           python-version: "3.12"
           cache: pip
 
-      # Setup sccache compiler cache (works seamlessly on Linux, macOS, and Windows)
+      # Setup sccache compiler cache
       - name: Setup sccache
         uses: mozilla/sccache-action@v0.0.8
 

@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://aka.ms/winget-manifest.singleton.1.6.0.schema.json
 
 PackageIdentifier: intelligent-username.tmd
-PackageVersion: 0.2.0
+PackageVersion: 0.0.4
 PackageName: tmd
 Publisher: intelligent-username
 PublisherUrl: https://github.com/intelligent-username
@@ -23,7 +23,7 @@ Tags:
   - converter
 Installers:
   - Architecture: x64
-    InstallerUrl: https://github.com/intelligent-username/tokens.md/releases/download/v0.2.0/tmd-windows-x64.exe
+    InstallerUrl: https://github.com/intelligent-username/tokens.md/releases/download/v0.0.4/tmd-windows-x64.exe
     InstallerSha256: REPLACE_WITH_SHA256_WINDOWS_X64
     InstallerType: portable
     Commands:
