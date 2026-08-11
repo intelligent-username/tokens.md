@@ -10,6 +10,17 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "tokens.md" }]
+classifiers = [
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Text Processing :: Markup :: Markdown",
+    "Topic :: Utilities",
+]
 dependencies = [
     "pymupdf4llm",
     "typer>=0.12",
@@ -68,3 +79,13 @@ strict = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+[tool.nuitka]
+onefile = true
+output-filename = "tmd"
+include-package = ["src", "backend"]
+follow-imports = true
+assume-yes-for-downloads = true
+windows-icon-from-ico = "assets/tmd.ico"
+macos-app-name = "tmd"
+linux-onefile-icon = "assets/tmd.png"

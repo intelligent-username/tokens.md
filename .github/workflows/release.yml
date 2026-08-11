@@ -1,0 +1,151 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  id-token: write  # for PyPI trusted publishing
+
+jobs:
+  # ── Binary builds ────────────────────────────────────────────────────────────
+  build:
+    name: Build (${{ matrix.os }} / ${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-22.04
+            os: linux
+            arch: x64
+            artifact: tmd-linux-x64
+            exe: tmd-linux-x64
+
+          - runner: ubuntu-24.04-arm
+            os: linux
+            arch: arm64
+            artifact: tmd-linux-arm64
+            exe: tmd-linux-arm64
+
+          - runner: macos-13        # Intel
+            os: macos
+            arch: x64
+            artifact: tmd-macos-x64
+            exe: tmd-macos-x64
+
+          - runner: macos-latest    # Apple Silicon
+            os: macos
+            arch: arm64
+            artifact: tmd-macos-arm64
+            exe: tmd-macos-arm64
+
+          - runner: windows-latest
+            os: windows
+            arch: x64
+            artifact: tmd-windows-x64.exe
+            exe: tmd-windows-x64.exe
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install nuitka ordered-set zstandard pillow -e .
+
+      # Convert PNG → ICO on non-Windows (Nuitka only reads .ico on Windows anyway)
+      - name: Build binary (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          python -m nuitka \
+            --onefile \
+            --output-filename=${{ matrix.exe }} \
+            --include-package=src \
+            --include-package=backend \
+            --follow-imports \
+            --assume-yes-for-downloads \
+            --linux-onefile-icon=assets/tmd.png \
+            src/cli.py
+
+      - name: Build binary (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          python -m nuitka `
+            --onefile `
+            --output-filename=${{ matrix.exe }} `
+            --include-package=src `
+            --include-package=backend `
+            --follow-imports `
+            --assume-yes-for-downloads `
+            --windows-icon-from-ico=assets/tmd.ico `
+            src/cli.py
+
+      - name: Smoke test
+        shell: bash
+        run: |
+          ./${{ matrix.exe }} --version
+          ./${{ matrix.exe }} --help
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.exe }}
+
+  # ── GitHub Release ────────────────────────────────────────────────────────────
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+          merge-multiple: true
+
+      - name: Generate checksums
+        run: |
+          cd dist
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+
+  # ── PyPI publish ─────────────────────────────────────────────────────────────
+  pypi-publish:
+    name: Publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Build sdist and wheel
+        run: |
+          pip install build
+          python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
