@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.singleton.1.6.0.schema.json
+
+PackageIdentifier: intelligent-username.tmd
+PackageVersion: 0.2.0
+PackageName: tmd
+Publisher: intelligent-username
+PublisherUrl: https://github.com/intelligent-username
+License: AGPL-3.0-only
+LicenseUrl: https://github.com/intelligent-username/tokens.md/blob/main/LICENSE
+ShortDescription: Convert files to token-efficient Markdown for LLM prompts
+Description: >-
+  tmd converts PDF, DOCX, PPTX, XLSX, ODT, EPUB, MOBI, HTML, JSON, CSV,
+  LaTeX, e-mail, subtitles, Jupyter notebooks, and whole code repositories
+  into clean, token-efficient Markdown for LLM context windows.
+  Includes token counting, budget pruning, hot-folder watching, and a web UI.
+Homepage: https://github.com/intelligent-username/tokens.md
+Tags:
+  - markdown
+  - llm
+  - tokens
+  - cli
+  - pdf
+  - converter
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/intelligent-username/tokens.md/releases/download/v0.2.0/tmd-windows-x64.exe
+    InstallerSha256: REPLACE_WITH_SHA256_WINDOWS_X64
+    InstallerType: portable
+    Commands:
+      - tmd
+ManifestType: singleton
+ManifestVersion: 1.6.0

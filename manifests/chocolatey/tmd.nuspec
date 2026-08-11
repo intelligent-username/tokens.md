@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>tmd</id>
+    <version>0.2.0</version>
+    <title>tmd</title>
+    <authors>intelligent-username</authors>
+    <owners>intelligent-username</owners>
+    <description>Convert files to token-efficient Markdown for LLM prompts. Supports PDF, DOCX, PPTX, XLSX, ODT, EPUB, MOBI, HTML, JSON, CSV, and many more formats.</description>
+    <projectUrl>https://github.com/intelligent-username/tokens.md</projectUrl>
+    <licenseUrl>https://github.com/intelligent-username/tokens.md/blob/main/LICENSE</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <tags>markdown llm tokens cli pdf docx converter</tags>
+    <releaseNotes>https://github.com/intelligent-username/tokens.md/releases/tag/v0.2.0</releaseNotes>
+    <packageTypes>
+      <packageType name="Portable" />
+    </packageTypes>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>

@@ -1,0 +1,35 @@
+name: tmd
+version: "0.2.0"
+summary: Convert files to token-efficient Markdown for LLM prompts
+description: |
+  tmd converts PDF, DOCX, PPTX, XLSX, ODT, EPUB, MOBI, HTML, JSON, CSV,
+  LaTeX, e-mail, subtitles, Jupyter notebooks, and whole code repositories
+  into clean, token-efficient Markdown for LLM context windows.
+
+  Features: batch conversion, clipboard copy, hot-folder watching,
+  web page fetching, repo manifests, token budgeting, and a local web UI.
+grade: stable
+confinement: strict
+base: core22
+license: AGPL-3.0
+
+apps:
+  tmd:
+    command: bin/tmd
+    plugs:
+      - home
+      - removable-media
+      - network
+
+parts:
+  tmd:
+    plugin: dump
+    source: https://github.com/intelligent-username/tokens.md/releases/download/v0.2.0/tmd-linux-x64
+    source-type: file
+    organize:
+      tmd-linux-x64: bin/tmd
+    stage:
+      - bin/tmd
+    override-build: |
+      craftctl default
+      chmod +x $CRAFT_PART_INSTALL/bin/tmd

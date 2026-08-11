@@ -8,7 +8,7 @@ version = "0.2.0"
 description = "Convert files to token-efficient Markdown for LLM prompts."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = { text = "AGPL-3." }
 authors = [{ name = "tokens.md" }]
 classifiers = [
     "Environment :: Console",
