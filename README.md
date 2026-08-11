@@ -1,6 +1,6 @@
 # tokens.md
 
-![The Vision of the Colosseum. The last martyr by José Benlliure y Gil - 1885](docs/imgs/cover.jpg)
+![The Vision of the Colosseum. The last martyr by José Benlliure y Gil - 1885](assets/rm/cover.jpg)
 
 Tokens.md is my tool for saving tokens when speaking to chatbots by converting files en-masse to Markdown. It turns PDFs, Office documents, e-books, structured data, HTML, web pages, and whole code repositories into clean, token-efficient Markdown you can paste straight into an LLM.
 
@@ -68,7 +68,7 @@ uv pip install -r requirements.txt
 
 ## Running
 
-![Quick lil demo](docs/imgs/example.webp)
+![Quick lil demo](assets/rm/example.webp)
 
 You can run `tokens.md` in three distinct ways depending on your workflow preference. Here they are, ordered from easiest to hardest to use.
 
