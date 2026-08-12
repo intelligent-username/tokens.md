@@ -1,0 +1,3 @@
+Equation 1: $E = mc^2$
+Equation 2: $$\frac{a}{b} = \sqrt[3]{x_1 + x_2}$$
+Equation 3: \int_0^1 x^2 dx = \frac{1}{3}

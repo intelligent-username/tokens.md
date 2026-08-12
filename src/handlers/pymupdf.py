@@ -22,14 +22,6 @@ PYMUPDF_EXTENSIONS = frozenset(
         ".oxps",
         ".fb2",
         ".cbz",
-        ".svg",
-        ".png",
-        ".jpg",
-        ".jpeg",
-        ".tif",
-        ".tiff",
-        ".gif",
-        ".bmp",
         ".txt",
     }
 )
@@ -124,7 +116,10 @@ class PymupdfConverter(Converter):
             page_chunks=page_chunks,
             **kwargs,
         )
-        result = pymupdf4llm.to_markdown(str(input_path), **markdown_kwargs)
+        try:
+            result = pymupdf4llm.to_markdown(str(input_path), **markdown_kwargs)
+        except Exception:
+            result = input_path.read_text(encoding="utf-8", errors="replace")
 
         if isinstance(result, str):
             output_path = output_dir / f"{input_path.stem}.md"

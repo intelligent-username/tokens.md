@@ -98,7 +98,6 @@ def convert(
     loc: Optional[str] = typer.Option(
         None,
         "--loc",
-        flag_value="",
         help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs).",
     ),
     recursive: bool = typer.Option(False, "-r", "--recursive", help="Recurse into subdirectories."),
@@ -134,7 +133,6 @@ def clip(
     loc: Optional[str] = typer.Option(
         None,
         "--loc",
-        flag_value="",
         help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs).",
     ),
     strip_headers_footers: bool = typer.Option(False, "--strip-headers-footers"),
@@ -184,7 +182,6 @@ def watch(
     loc: Optional[str] = typer.Option(
         None,
         "--loc",
-        flag_value="",
         help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs).",
     ),
     poll_interval: float = typer.Option(DEFAULT_POLL_INTERVAL, "--poll-interval", help="Stability wait in seconds."),
@@ -219,7 +216,6 @@ def fetch(
     loc: Optional[str] = typer.Option(
         None,
         "--loc",
-        flag_value="",
         help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs).",
     ),
 ) -> None:
@@ -242,7 +238,6 @@ def repo(
     loc: Optional[str] = typer.Option(
         None,
         "--loc",
-        flag_value="",
         help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs).",
     ),
     exclude: List[str] = typer.Option([], "--exclude", help="Extra gitignore patterns."),
@@ -260,7 +255,6 @@ def merge(
     loc: Optional[str] = typer.Option(
         None,
         "--loc",
-        flag_value="",
         help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs).",
     ),
     recursive: bool = typer.Option(False, "-r", "--recursive"),
@@ -320,7 +314,6 @@ def delta(
     loc: Optional[str] = typer.Option(
         None,
         "--loc",
-        flag_value="",
         help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs).",
     ),
     encoding: str = typer.Option(DEFAULT_ENCODING, "--encoding"),

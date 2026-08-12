@@ -1,0 +1,3 @@
+Record #7777777: Amount = $33,333.33 | Token Count = 4291 | Latency = 12.4ms
+Item #99012: Quantity = 852 | Price = $19.99 | Total = $17,031.48
+Order #77412: Status = PROCESSED | Date = 2026-08-12 | Weight = 3.5kg

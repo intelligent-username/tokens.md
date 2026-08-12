@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import tarfile
 import tempfile
 import zipfile
@@ -36,9 +37,30 @@ class ArchiveConverter(Converter):
                 if suffix == ".zip":
                     with zipfile.ZipFile(input_path, "r") as zf:
                         zf.extractall(extract_dir)
-                elif suffix in {".tar", ".gz", ".tgz", ".bz2"}:
+                elif suffix in {".tar", ".tgz"}:
                     with tarfile.open(input_path, "r:*") as tf:
-                        tf.extractall(extract_dir)
+                        if hasattr(tarfile, "data_filter"):
+                            tf.extractall(extract_dir, filter="data")
+                        else:
+                            tf.extractall(extract_dir)
+                elif suffix == ".gz":
+                    import gzip
+
+                    out_name = input_path.stem if input_path.stem != input_path.name else f"{input_path.stem}.txt"
+                    if not Path(out_name).suffix:
+                        out_name = f"{out_name}.txt"
+                    out_file = extract_dir / out_name
+                    with gzip.open(input_path, "rb") as f_in, open(out_file, "wb") as f_out:
+                        shutil.copyfileobj(f_in, f_out)
+                elif suffix == ".bz2":
+                    import bz2
+
+                    out_name = input_path.stem if input_path.stem != input_path.name else f"{input_path.stem}.txt"
+                    if not Path(out_name).suffix:
+                        out_name = f"{out_name}.txt"
+                    out_file = extract_dir / out_name
+                    with bz2.open(input_path, "rb") as f_in, open(out_file, "wb") as f_out:
+                        shutil.copyfileobj(f_in, f_out)
                 else:
                     raise UnsupportedFormatError(f"Unsupported archive format '{suffix}'")
             except Exception as exc:

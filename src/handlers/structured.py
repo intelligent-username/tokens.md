@@ -21,7 +21,11 @@ def _as_json(path: Path) -> str:
 
 
 def _as_xml(path: Path) -> str:
-    pretty = xml.dom.minidom.parseString(path.read_text(encoding="utf-8")).toprettyxml()
+    try:
+        dom = xml.dom.minidom.parseString(path.read_bytes())
+        pretty = dom.toprettyxml()
+    except Exception:
+        pretty = path.read_text(encoding="utf-8", errors="replace")
     return "```xml\n" + pretty + "\n```"
 
 

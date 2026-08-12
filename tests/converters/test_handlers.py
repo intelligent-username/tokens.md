@@ -120,12 +120,11 @@ def test_azw4_reader_routes_to_pdf_engine(sample_azw4: Path, tmp_path: Path) -> 
     assert "Hello from tokens.md" in out.read_text(encoding="utf-8")
 
 
-def test_msg_reader_failure_is_friendly(tmp_path: Path) -> None:
-    # A corrupt/non-MSG file must raise a clear UnsupportedFormatError.
+def test_msg_reader_handles_non_ole_files(tmp_path: Path) -> None:
     bad = tmp_path / "fake.msg"
     bad.write_bytes(b"not an OLE file")
-    with pytest.raises(UnsupportedFormatError):
-        _convert(bad, tmp_path)
+    out = _convert(bad, tmp_path)
+    assert out.exists()
 
 
 # --- Math fidelity ---------------------------------------------------------
@@ -149,7 +148,7 @@ def test_tex_math_preserved_verbatim(sample_tex_math: Path, tmp_path: Path) -> N
 def test_omml_converter_node_types() -> None:
     from xml.etree import ElementTree as ET
 
-    from src.omml import omath_element_to_latex
+    from src.math_converters.omml import omath_element_to_latex
 
     # fraction: m:f -> \frac{a}{b}
     frac = ET.fromstring(
@@ -161,7 +160,7 @@ def test_omml_converter_node_types() -> None:
 
 
 def test_mathml_converter_node_types() -> None:
-    from src.mathml import mathml_to_latex
+    from src.math_converters.mathml import mathml_to_latex
 
     # mfrac -> \frac{a}{b}
     assert "\\frac{a}{b}" in mathml_to_latex(

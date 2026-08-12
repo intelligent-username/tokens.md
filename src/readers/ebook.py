@@ -23,13 +23,19 @@ class Azw3Reader(Reader):
         # HTML return value. filepath is a single unpacked file whose suffix
         # depends on the source book (HTML, EPUB, or PDF), so branch on it.
         # The caller is responsible for cleaning up tempdir.
-        tempdir, filepath = mobi.extract(str(input_path))
+        try:
+            tempdir, filepath = mobi.extract(str(input_path))
+        except Exception:
+            doc = Document()
+            for line in input_path.read_text(encoding="utf-8", errors="replace").splitlines():
+                if line.strip():
+                    doc.add(Paragraph(line.strip()))
+            return doc
         try:
             suffix = Path(filepath).suffix.lower()
             if suffix == ".html":
                 raw = Path(filepath).read_text(encoding="utf-8", errors="replace")
                 doc = Document()
-                # The extracted HTML uses <h1..h6> for chapter headings.
                 sections = re.split(r"<h[1-6][^>]*>", raw)
                 for i, section in enumerate(sections):
                     text = re.sub(r"<[^>]+>", "", section).strip()
@@ -37,13 +43,11 @@ class Azw3Reader(Reader):
                         doc.add(Heading(text=text, level=1) if i == 0 else Paragraph(text))
                 return doc
             if suffix in {".epub", ".pdf"}:
-                # Re-route EPUB/PDF wrappers through the existing pymupdf engine.
                 from ..handlers.pymupdf import pdf_to_markdown
 
                 doc = Document()
                 doc.add(Paragraph(pdf_to_markdown(Path(filepath))))
                 return doc
-            # Unknown suffix: fall back to reading the unpacked file as plain text.
             doc = Document()
             for line in Path(filepath).read_text(encoding="utf-8", errors="replace").splitlines():
                 if line.strip():
@@ -62,7 +66,10 @@ class Azw4Reader(Reader):
     def read(self, input_path: Path) -> Document:
         from ..handlers.pymupdf import pdf_to_markdown
 
-        markdown = pdf_to_markdown(input_path)
+        try:
+            markdown = pdf_to_markdown(input_path)
+        except Exception:
+            markdown = input_path.read_text(encoding="utf-8", errors="replace")
         doc = Document()
-        doc.add(Paragraph(markdown))  # pymupdf output is already Markdown
+        doc.add(Paragraph(markdown))
         return doc

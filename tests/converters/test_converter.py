@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from src.converter import convert_pdf_to_markdown, pdf_to_markdown, run_pipeline
+from src.engine import convert_pdf_to_markdown, pdf_to_markdown, run_pipeline
 
 
 def test_pdf_to_markdown_returns_string(sample_pdf: Path) -> None:
