@@ -11,7 +11,7 @@ from .file_selector import (
     GlobPatternFileSelector,
     select_files,
 )
-from .converter import convert_pdf_to_markdown, run_pipeline, pdf_to_markdown
+from .engine import convert_pdf_to_markdown, run_pipeline, pdf_to_markdown
 from .registry import (
     Converter,
     Registry,

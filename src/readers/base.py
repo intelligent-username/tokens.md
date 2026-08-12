@@ -5,7 +5,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from ..model import Document
+from ..engine.model import Document
 
 
 class Reader(ABC):

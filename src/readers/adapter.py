@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ..model import Document
+from ..engine.model import Document
+from ..engine.renderer import MarkdownRenderer
 from ..registry import Converter, UnsupportedFormatError
-from ..renderer import MarkdownRenderer
 from .base import Reader
 
 

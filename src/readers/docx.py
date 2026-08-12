@@ -10,8 +10,8 @@ from pathlib import Path
 from typing import Any
 
 from ..deps import require
-from ..model import CodeBlock, Document, Heading, Paragraph, Quote, Table
-from ..omml import omath_element_to_latex
+from ..engine.model import CodeBlock, Document, Heading, Paragraph, Quote, Table
+from ..math_converters.omml import omath_element_to_latex
 from .base import Reader
 
 _W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
@@ -28,61 +28,70 @@ class DocxReader(Reader):
     extensions = frozenset({".docx"})
     name = "docx"
 
-    def read(self, input_path: Path) -> Document:
-        docx = require("docx", "DOCX conversion")
-        document = docx.Document(str(input_path))
-        result = Document(title=input_path.stem)
-        for paragraph in document.paragraphs:
-            style = (paragraph.style.name or "").lower() if paragraph.style else ""
-            text = _paragraph_text_with_math(paragraph)
-            if not text:
-                continue
-            if style.startswith("heading"):
-                try:
-                    level = int(style.split()[-1])
-                except ValueError:
-                    level = 1
-                result.add(Heading(text=text, level=min(max(level, 1), 6)))
-            elif style == "title":
-                result.add(Heading(text=text, level=1))
-            elif style in ("code", "source code"):
-                result.add(CodeBlock(text=text))
-            elif style == "quote":
-                result.add(Quote(text=text))
-            else:
-                result.add(Paragraph(text=text))
-        for table in document.tables:
-            result.add(_table_from_docx(table))
+    def read(self, path: Path, **kwargs: Any) -> Document:
+        require("docx", "reading DOCX files")
+        import docx
+
+        doc = docx.Document(path)
+        result = Document()
+
+        for element in doc.element.body:
+            tag = element.tag
+            if tag.endswith("}p"):
+                self._parse_paragraph(element, result)
+            elif tag.endswith("}tbl"):
+                self._parse_table(element, result)
+
         return result
 
+    def _parse_paragraph(self, p_elem: Any, doc: Document) -> None:
+        style_name = ""
+        pPr = p_elem.find(f"{{{_W_NS}}}pPr")
+        if pPr is not None:
+            pStyle = pPr.find(f"{{{_W_NS}}}pStyle")
+            if pStyle is not None:
+                style_name = (pStyle.get(f"{{{_W_NS}}}val") or "").lower()
 
-def _paragraph_text_with_math(paragraph: Any) -> str:
-    """Concatenate run text and OMML equations inside a paragraph.
+        text_parts: list[str] = []
+        for child in p_elem:
+            tag = child.tag
+            if tag == _W_R:
+                text_parts.append("".join(t.text or "" for t in child.findall(_W_T)))
+            elif tag == _M_OMATH_PARA:
+                text_parts.append(f" $${omath_element_to_latex(child)}$$ ")
+            elif tag == _M_OMATH:
+                text_parts.append(f" ${omath_element_to_latex(child)}$ ")
 
-    Inline ``m:oMath`` becomes ``$…$``; display ``m:oMathPara`` becomes ``$$…$$``.
-    """
-    parts: list[str] = []
-    for child in paragraph._p:
-        if child.tag in (_M_OMATH, _M_OMATH_PARA):
-            latex = omath_element_to_latex(child)
-            if latex:
-                delim = "$$" if child.tag == _M_OMATH_PARA else "$"
-                parts.append(f"{delim}{latex}{delim}")
-        elif child.tag == _W_R:
-            text = "".join(t.text or "" for t in child.iter(_W_T))
-            if text:
-                parts.append(text)
-    return "".join(parts).strip()
+        full_text = "".join(text_parts).strip()
+        if not full_text:
+            return
 
-
-def _table_from_docx(table: Any) -> Table:
-    """Convert a python-docx table into a :class:`Table`."""
-    header: list[str] = []
-    rows: list[list[str]] = []
-    for row_index, row in enumerate(table.rows):
-        cells = [cell.text.strip() for cell in row.cells]
-        if row_index == 0:
-            header = cells
+        if style_name.startswith("heading"):
+            try:
+                level = int(style_name.replace("heading", "").strip())
+            except ValueError:
+                level = 1
+            doc.add_heading(full_text, level=min(level, 6))
+        elif "quote" in style_name:
+            doc.add_quote(full_text)
+        elif "code" in style_name:
+            doc.add_code_block(full_text)
         else:
-            rows.append(cells)
-    return Table(header=header, rows=rows)
+            doc.add_paragraph(full_text)
+
+    def _parse_table(self, tbl_elem: Any, doc: Document) -> None:
+        rows: list[list[str]] = []
+        for tr in tbl_elem.findall(f"{{{_W_NS}}}tr"):
+            row: list[str] = []
+            for tc in tr.findall(f"{{{_W_NS}}}tc"):
+                cell_text = "".join(tc.itertext()).strip()
+                row.append(cell_text)
+            if any(row):
+                rows.append(row)
+
+        if not rows:
+            return
+
+        header = rows[0]
+        body = rows[1:] if len(rows) > 1 else []
+        doc.add_table(body, header=header)

@@ -10,8 +10,8 @@ from pathlib import Path
 from typing import Any
 
 from ..deps import require
-from ..model import Document, Heading, Paragraph
-from ..omml import omath_element_to_latex
+from ..engine.model import Document, Heading, Paragraph
+from ..math_converters.omml import omath_element_to_latex
 from .base import Reader
 
 _DRAWING_NS = "http://schemas.openxmlformats.org/drawingml/2006/main"
@@ -29,55 +29,53 @@ class PptxReader(Reader):
     extensions = frozenset({".pptx"})
     name = "pptx"
 
-    def read(self, input_path: Path) -> Document:
-        pptx = require("pptx", "PPTX conversion")
-        prs = pptx.Presentation(str(input_path))
-        result = Document(title=input_path.stem)
+    def read(self, path: Path, **kwargs: Any) -> Document:
+        require("pptx", "reading PPTX files")
+        import pptx
+
+        prs = pptx.Presentation(path)
+        doc = Document()
+
         for index, slide in enumerate(prs.slides, start=1):
-            result.add(Heading(text=f"Slide {index}", level=2))
-            title = slide.shapes.title
-            if title is not None and title.text.strip():
-                result.add(Heading(text=title.text.strip(), level=3))
+            doc.add_heading(f"Slide {index}", level=2)
+
             for shape in slide.shapes:
-                text = _shape_text_with_math(shape)
-                if text:
-                    result.add(Paragraph(text))
-            if slide.has_notes_slide:
-                notes_frame = slide.notes_slide.notes_text_frame
-                if notes_frame is not None:
-                    notes = notes_frame.text.strip()
-                    if notes:
-                        result.add(Paragraph(f"*Notes:* {notes}"))
-        return result
+                if shape.has_text_frame:
+                    self._parse_text_frame(shape.text_frame, doc)
+                elif shape.has_table:
+                    self._parse_table(shape.table, doc)
 
+            notes_slide = getattr(slide, "notes_slide", None)
+            if notes_slide and notes_slide.notes_text_frame:
+                notes = notes_slide.notes_text_frame.text.strip()
+                if notes:
+                    doc.add_paragraph(f"Notes: {notes}")
 
-def _shape_text_with_math(shape: Any) -> str:
-    """Walk a shape's XML for a:t text and m:oMath equations.
+        return doc
 
-    ``mc:AlternateContent`` is unwrapped to its first ``mc:Choice`` (where
-    PowerPoint stores real equations via ``a14:m``). Falls back to
-    python-pptx's own ``text_frame.text`` when the XML walk yields nothing.
-    """
-    parts: list[str] = []
+    def _parse_text_frame(self, tf: Any, doc: Document) -> None:
+        for paragraph in tf.paragraphs:
+            parts: list[str] = []
+            for child in paragraph._p:
+                tag = child.tag
+                if tag.endswith("}r"):
+                    parts.append("".join(t.text or "" for t in child.findall(_A_T)))
+                elif tag == _M_OMATH:
+                    parts.append(f" ${omath_element_to_latex(child)}$ ")
+                elif tag == _MC_ALTERNATE:
+                    choice = child.find(_MC_CHOICE)
+                    if choice is not None:
+                        om = choice.find(_M_OMATH)
+                        if om is not None:
+                            parts.append(f" ${omath_element_to_latex(om)}$ ")
 
-    def walk(node: Any) -> None:
-        for child in node:
-            if child.tag == _MC_ALTERNATE:
-                choice = child.find(_MC_CHOICE)
-                if choice is not None:
-                    walk(choice)
-            elif child.tag == _A_T:
-                if child.text:
-                    parts.append(child.text)
-            elif child.tag == _M_OMATH:
-                latex = omath_element_to_latex(child)
-                if latex:
-                    parts.append(f"$${latex}$$")
-            else:
-                walk(child)
+            text = "".join(parts).strip()
+            if text:
+                doc.add_paragraph(text)
 
-    walk(shape._element)
-    text = "".join(parts).strip()
-    if not text and shape.has_text_frame:
-        text = shape.text_frame.text.strip()
-    return text
+    def _parse_table(self, table: Any, doc: Document) -> None:
+        rows: list[list[str]] = []
+        for row in table.rows:
+            rows.append([cell.text.strip() for cell in row.cells])
+        if rows and any(any(r) for r in rows):
+            doc.add_table(rows[1:], header=rows[0])

@@ -18,7 +18,7 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 
 from ..deps import require
-from ..model import Document, Heading, Paragraph, RawMarkdown
+from ..engine.model import Document, Heading, Paragraph, RawMarkdown
 from .base import Reader
 
 ODF_EXTENSIONS = frozenset({".odt", ".ods", ".odp"})
@@ -143,7 +143,7 @@ class OdfReader(Reader):
         formula_map = _extract_formula_map(input_path)
 
         doc_obj = load(str(input_path))
-        result = Document(title=input_path.stem)
+        result = Document()
         body = doc_obj.body
 
         def _process_paragraph(node: object, level: int | None = None) -> None:

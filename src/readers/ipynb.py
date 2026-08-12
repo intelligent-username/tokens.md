@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from ..model import CodeBlock, Document, RawMarkdown
+from ..engine.model import CodeBlock, Document, Paragraph, RawMarkdown
 from .base import Reader
 
 
@@ -17,7 +17,7 @@ class IpynbReader(Reader):
     def read(self, input_path: Path) -> Document:
         content = input_path.read_text(encoding="utf-8", errors="replace")
         data = json.loads(content)
-        doc = Document(title=input_path.stem)
+        doc = Document()
         cells = data.get("cells", [])
         for cell in cells:
             cell_type = cell.get("cell_type")

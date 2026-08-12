@@ -1,0 +1,5 @@
+export const BYTES_PER_KB = 1024;
+export const CHARS_PER_TOKEN_ESTIMATE = 250;
+export const TOKENS_PER_MB_ESTIMATE = CHARS_PER_TOKEN_ESTIMATE * BYTES_PER_KB;
+
+export const CLIPBOARD_MARKDOWN_SEPARATOR = '\n\n---\n\n';

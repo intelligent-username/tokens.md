@@ -3,104 +3,26 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchJson, wsUrl } from './apiBase';
 import { markDegraded } from './useHealth';
+import type {
+  WatchLogLine,
+  WatchStartOptions,
+  WatchStatus,
+  WatchStatusResponse,
+  WatchTotals,
+  WatchLineKind,
+} from './watch/types';
+import {
+  MAX_BACKOFF_MS,
+  MAX_LOG_LINES,
+  lineText,
+  nextLineId,
+} from './watch/utils';
 
-export type WatchStatus =
-  | 'disconnected'
-  | 'connecting'
-  | 'watching'
-  | 'reconnecting'
-  | 'stopping'
-  | 'stopped';
-
-export type WatchLineKind =
-  | 'started'
-  | 'queued'
-  | 'converting'
-  | 'done'
-  | 'skipped'
-  | 'error'
-  | 'stopped';
-
-export interface WatchLogLine {
-  id: string;
-  kind: WatchLineKind;
-  text: string;
-  file?: string;
-  sourceTokens?: number;
-  targetTokens?: number;
-  percent?: number;
-  error?: string;
-  ts: number;
-}
-
-export interface WatchTotals {
-  files: number;
-  source_tokens: number;
-  target_tokens: number;
-  percent: number;
-  files_processed: number;
-}
-
-export interface WatchStartOptions {
-  poll_interval?: number;
-  extensions?: string[];
-  once?: boolean;
-  convert_opts?: Record<string, unknown>;
-}
-
-interface WatchStatusResponse {
-  running: boolean;
-  started_at?: string;
-  source?: string;
-  output?: string;
-  files_processed?: number;
-  source_tokens?: number;
-  target_tokens?: number;
-}
-
-const MAX_LOG_LINES = 1000;
-const MAX_BACKOFF_MS = 30_000;
-
-let watchSeq = 0;
-const nextLineId = () => `watch-${++watchSeq}`;
-
-const fmtTokens = (n?: number) =>
-  n === undefined ? '' : new Intl.NumberFormat('en-US').format(n);
-const fmtPercent = (p?: number) =>
-  p === undefined ? '' : `${p >= 0 ? '−' : ''}${Math.abs(p)}%`;
-
-function lineText(
-  kind: WatchLineKind,
-  data: Record<string, unknown>,
-): string {
-  const file = String(data.file ?? '');
-  switch (kind) {
-    case 'started':
-      return `${String(data.source ?? '')} → ${String(data.output ?? '')}`;
-    case 'queued':
-      return `queued ${file}`;
-    case 'converting':
-      return `converting ${file}`;
-    case 'done':
-      return `converted ${file} → ${fmtTokens(data.source_tokens as number)} → ${fmtTokens(
-        data.target_tokens as number,
-      )} · ${fmtPercent(data.percent as number)}`;
-    case 'skipped':
-      return `skipped ${file}${data.error ? ` — ${String(data.error)}` : ''}`;
-    case 'error':
-      return `failed ${file}${data.error ? ` — ${String(data.error)}` : ''}`;
-    case 'stopped':
-      return `stopped${data.reason ? ` — ${String(data.reason)}` : ''}`;
-    default:
-      return file;
-  }
-}
+export * from './watch/types';
 
 /**
  * Watch stream: WS /api/ws?session_id + GET /api/watch/{sid} status restore.
- * Reconnects with backoff; while disconnected the daemon keeps running
- * server-side. watch.total events are accumulated defensively (absolute if the
- * count grows, additive otherwise).
+ * Reconnects with backoff; while disconnected the daemon keeps running server-side.
  */
 export function useWatchStream(sessionId: string): {
   status: WatchStatus;
@@ -119,22 +41,25 @@ export function useWatchStream(sessionId: string): {
   const backoffRef = useRef(1000);
   const timerRef = useRef<number | null>(null);
 
-  const append = useCallback((kind: WatchLineKind, text: string, data?: Record<string, unknown>) => {
-    setLog((prev) => [
-      ...prev.slice(-(MAX_LOG_LINES - 1)),
-      {
-        id: nextLineId(),
-        kind,
-        text,
-        file: data?.file ? String(data.file) : undefined,
-        sourceTokens: data?.source_tokens as number | undefined,
-        targetTokens: data?.target_tokens as number | undefined,
-        percent: data?.percent as number | undefined,
-        error: data?.error ? String(data.error) : undefined,
-        ts: Date.now(),
-      },
-    ]);
-  }, []);
+  const append = useCallback(
+    (kind: WatchLineKind, text: string, data?: Record<string, unknown>) => {
+      setLog((prev) => [
+        ...prev.slice(-(MAX_LOG_LINES - 1)),
+        {
+          id: nextLineId(),
+          kind,
+          text,
+          file: data?.file ? String(data.file) : undefined,
+          sourceTokens: data?.source_tokens as number | undefined,
+          targetTokens: data?.target_tokens as number | undefined,
+          percent: data?.percent as number | undefined,
+          error: data?.error ? String(data.error) : undefined,
+          ts: Date.now(),
+        },
+      ]);
+    },
+    [],
+  );
 
   const applyTotals = useCallback((data: Record<string, unknown>) => {
     setTotals((prev) => {
@@ -165,9 +90,7 @@ export function useWatchStream(sessionId: string): {
 
       ws.onopen = () => {
         backoffRef.current = 1000;
-        setStatus((prev) =>
-          prev === 'stopping' ? prev : 'watching',
-        );
+        setStatus((prev) => (prev === 'stopping' ? prev : 'watching'));
       };
 
       ws.onmessage = (msg) => {
@@ -213,7 +136,7 @@ export function useWatchStream(sessionId: string): {
         if (intentRef.current.stopping) return;
         setStatus('reconnecting');
         markDegraded();
-        if (timerRef.current !== null) return; // already scheduled
+        if (timerRef.current !== null) return;
         const delay = backoffRef.current;
         backoffRef.current = Math.min(backoffRef.current * 2, MAX_BACKOFF_MS);
         timerRef.current = window.setTimeout(() => {
@@ -246,7 +169,6 @@ export function useWatchStream(sessionId: string): {
     }
   }, [sessionId, openSocket]);
 
-  // Reattach to a live session on mount / session change.
   useEffect(() => {
     setLog([]);
     setTotals(null);

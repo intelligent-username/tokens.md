@@ -8,7 +8,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from ..deps import require
-from ..model import Document, Paragraph
+from ..engine.model import Document, Paragraph
 from .base import Reader
 
 
@@ -23,7 +23,7 @@ class RtfReader(Reader):
         from striprtf.striprtf import rtf_to_text
         raw = input_path.read_text(encoding="utf-8", errors="replace")
         text = rtf_to_text(raw)
-        result = Document(title=input_path.stem)
+        result = Document()
         for line in text.splitlines():
             line = line.strip()
             if line:

@@ -7,7 +7,7 @@ import shutil
 from pathlib import Path
 
 from ..deps import require
-from ..model import Document, Heading, Paragraph
+from ..engine.model import CodeBlock, Document, Heading, Image, Paragraph, Quote, Table
 from .base import Reader
 
 
@@ -28,7 +28,7 @@ class Azw3Reader(Reader):
             suffix = Path(filepath).suffix.lower()
             if suffix == ".html":
                 raw = Path(filepath).read_text(encoding="utf-8", errors="replace")
-                doc = Document(title=input_path.stem)
+                doc = Document()
                 # The extracted HTML uses <h1..h6> for chapter headings.
                 sections = re.split(r"<h[1-6][^>]*>", raw)
                 for i, section in enumerate(sections):
@@ -40,11 +40,11 @@ class Azw3Reader(Reader):
                 # Re-route EPUB/PDF wrappers through the existing pymupdf engine.
                 from ..handlers.pymupdf import pdf_to_markdown
 
-                doc = Document(title=input_path.stem)
+                doc = Document()
                 doc.add(Paragraph(pdf_to_markdown(Path(filepath))))
                 return doc
             # Unknown suffix: fall back to reading the unpacked file as plain text.
-            doc = Document(title=input_path.stem)
+            doc = Document()
             for line in Path(filepath).read_text(encoding="utf-8", errors="replace").splitlines():
                 if line.strip():
                     doc.add(Paragraph(line.strip()))
@@ -63,6 +63,6 @@ class Azw4Reader(Reader):
         from ..handlers.pymupdf import pdf_to_markdown
 
         markdown = pdf_to_markdown(input_path)
-        doc = Document(title=input_path.stem)
+        doc = Document()
         doc.add(Paragraph(markdown))  # pymupdf output is already Markdown
         return doc

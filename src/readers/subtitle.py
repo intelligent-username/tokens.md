@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from ..model import Document, Paragraph
+from ..engine.model import Document, Paragraph
 from .base import Reader
 
 _SUBTITLE_EXTENSIONS = frozenset({".srt", ".vtt"})
@@ -17,7 +17,7 @@ class SubtitleReader(Reader):
 
     def read(self, input_path: Path) -> Document:
         text = input_path.read_text(encoding="utf-8", errors="replace")
-        doc = Document(title=input_path.stem)
+        doc = Document()
         # Drop cue numbers and timing lines; keep the spoken text.
         for line in text.splitlines():
             stripped = line.strip()

@@ -32,7 +32,9 @@ def main() -> None:
         print(f"  {name}: {sha}")
 
     win_x64 = hashes.get("tmd-windows-x64.exe", "")
+    win_arm64 = hashes.get("tmd-windows-arm64.exe", "")
     mac_arm64 = hashes.get("tmd-macos-arm64", "")
+    mac_x64 = hashes.get("tmd-macos-x64", "")
     linux_x64 = hashes.get("tmd-linux-x64", "")
     linux_arm64 = hashes.get("tmd-linux-arm64", "")
 

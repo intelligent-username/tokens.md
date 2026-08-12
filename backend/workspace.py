@@ -1,15 +1,8 @@
-"""Session workspaces under the system temp directory.
-
-A ``Workspace`` owns the uploads/output dirs for one session, a JSON manifest
-registry, zip building, a TTL janitor, and bundled demo samples. All file
-reads resolve through the manifest; client-supplied paths are sanitized and
-re-validated with ``resolve().is_relative_to()`` before any write.
-"""
+"""Session workspaces under the system temp directory."""
 
 from __future__ import annotations
 
 import json
-import re
 import shutil
 import tempfile
 import threading
@@ -21,8 +14,10 @@ from typing import Any
 
 from src.tokenizer import count_raw_file_tokens
 
-_SAFE_RE = re.compile(r"[^A-Za-z0-9._ -]+")
-_MAX_NAME = 120
+from .workspace_support.constants import ID_HEX_LENGTH, WORKSPACE_DIR_PREFIX
+from .workspace_support.janitor import cleanup_all, start_janitor, sweep_workspaces
+from .workspace_support.samples import SAMPLES_DIR, list_samples, read_sample_path
+from .workspace_support.sanitizer import sanitize_name, sanitize_relpath
 
 
 class WorkspaceError(Exception):
@@ -37,45 +32,17 @@ class TooLargeError(WorkspaceError):
     """Raised when an upload exceeds configured limits."""
 
 
-def sanitize_name(name: str) -> str:
-    """Keep ``[A-Za-z0-9._ -]``, collapse runs, cap at 120 chars.
-
-    Also removes ``..`` sequences and path separators to prevent path traversal via filenames.
-    """
-    # Remove parent directory references and path separators
-    name = name.replace("..", "").replace("/", "").replace("\\", "")
-    cleaned = _SAFE_RE.sub("_", name)
-    cleaned = cleaned.strip(" .")
-    if not cleaned:
-        cleaned = "file"
-    return cleaned[:_MAX_NAME]
-
-
-def sanitize_relpath(relpath: str) -> Path:
-    """Turn a client-supplied relative path into a safe subpath.
-
-    Drops empty parts and ``..`` segments; every segment is name-sanitized.
-    Returns ``Path()`` for a plain (non-folder) file.
-    """
-    parts: list[str] = []
-    for part in relpath.replace("\\", "/").split("/"):
-        if part == "..":
-            continue  # Drop parent directory references entirely
-        part = sanitize_name(part)
-        if part in {"", "."}:
-            continue
-        parts.append(part)
-    if not parts:
-        return Path()
-    return Path(*parts)
+def read_sample(name: str) -> Path:
+    """Resolve a bundled sample file name to its path (path-safe)."""
+    return read_sample_path(name, NotFoundError)
 
 
 class Workspace:
     """Filesystem-backed session workspace with a JSON manifest registry."""
 
     def __init__(self, sid: str | None = None) -> None:
-        self.sid = sid or uuid.uuid4().hex[:12]
-        self.root = Path(tempfile.gettempdir()) / f"tmd-ui-{self.sid}"
+        self.sid = sid or uuid.uuid4().hex[:ID_HEX_LENGTH]
+        self.root = Path(tempfile.gettempdir()) / f"{WORKSPACE_DIR_PREFIX}{self.sid}"
         self.uploads_dir = self.root / "uploads"
         self.output_dir = self.root / "output"
         self.repo_root = self.root / "repo"
@@ -126,7 +93,7 @@ class Workspace:
     def register_upload(self, dest: Path, name: str, relpath: str) -> str:
         """Register an uploaded file in the manifest and return its file_id."""
         with self._lock:
-            file_id = uuid.uuid4().hex[:12]
+            file_id = uuid.uuid4().hex[:ID_HEX_LENGTH]
             self._uploads[file_id] = {
                 "file_id": file_id,
                 "name": name,
@@ -153,7 +120,7 @@ class Workspace:
     def register_output(self, path: Path, target_tokens: int) -> str:
         """Register a converted output in the manifest and return its file_id."""
         with self._lock:
-            file_id = uuid.uuid4().hex[:12]
+            file_id = uuid.uuid4().hex[:ID_HEX_LENGTH]
             self._outputs[file_id] = {
                 "file_id": file_id,
                 "name": path.name,
@@ -208,64 +175,17 @@ class Workspace:
         shutil.rmtree(self.root, ignore_errors=True)
 
 
-def start_janitor(ttl_hours: int) -> threading.Event:
-    """Start a daemon janitor thread; return a stop event."""
-    stop = threading.Event()
-    thread = threading.Thread(
-        target=_janitor_loop, args=(ttl_hours, stop), daemon=True
-    )
-    thread.start()
-    return stop
-
-
-def _janitor_loop(ttl_hours: int, stop: threading.Event) -> None:
-    while not stop.wait(3600):
-        sweep_workspaces(ttl_hours)
-
-
-def sweep_workspaces(ttl_hours: int) -> None:
-    """Delete ``tmd-ui-*`` dirs in the temp dir older than ``ttl_hours``."""
-    cutoff = time.time() - ttl_hours * 3600
-    for child in Path(tempfile.gettempdir()).glob("tmd-ui-*"):
-        if not child.is_dir():
-            continue
-        try:
-            mtime = child.stat().st_mtime
-        except OSError:
-            continue
-        if mtime < cutoff:
-            shutil.rmtree(child, ignore_errors=True)
-
-
-def cleanup_all() -> None:
-    """Remove every ``tmd-ui-*`` temp dir (shutdown hygiene)."""
-    for child in Path(tempfile.gettempdir()).glob("tmd-ui-*"):
-        shutil.rmtree(child, ignore_errors=True)
-
-
-SAMPLES_DIR = Path(__file__).resolve().parent / "samples"
-
-
-def list_samples() -> list[dict[str, str]]:
-    """List bundled demo files as ``{name, kind}`` dicts."""
-    samples: list[dict[str, str]] = []
-    for path in sorted(SAMPLES_DIR.iterdir()):
-        if path.is_file():
-            samples.append(
-                {
-                    "name": path.name,
-                    "kind": path.suffix.lstrip(".") or "text",
-                }
-            )
-    return samples
-
-
-def read_sample(name: str) -> Path:
-    """Resolve a bundled sample file name to its path (path-safe)."""
-    candidate = SAMPLES_DIR / sanitize_name(name)
-    if (
-        not candidate.is_file()
-        or not candidate.resolve().is_relative_to(SAMPLES_DIR.resolve())
-    ):
-        raise NotFoundError(f"Unknown sample: {name}")
-    return candidate
+__all__ = [
+    "NotFoundError",
+    "SAMPLES_DIR",
+    "TooLargeError",
+    "Workspace",
+    "WorkspaceError",
+    "cleanup_all",
+    "list_samples",
+    "read_sample",
+    "sanitize_name",
+    "sanitize_relpath",
+    "start_janitor",
+    "sweep_workspaces",
+]

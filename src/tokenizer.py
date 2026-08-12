@@ -37,7 +37,7 @@ def count_tokens_in_file(path: Path, encoding: str = DEFAULT_ENCODING) -> int:
     return count_tokens(text, encoding)
 
 
-def count_raw_file_tokens(path: Path) -> int:
+def count_raw_file_tokens(path: Path, encoding: str = DEFAULT_ENCODING) -> int:
     """Estimate the token count of a whole file from its raw size.
 
     Uses the common ~4 bytes-per-token heuristic so the estimate reflects the

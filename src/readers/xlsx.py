@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from ..deps import require
-from ..model import Document, Table
+from ..engine.model import Document, Heading, Table
 from .base import Reader
 
 
@@ -16,7 +16,7 @@ class XlsxReader(Reader):
     def read(self, input_path: Path) -> Document:
         openpyxl = require("openpyxl", "XLSX conversion")
         wb = openpyxl.load_workbook(str(input_path), data_only=True, read_only=True)
-        doc = Document(title=input_path.stem)
+        doc = Document()
         try:
             for ws in wb.worksheets:
                 rows: list[list[str]] = []

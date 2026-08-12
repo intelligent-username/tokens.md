@@ -167,9 +167,13 @@ export PATH="$HOME/.local/bin:$PATH"
 # Test the tmd executable
 tmd --version
 tmd --help
+
+# More commands...
+exit
 ```
 
 Exiting the shell (`exit`) automatically destroys the container and leaves zero footprint on your system.
+These steps can be done in a permanent environment as well (a real docker container or native install), but pipx won't be performing a native install.
 
 
 ## Documentation

@@ -49,7 +49,6 @@ def _node_to_latex(el: ET.Element) -> str:
             " & ".join(_node_to_latex(mtd) for mtd in mtr) + r" \\" for mtr in el
         ]
         return r"\begin{matrix}" + "\n" + "\n".join(rows) + "\n" + r"\end{matrix}"
-    # Unknown node: keep children + text, never raise, never drop.
     return "".join(_node_to_latex(c) for c in el) + (el.text or "")
 
 
@@ -61,5 +60,4 @@ def mathml_to_latex(mathml: str) -> str:
             return latex
     except Exception:
         pass
-    # Fallback: never lose the equation.
     return f"```mathml\n{mathml}\n```"

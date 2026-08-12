@@ -6,7 +6,7 @@ import email
 from email import policy
 from pathlib import Path
 
-from ..model import Document, Heading, Paragraph
+from ..engine.model import Document, Heading, Paragraph
 from .base import Reader
 
 

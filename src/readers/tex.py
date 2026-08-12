@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from ..model import Document, Heading, Paragraph
+from ..engine.model import CodeBlock, Document, Heading, Paragraph, Quote
 from .base import Reader
 
 _SECTION_RE = re.compile(r"\\(?:part|chapter|section|subsection|subsubsection)\*?\{(.+?)\}")
@@ -20,7 +20,7 @@ class TexReader(Reader):
 
     def read(self, input_path: Path) -> Document:
         text = input_path.read_text(encoding="utf-8", errors="replace")
-        doc = Document(title=input_path.stem)
+        doc = Document()
         in_math_env = False
         math_env_name = ""
         for line in text.splitlines():

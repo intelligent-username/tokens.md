@@ -1,18 +1,13 @@
-"""Backward-compatible thin wrappers over the converter registry.
-
-The real conversion logic lives in ``src.handlers`` and ``src.registry``.
-These functions preserve the original public API so existing callers keep
-working unchanged.
-"""
+"""Pipeline conversion engine."""
 
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Any, List, Optional, Sequence, Union
 
-from .file_selector import FileSelector, select_files
-from .handlers.pymupdf import PymupdfConverter, pdf_to_markdown
-from .registry import convert_file
+from ..file_selector import FileSelector, select_files
+from ..handlers.pymupdf import PymupdfConverter, pdf_to_markdown
+from ..registry import convert_file
 
 __all__ = [
     "convert_pdf_to_markdown",
@@ -31,10 +26,7 @@ def convert_pdf_to_markdown(
     pages: Optional[List[int]] = None,
     **kwargs: Any,
 ) -> Path:
-    """Convert a single file to Markdown and save it into ``output_dir``.
-
-    Thin wrapper over :class:`PymupdfConverter` for backward compatibility.
-    """
+    """Convert a single file to Markdown and save it into ``output_dir``."""
     return PymupdfConverter().convert(
         Path(pdf_path),
         Path(output_dir),
@@ -56,11 +48,7 @@ def run_pipeline(
     recursive: bool = False,
     **kwargs: Any,
 ) -> List[Path]:
-    """Run the conversion pipeline over all selected files.
-
-    Selects files via :func:`select_files` and converts each through the
-    registry. Returns the list of written output paths.
-    """
+    """Run the conversion pipeline over all selected files."""
     files_to_convert = select_files(
         source, extensions=extensions, recursive=recursive
     )

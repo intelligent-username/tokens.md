@@ -1,4 +1,4 @@
-"""Render a :class:`Document` into Markdown. Shared by every reader-backed converter."""
+"""Render a Document into Markdown. Shared by every reader-backed converter."""
 
 from __future__ import annotations
 
@@ -11,12 +11,13 @@ from .model import (
     ListItem,
     Paragraph,
     Quote,
+    RawMarkdown,
     Table,
 )
 
 
 class MarkdownRenderer:
-    """Turns a :class:`Document` into a single Markdown string."""
+    """Turns a Document into a single Markdown string."""
 
     def render(self, document: Document) -> str:
         parts: list[str] = []
@@ -49,7 +50,9 @@ class MarkdownRenderer:
             return f"![{block.alt}]({block.path})"
         if isinstance(block, HorizontalRule):
             return "---"
-        return str(block)  # RawMarkdown and any future block types
+        if isinstance(block, RawMarkdown):
+            return block.text
+        return str(block)
 
     @staticmethod
     def _render_table(table: Table) -> str:
