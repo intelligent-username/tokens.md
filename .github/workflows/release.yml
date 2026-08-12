@@ -13,17 +13,23 @@ jobs:
   verify:
     uses: ./.github/workflows/verify.yml
 
-  # 2. Parallel binary builds (4 matrix jobs run concurrently)
+  # 2. Parallel binary builds (6 matrix jobs run concurrently)
   build-binaries:
     uses: ./.github/workflows/build-binary.yml
 
-  # 3. Create GitHub Release once binaries are ready
+  # 3. Create GitHub Release once binaries are ready & auto-sync manifest SHA256 hashes
   github-release:
-    name: Create GitHub Release
+    name: Create GitHub Release & Update Manifests
     needs: build-binaries
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -44,6 +50,22 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: false
+
+      - name: Inject SHA-256 hashes into manifests
+        run: |
+          python scripts/update_manifest_hashes.py
+
+      - name: Commit updated manifests back to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add manifests/
+          if git diff --staged --quiet; then
+            echo "No manifest changes to commit."
+          else
+            git commit -m "chore(release): auto-sync manifest SHA-256 hashes for release"
+            git push origin HEAD:main
+          fi
 
   # 4. Publish to PyPI
   pypi:
