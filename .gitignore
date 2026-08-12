@@ -1,5 +1,7 @@
+
 **__pycache__/**
-**.pytest_cache**
+**.*_cache**
+
 *.pyc
 .venv/
 v/
@@ -8,7 +10,16 @@ input/
 output/
 scratch/
 inbox/
+temp/
 
 notes/
 .notes/
 testing/
+
+.coverage
+.coverage.*
+htmlcov/
+coverage/
+
+**/temp/
+**/.temp/

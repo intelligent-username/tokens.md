@@ -27,7 +27,7 @@ export interface TriageResult {
 
 /** Map a backend error name (e.g. "UnsupportedFormatError") to an ErrorKind. */
 export function classifyError(error: string): ErrorKind {
-  const name = error.toLowerCase();
+  const name = error.toLowerCase().replace(/_/g, "");
   if (name.includes("unsupportedformat")) return "unsupported_format";
   if (name.includes("missingdependency")) return "missing_dependency";
   if (name.includes("toolarge") || name.includes("payload")) return "too_large";

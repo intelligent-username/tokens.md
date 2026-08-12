@@ -265,3 +265,18 @@ def lint(fix: bool = typer.Option(False, "--fix", help="Automatically fix linter
     res = subprocess.run(cmd)
     if res.returncode != 0:
         raise typer.Exit(code=EXIT_CODE_ERROR)
+
+
+@app.command()
+def test(verbose: bool = typer.Option(False, "-v", "--v", "--verbose", help="Show detailed test outputs.")) -> None:
+    """Run backend (pytest) and frontend (vitest) test suites in parallel with coverage summary."""
+    import subprocess
+    import sys
+
+    script_path = Path("scripts/test.py")
+    cmd = [sys.executable, str(script_path)]
+    if verbose:
+        cmd.append("-v")
+    res = subprocess.run(cmd)
+    if res.returncode != 0:
+        raise typer.Exit(code=EXIT_CODE_ERROR)
