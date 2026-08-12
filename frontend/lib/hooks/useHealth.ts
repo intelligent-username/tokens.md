@@ -32,9 +32,9 @@ let lastCheckTime = 0;
 export function useHealth(): { status: HealthStatus; retry: () => void } {
   const [status, setStatus] = useState<HealthStatus>('booting');
 
-  const check = useCallback(async () => {
+  const check = useCallback(async (force = false) => {
     const now = Date.now();
-    if (now - lastCheckTime < 15_000) return;
+    if (!force && now - lastCheckTime < 15_000) return;
     lastCheckTime = now;
     const started = Date.now();
     try {
@@ -63,7 +63,7 @@ export function useHealth(): { status: HealthStatus; retry: () => void } {
   }, [check, setDegraded]);
 
   const retry = useCallback(() => {
-    void check();
+    void check(true);
   }, [check]);
 
   return { status, retry };

@@ -11,6 +11,7 @@ import {
   CaretUp,
   DownloadSimple,
   X,
+  Trash,
   ArrowRight,
   Sparkle,
   Info,
@@ -768,6 +769,14 @@ export function ConvertWorkspace() {
     }
   };
 
+  const onClearAll = () => {
+    setFiles([]);
+    setQueue([]);
+    setConvertedMap({});
+    setUploadMetaMap({});
+    setMergeResult(null);
+  };
+
   const handleCopyAll = async () => {
     if (mergeResult && sessionId) {
       try {
@@ -869,7 +878,21 @@ export function ConvertWorkspace() {
       {files.length > 0 && activeMode === 'upload' ? (
         <div ref={rowsContainerRef} className="relative flex flex-col gap-3">
           <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-muted-foreground px-1">
-            <span>1. Input {files.length === 1 ? 'File' : 'Files'} ({files.length})</span>
+            <div className="flex items-center gap-2 pl-3">
+              <span>1. {files.length === 1 ? 'Input File' : 'Input Files'} ({files.length})</span>
+              {files.length > 0 && (
+                <button
+                  type="button"
+                  onClick={onClearAll}
+                  disabled={running}
+                  aria-label="Clear all input files"
+                  className="inline-flex items-center gap-1 rounded-full bg-muted/60 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground hover:bg-destructive/15 hover:text-destructive transition-colors disabled:opacity-50 normal-case tracking-normal"
+                >
+                  <Trash size={12} weight="bold" />
+                  Clear
+                </button>
+              )}
+            </div>
             <span>2. Converted Markdown</span>
           </div>
 
@@ -895,9 +918,9 @@ export function ConvertWorkspace() {
                     onClick={() => onRemoveFile(i)}
                     disabled={running}
                     aria-label={`Remove ${file.name}`}
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive hover:bg-destructive hover:text-destructive-foreground focus-visible:ring-2 focus-visible:ring-destructive focus-visible:outline-none transition-all disabled:opacity-50"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted/60 text-muted-foreground/70 hover:bg-destructive/15 hover:text-destructive focus-visible:ring-2 focus-visible:ring-destructive focus-visible:outline-none transition-all disabled:opacity-50"
                   >
-                    <X size={14} weight="bold" />
+                    <X size={12} weight="bold" />
                   </button>
                   <span
                     className={cn(

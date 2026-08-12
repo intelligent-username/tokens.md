@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 import logging
 import shutil
-import threading
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -215,44 +215,41 @@ def convert(req: ConvertRequest, request: Request) -> ConvertResponse:
         ]
     kwargs = _convert_kwargs(req.options)
 
-    results: list[ConvertItem] = []
-    total_source = 0
-    total_target = 0
-    converted = 0
-    failed = 0
-    for file_id, path in targets:
+    def _process_target(item: tuple[str | None, Path]) -> ConvertItem:
+        file_id, path = item
         try:
             out = convert_file(path, ws.output_dir, **kwargs)
             markdown = out.read_text(encoding="utf-8", errors="replace")
             source_tokens = count_raw_file_tokens(path)
             target_tokens = count_tokens(markdown, DEFAULT_ENCODING)
             out_id = ws.register_output(out, target_tokens)
-            results.append(
-                ConvertItem(
-                    file_id=file_id or "",
-                    name=path.name,
-                    status="done",
-                    output_file_id=out_id,
-                    output_name=out.name,
-                    output_size=out.stat().st_size,
-                    source_tokens=source_tokens,
-                    target_tokens=target_tokens,
-                    percent=delta_percent(source_tokens, target_tokens),
-                )
+            return ConvertItem(
+                file_id=file_id or "",
+                name=path.name,
+                status="done",
+                output_file_id=out_id,
+                output_name=out.name,
+                output_size=out.stat().st_size,
+                source_tokens=source_tokens,
+                target_tokens=target_tokens,
+                percent=delta_percent(source_tokens, target_tokens),
             )
-            converted += 1
-            total_source += source_tokens
-            total_target += target_tokens
         except UnsupportedFormatError as exc:
-            failed += 1
-            results.append(
-                ConvertItem(
-                    file_id=file_id or "",
-                    name=path.name,
-                    status="error",
-                    error=str(exc),
-                )
+            return ConvertItem(
+                file_id=file_id or "",
+                name=path.name,
+                status="error",
+                error=str(exc),
             )
+
+    with ThreadPoolExecutor() as executor:
+        results = list(executor.map(_process_target, targets))
+
+    converted = sum(1 for r in results if r.status == "done")
+    failed = sum(1 for r in results if r.status == "error")
+    total_source = sum(r.source_tokens for r in results if r.source_tokens)
+    total_target = sum(r.target_tokens for r in results if r.target_tokens)
+
     return ConvertResponse(
         results=results,
         converted_count=converted,

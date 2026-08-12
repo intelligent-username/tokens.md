@@ -5,13 +5,16 @@ import { ThemeToggle } from "@/app/theme";
 import type { HealthStatus } from "@/lib/hooks/useHealth";
 import { cn } from "@/lib/utils/cn";
 
+import { ArrowClockwise } from "@phosphor-icons/react";
+
 export interface TopBarProps {
   active?: string;
   onChange?: (id: any) => void;
   health: HealthStatus;
+  onRetry?: () => void;
 }
 
-export function TopBar({ health }: TopBarProps) {
+export function TopBar({ health, onRetry }: TopBarProps) {
   const [showOffline, setShowOffline] = useState(false);
 
   useEffect(() => {
@@ -48,9 +51,20 @@ export function TopBar({ health }: TopBarProps) {
         {/* Right Status Controls */}
         <div className="flex items-center gap-3.5">
           {isOffline ? (
-            <div className="flex items-center gap-2 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1 text-xs font-semibold text-destructive animate-pulse">
-              <span className="h-2 w-2 rounded-full bg-destructive" />
+            <div className="flex items-center gap-2 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1 text-xs font-semibold text-destructive">
+              <span className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
               <span>API offline</span>
+              {onRetry && (
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  title="Retry backend connection"
+                  aria-label="Retry backend connection"
+                  className="ml-0.5 inline-flex items-center justify-center rounded-full p-0.5 hover:bg-destructive/20 transition-colors text-destructive"
+                >
+                  <ArrowClockwise size={13} weight="bold" />
+                </button>
+              )}
             </div>
           ) : null}
 

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import threading
 import webbrowser
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, List, Optional, Sequence
 
@@ -131,17 +132,30 @@ def convert_impl(
         raise typer.Exit(code=1)
 
     kwargs = _convert_kwargs(strip_headers_footers, write_images, image_path, pages)
-    failures = 0
-    converted_count = 0
-    combined: list[str] = []
-    total_source = 0
-    total_target = 0
-    for path in files:
+
+    def _convert_file_worker(path: Path):
         try:
             out = convert_file(path, output_dir, **kwargs)
             markdown = out.read_text(encoding="utf-8", errors="replace")
             source_tokens = count_raw_file_tokens(path)
             target_tokens = count_tokens(markdown, DEFAULT_ENCODING)
+            return (path, out, markdown, source_tokens, target_tokens, None)
+        except UnsupportedFormatError as exc:
+            return (path, None, None, 0, 0, exc)
+
+    with ThreadPoolExecutor() as executor:
+        results = list(executor.map(_convert_file_worker, files))
+
+    failures = 0
+    converted_count = 0
+    combined: list[str] = []
+    total_source = 0
+    total_target = 0
+    for path, out, markdown, source_tokens, target_tokens, exc in results:
+        if exc is not None:
+            console.print(f"[yellow]Skipped[/yellow] {path.name}: {exc}")
+            failures += 1
+        elif out is not None and markdown is not None:
             console.print(
                 f"[green]Converted[/green] {path.name} -> {out.name} "
                 f"({format_tokens(source_tokens)} -> {format_tokens(target_tokens)} tokens)"
@@ -150,9 +164,6 @@ def convert_impl(
             converted_count += 1
             total_source += source_tokens
             total_target += target_tokens
-        except UnsupportedFormatError as exc:
-            console.print(f"[yellow]Skipped[/yellow] {path.name}: {exc}")
-            failures += 1
 
     if clip and combined:
         from .clipboard import copy_to_clipboard
