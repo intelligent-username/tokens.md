@@ -13,7 +13,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, List, Optional, Sequence
 
+import click
 import typer
+import typer.core
 from rich.console import Console
 from rich.progress import (
     BarColumn,
@@ -41,13 +43,91 @@ from .tokenizer import (
     format_tokens,
 )
 
+from rich import box
+from rich.panel import Panel
+from rich.table import Table
+
+class OrderGroup(typer.core.TyperGroup):
+    def format_help(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
+        if self.help:
+            console.print(f"{self.help}\n")
+
+        console.print(" [bright_white]Usage:[/bright_white] [dim]tmd[/dim] [bold red]COMMAND[/bold red] [bold blue][ARGS][/bold blue] [bold orange3][OPTIONS][/bold orange3]\n")
+
+        # 1. Commands Panel (Red)
+        cmd_table = Table(box=None, show_header=False, pad_edge=False)
+        cmd_table.add_column("Command", style="bold red", width=28, no_wrap=True)
+        cmd_table.add_column("Help", style="default")
+
+        for name in self.list_commands(ctx):
+            if not name:
+                continue
+            cmd = self.get_command(ctx, name)
+            if cmd and not cmd.hidden:
+                help_text = cmd.get_short_help_str(limit=120) or ""
+                cmd_table.add_row(name, help_text)
+
+        cmd_panel = Panel(
+            cmd_table,
+            title="[bold red]Commands[/bold red]",
+            title_align="left",
+            border_style="red",
+            box=box.ROUNDED,
+            expand=False,
+        )
+        console.print(cmd_panel)
+
+        # 2. Arguments Panel (Blue)
+        arg_table = Table(box=None, show_header=False, pad_edge=False)
+        arg_table.add_column("Argument", style="bold blue", width=28, no_wrap=True)
+        arg_table.add_column("Description", style="default")
+        arg_table.add_row("SOURCE", "Target directory, file path, or glob pattern (e.g. '.', 'input/', 'report.pdf')")
+        arg_table.add_row("URL", "Web page link to fetch article markdown from")
+        arg_table.add_row("DIRECTORY", "Repository directory to collapse for 'tmd repo'")
+
+        arg_panel = Panel(
+            arg_table,
+            title="[bold blue]Arguments (Positional Targets)[/bold blue]",
+            title_align="left",
+            border_style="blue",
+            box=box.ROUNDED,
+            expand=False,
+        )
+        console.print(arg_panel)
+
+        # 3. Options Panel (Orange)
+        opt_table = Table(box=None, show_header=False, pad_edge=False)
+        opt_table.add_column("Option", style="bold orange3", width=28, no_wrap=True)
+        opt_table.add_column("Description", style="default")
+        opt_table.add_row("--pages PAGES", "Comma-separated zero-based page indices e.g. '0,1' (convert, merge, clip)")
+        opt_table.add_row("--strip-headers-footers", "Strip repeating headers & footers from PDFs (convert, merge, clip)")
+        opt_table.add_row("--write-images", "Try to extract embedded images to image path (convert, merge, clip)")
+        opt_table.add_row("--budget INT", "Token ceiling budget for pruning (merge)")
+        opt_table.add_row("--clip", "Copy converted output directly to clipboard (convert)")
+
+        opt_panel = Panel(
+            opt_table,
+            title="[bold orange3]Options & Flags[/bold orange3]",
+            title_align="left",
+            border_style="orange3",
+            box=box.ROUNDED,
+            expand=False,
+        )
+        console.print(opt_panel)
+
+        # Epilog Example
+        console.print()
+        console.print(' [bright_white]Example:[/bright_white] [dim]tmd[/dim] [bold red]convert[/bold red] [bold blue].[/bold blue] [bold orange3]--loc="out"[/bold orange3]')
+        console.print('         [dark_green]# Converts all supported files in the current repository into markdown and writes to out/ folder[/dark_green]')
+
 app = typer.Typer(
-    help=(
-        "Convert files to token-efficient Markdown for LLM prompts.\n\n"
-        'Example: tmd convert . --loc="out"               # Converts all supported files in the current repository into markdown and writes to out/ folder'
-    ),
+    cls=OrderGroup,
+    help="Convert files to token-efficient Markdown for LLM prompts.",
     no_args_is_help=False,
     add_completion=False,
+    rich_markup_mode="rich",
+    options_metavar="",
+    context_settings={"help_option_names": []},
 )
 console = Console()
 
@@ -103,18 +183,36 @@ def _default_source() -> Path:
 @app.callback(invoke_without_command=True)
 def _main(
     ctx: typer.Context,
-    version: bool = typer.Option(False, "--version", help="Show version and exit."),
+    version: bool = typer.Option(False, "--version", "--v", "-v", hidden=True),
+    help_opt: bool = typer.Option(False, "--help", "-h", hidden=True),
 ) -> None:
-    """Convert files to token-efficient Markdown for LLM prompts.
-
-    Example: tmd convert . --loc="out"               # Converts all supported files in the current repository into markdown and writes to out/ folder
-    """
+    """Convert files to token-efficient Markdown for LLM prompts."""
+    if help_opt:
+        console.print(ctx.get_help())
+        raise typer.Exit()
     if version:
         typer.echo(f"tmd {__version__}")
         raise typer.Exit()
     if ctx.invoked_subcommand is None:
         source = _default_source()
         convert_impl(source=str(source), output=str(source.parent / "output"))
+
+
+@app.command("version")
+def version_cmd() -> None:
+    """Show version and exit. (Doesn't accept ARGS)"""
+    typer.echo(f"tmd {__version__}")
+    raise typer.Exit()
+
+
+@app.command("help")
+def help_cmd(ctx: typer.Context) -> None:
+    """Show this message and exit. (Doesn't accept ARGS)"""
+    if ctx.parent:
+        console.print(ctx.parent.get_help())
+    else:
+        console.print(ctx.get_help())
+    raise typer.Exit()
 
 
 def _resolve_output_dir(output: str, loc: Optional[str] = None) -> Path:
@@ -164,38 +262,62 @@ def convert_impl(
 
     kwargs = _convert_kwargs(strip_headers_footers, write_images, image_path, pages)
 
+    def _truncate_desc(text: str, length: int = 44) -> str:
+        if len(text) <= length:
+            return text.ljust(length)
+        return text[: length - 3] + "..."
+
     with Progress(
         SpinnerColumn(spinner_name="dots"),
         TextColumn("{task.description}"),
-        BarColumn(bar_width=20, style="dim white", complete_style="green"),
+        BarColumn(bar_width=22, style="grey23", complete_style="bright_green"),
         TaskProgressColumn(),
         console=console,
         transient=False,
     ) as progress:
-        task_map = {
-            path: progress.add_task(f"[cyan]Converting[/cyan] {path.name}", total=100)
-            for path in files
-        }
+        task_map = {}
+        for path in files:
+            label = _truncate_desc(f"Converting {path.name}", 44)
+            task_map[path] = progress.add_task(
+                f"[bold cyan]⟳[/bold cyan] [bright_white]{label}[/bright_white]",
+                total=100,
+            )
 
         def _convert_file_worker(path: Path):
             t_id = task_map[path]
-            progress.update(t_id, completed=10, description=f"[cyan]Converting[/cyan] {path.name}")
+            stop_event = threading.Event()
+
+            def _smooth_ticker():
+                step = 10
+                while not stop_event.is_set() and step < 90:
+                    stop_event.wait(0.1)
+                    if stop_event.is_set():
+                        break
+                    step += 5
+                    progress.update(t_id, completed=step)
+
+            ticker = threading.Thread(target=_smooth_ticker, daemon=True)
+            ticker.start()
+
             try:
-                progress.update(t_id, completed=40)
                 out = convert_file(path, output_dir, **kwargs)
-                progress.update(t_id, completed=85)
                 markdown = out.read_text(encoding="utf-8", errors="replace")
                 source_tokens = count_raw_file_tokens(path)
                 target_tokens = count_tokens(markdown, DEFAULT_ENCODING)
 
-                desc = (
-                    f"[green]Converted[/green] {path.name} -> {out.name} "
-                    f"({format_tokens(source_tokens)} -> {format_tokens(target_tokens)} tokens)"
-                )
+                stop_event.set()
+                ticker.join(timeout=0.2)
+
+                flow_str = _truncate_desc(f"Converted {path.name} -> {out.name}", 44)
+                tok_str = f"({format_tokens(source_tokens)} → {format_tokens(target_tokens)} tokens)"
+                desc = f"[bold green]✓[/bold green] [bright_white]{flow_str}[/bright_white] [dim cyan]{tok_str}[/dim cyan]"
                 progress.update(t_id, completed=100, description=desc)
                 return (path, out, markdown, source_tokens, target_tokens, None)
             except UnsupportedFormatError as exc:
-                desc = f"[yellow]Skipped[/yellow] {path.name}: {exc}"
+                stop_event.set()
+                ticker.join(timeout=0.2)
+                err_str = _truncate_desc(f"Skipped {path.name}", 44)
+                desc = f"[bold yellow]⚠[/bold yellow] [yellow]{err_str}[/yellow] [dim]{exc}[/dim]"
                 progress.update(t_id, completed=100, description=desc)
                 return (path, None, None, 0, 0, exc)
 
