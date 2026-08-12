@@ -68,6 +68,20 @@ tmd = "src.cli:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src", "backend", "tmd_ui_static"]
 
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "tests",
+    "scripts",
+    "frontend",
+    "temp",
+    "docs",
+    ".prettierrc",
+    ".prettierignore",
+    ".eslintrc.json",
+    ".eslintignore",
+    "vitest.config.ts",
+]
+
 [tool.ruff]
 line-length = 300
 target-version = "py310"

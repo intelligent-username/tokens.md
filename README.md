@@ -145,14 +145,40 @@ Install dev dependencies and run the test suite and linters:
 
 ```bash
 uv pip install -e ".[dev]"
+```
 
-# Run test suite
-pytest
+### Testing
 
-# Run unified backend & frontend linters (Ruff + Prettier + Next ESLint)
-python scripts/lint.py           # Cross-platform runner script
-.\scripts\lint.ps1               # Windows PowerShell script
-python scripts/lint.py --fix     # Auto-fix linter and formatting errors
+**Backend (pytest):**
+
+```bash
+pytest                           # Run tests with coverage report
+pytest --cov-report=html         # Generate HTML coverage report in htmlcov/
+```
+
+**Frontend (vitest):**
+
+```bash
+cd frontend
+npm install                       # First-time setup
+npm test                          # Run tests once with coverage
+npm run test:watch                # Watch mode for development
+```
+
+**Run both test suites in parallel with a unified coverage summary:**
+
+```bash
+tmd test                          # Run both backend and frontend test suites
+python scripts/test.py            # Direct script invocation
+tmd test -v                       # Verbose: full test output
+```
+
+### Linting
+
+```bash
+python scripts/lint.py            # Cross-platform: Ruff + Prettier + ESLint
+.\scripts\lint.ps1                # Windows PowerShell script
+python scripts/lint.py --fix      # Auto-fix linter and formatting errors
 ```
 
 ### Testing PyPI Releases in Isolated Docker Sandbox
@@ -179,6 +205,10 @@ exit
 
 Exiting the shell (`exit`) automatically destroys the container and leaves zero footprint on your system.
 These steps can be done in a permanent environment as well (a real docker container or native install), but pipx won't be performing a native install.
+
+> **Note on `pipx` vs `pip`**:
+> - **`pipx install tokens-md`**: Recommended for global CLI use—installs `tmd` as an isolated system-wide executable without needing an active virtualenv.
+> - **`pip install tokens-md`** (or `uv pip install tokens-md`): Best when working inside an active Python virtual environment where you want `tmd` registered directly in that environment's PATH.
 
 
 ## Documentation

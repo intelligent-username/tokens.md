@@ -2,6 +2,8 @@
 
 `tmd` converts documents to token-efficient Markdown for LLM context windows. It runs from the command line, or you can launch the web UI locally with `tmd ui`.
 
+This documentation is for breaking down all of the possible usage of the CLI.
+
 ```bash
 tmd --help            # list all subcommands
 tmd <command> --help  # help for a specific subcommand
@@ -238,7 +240,6 @@ cd frontend && npm install && npm run build
 
 The REST API is available at `http://127.0.0.1:8642/api` with interactive Swagger docs at `/docs`.
 
-
 ---
 
 ## Token budgeting
@@ -308,3 +309,23 @@ These only apply when running `tmd ui` or the backend directly.
 | `TMD_ALLOW_LOCAL_PATHS` | `false` | Allow server-side file paths in API requests |
 | `TMD_LOCAL_PATHS_ROOT` | cwd | Root for server-side path access when enabled |
 | `TMD_LOG_LEVEL` | `info` | Logging level |
+
+---
+
+## Developer Tools
+
+These are strictly developer commands for maintaining backend and frontend code quality. Do not expect anything else from them, they're not part of the CLI product.
+
+```bash
+tmd lint                          # Quiet parallel check (Ruff + Prettier + ESLint)
+tmd lint -v                       # Verbose linter output
+tmd lint --fix                    # Auto-fix formatting and lint errors
+
+tmd test                          # Run backend (pytest) + frontend (vitest) in parallel
+tmd test -v                       # Verbose test output with stack traces
+```
+
+| Subcommand | Meaning |
+|---|---|
+| `tmd lint` | Checks backend Python files (`ruff`) and frontend TypeScript/CSS files (`prettier` & `next lint`) in parallel. |
+| `tmd test` | Runs backend pytest suite (with coverage) and frontend vitest suite (with coverage) in parallel and prints a unified summary table. |
