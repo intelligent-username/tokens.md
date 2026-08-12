@@ -141,13 +141,18 @@ tmd repo . -o output/repo.md
 
 ## Development
 
-Install dev dependencies and run the checks:
+Install dev dependencies and run the test suite and linters:
 
 ```bash
 uv pip install -e ".[dev]"
+
+# Run test suite
 pytest
-ruff check .
-mypy src
+
+# Run unified backend & frontend linters (Ruff + Prettier + Next ESLint)
+python scripts/lint.py           # Cross-platform runner script
+.\scripts\lint.ps1               # Windows PowerShell script
+python scripts/lint.py --fix     # Auto-fix linter and formatting errors
 ```
 
 ### Testing PyPI Releases in Isolated Docker Sandbox

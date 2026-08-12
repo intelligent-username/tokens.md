@@ -2686,7 +2686,7 @@ wheels = [
 
 [[package]]
 name = "tokens-md"
-version = "0.2.0"
+version = "0.0.5"
 source = { editable = "." }
 dependencies = [
     { name = "extract-msg" },
@@ -2703,6 +2703,7 @@ dependencies = [
     { name = "python-multipart" },
     { name = "python-pptx" },
     { name = "rich" },
+    { name = "ruff" },
     { name = "striprtf" },
     { name = "sumy" },
     { name = "tiktoken" },
@@ -2752,6 +2753,7 @@ requires-dist = [
     { name = "python-multipart", marker = "extra == 'web'" },
     { name = "python-pptx", specifier = ">=0.6.23" },
     { name = "rich" },
+    { name = "ruff", specifier = ">=0.9" },
     { name = "ruff", marker = "extra == 'dev'" },
     { name = "striprtf", specifier = ">=0.0.26" },
     { name = "sumy" },

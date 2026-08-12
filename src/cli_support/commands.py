@@ -365,3 +365,23 @@ def ui(
         log_level="info",
         reload=True,
     )
+
+
+@app.command()
+def lint(
+    fix: bool = typer.Option(False, "--fix", help="Automatically fix linter and formatting errors."),
+    verbose: bool = typer.Option(False, "-v", "--verbose", help="Show detailed verbose linter outputs."),
+) -> None:
+    """Lint both Python backend (Ruff) and Next.js frontend (Prettier + ESLint)."""
+    import subprocess
+    import sys
+
+    script_path = Path("scripts/lint.py")
+    cmd = [sys.executable, str(script_path)]
+    if fix:
+        cmd.append("--fix")
+    if verbose:
+        cmd.append("-v")
+    res = subprocess.run(cmd)
+    if res.returncode != 0:
+        raise typer.Exit(code=EXIT_CODE_ERROR)

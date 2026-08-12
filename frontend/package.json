@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build"
+    "build": "next build",
+    "lint": "next lint"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
@@ -25,6 +26,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "postcss": "^8.5.0",
+    "prettier": "^3.5.0",
     "tailwindcss": "^4.3.0",
     "typescript": "^5.9.0"
   }
