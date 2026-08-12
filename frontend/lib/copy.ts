@@ -64,7 +64,7 @@ export const showMore = 'Show more';
 
 export const dropFilesHere = 'Drop files here';
 export const dropFilesSubline =
-  'PDF, DOCX, XLSX, PPTX, EPUB, HTML, images, JSON, CSV, TXT — or browse';
+  'PDF, DOCX, XLSX, PPTX, EPUB, HTML, JSON, CSV, TXT — or browse';
 export const dropFolderHere = 'Upload Files or Folders';
 export const dropFolderSubline = 'PDFs, Office Documents, Structured Data, Code, or Folders';
 export const releaseToConvert = 'Release to convert';

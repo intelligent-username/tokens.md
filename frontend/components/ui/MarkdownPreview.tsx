@@ -19,29 +19,34 @@ interface MarkdownPreviewProps {
 }
 
 const shellStyle: CSSProperties = {
-  borderRadius: 'var(--radius-card)',
+  borderRadius: '12px',
   border: '1px solid var(--color-border)',
-  background: 'var(--color-card)',
-  padding: '16px',
-  minHeight: '240px',
+  background: '#0B1220',
+  padding: '24px',
+  height: '100%',
+  minHeight: '400px',
+  display: 'flex',
+  flexDirection: 'column',
 };
 
 const centerStyle: CSSProperties = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
+  flex: 1,
 };
 
 const scrollStyle: CSSProperties = {
-  overflow: 'auto',
-  maxHeight: '60vh',
+  overflowY: 'auto',
+  flex: 1,
+  paddingRight: '8px',
 };
 
 const mdStyle: CSSProperties = {
   fontFamily: 'var(--font-sans)',
-  fontSize: '14px',
-  lineHeight: '1.7',
-  color: 'var(--color-foreground)',
+  fontSize: '15px',
+  lineHeight: '1.75',
+  color: '#E2E8F0',
   overflowWrap: 'break-word',
 };
 
@@ -116,15 +121,26 @@ export function MarkdownPreview({ content, loading, error, className }: Markdown
     );
   }
   return (
-    <div className={cn(className)} style={{ ...shellStyle, ...scrollStyle }}>
-      <div style={mdStyle}>
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          rehypePlugins={[rehypeSanitize]}
-          components={components}
-        >
-          {content}
-        </ReactMarkdown>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        minHeight: '400px',
+        padding: '24px',
+        borderRadius: '12px',
+        border: '1px solid rgba(255, 255, 255, 0.12)',
+        backgroundColor: '#070C15',
+        color: '#E2E8F0',
+        overflow: 'hidden',
+      }}
+    >
+      <div style={{ flex: 1, overflowY: 'auto', paddingRight: '8px' }}>
+        <div style={mdStyle}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+            {content}
+          </ReactMarkdown>
+        </div>
       </div>
     </div>
   );

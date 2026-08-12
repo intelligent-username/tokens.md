@@ -14,27 +14,31 @@ interface ModalProps {
 const backdropStyle: CSSProperties = {
   position: 'fixed',
   inset: '0',
-  zIndex: 50,
+  zIndex: 100,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  padding: '20px',
-  background: 'color-mix(in srgb, var(--color-navy-950) 60%, transparent)',
+  padding: '24px',
+  background: 'rgba(5, 10, 20, 0.85)',
+  backdropFilter: 'blur(8px)',
+  WebkitBackdropFilter: 'blur(8px)',
 };
 
 const panelStyle: CSSProperties = {
-  width: '100%',
-  maxWidth: '560px',
-  maxHeight: '80vh',
+  position: 'relative',
+  width: '85vw',
+  maxWidth: '1200px',
+  height: '85vh',
   display: 'flex',
   flexDirection: 'column',
-  gap: '14px',
-  padding: '20px',
-  borderRadius: 'var(--radius-card)',
+  gap: '16px',
+  padding: '24px',
+  borderRadius: '16px',
   border: '1px solid var(--color-border)',
-  background: 'var(--color-card)',
-  boxShadow: '0 20px 40px -20px var(--glass-drop)',
-  overflow: 'auto',
+  background: 'var(--card-solid, #131B2E)',
+  color: 'var(--color-foreground, #E9F6EE)',
+  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.75)',
+  overflow: 'hidden',
 };
 
 const headerStyle: CSSProperties = {
@@ -122,7 +126,26 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
   if (!open) return null;
 
   return (
-    <div style={backdropStyle} onClick={onClose}>
+    <div
+      style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        width: '100vw',
+        height: '100vh',
+        zIndex: 99999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '24px',
+        backgroundColor: 'rgba(5, 10, 20, 0.65)',
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
+      }}
+      onClick={onClose}
+    >
       <div
         ref={panelRef}
         role="dialog"
@@ -130,7 +153,22 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
         aria-label={title}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        style={panelStyle}
+        style={{
+          position: 'relative',
+          width: '60vw',
+          maxWidth: '1000px',
+          height: '80vh',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '16px',
+          padding: '24px',
+          borderRadius: '16px',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
+          backgroundColor: '#0B1220',
+          color: '#E9F6EE',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.95)',
+          overflow: 'hidden',
+        }}
       >
         <div style={headerStyle}>
           {title ? <div style={titleStyle}>{title}</div> : null}
@@ -138,7 +176,7 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
             <X size={16} weight="regular" aria-hidden="true" />
           </button>
         </div>
-        <div>{children}</div>
+        <div style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>{children}</div>
       </div>
     </div>
   );

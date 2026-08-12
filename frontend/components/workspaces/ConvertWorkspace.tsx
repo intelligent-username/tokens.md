@@ -951,14 +951,14 @@ export function ConvertWorkspace() {
                           <span className="truncate font-mono text-xs sm:text-sm font-semibold text-foreground">
                             {resultItem.output_name ?? resultItem.name}
                           </span>
-                          <span className="font-mono text-[11px] text-muted-foreground">
-                            {formatTokens(resultItem.target_tokens)} tokens
-                          </span>
                           {resultItem.output_size ? (
                             <span className="font-mono text-[11px] text-muted-foreground">
                               {formatBytes(resultItem.output_size)}
                             </span>
                           ) : null}
+                          <span className="font-mono text-[11px] text-muted-foreground">
+                            {formatTokens(resultItem.target_tokens)} tokens
+                          </span>
                         </div>
                         <div className="flex items-center gap-1.5 shrink-0">
                           <ResultClipButton file={resultItem} sessionId={resultItem.session_id || sessionId!} />
