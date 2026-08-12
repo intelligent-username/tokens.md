@@ -9,12 +9,17 @@ permissions:
   id-token: write
 
 jobs:
-  # 1. Non-blocking version check
-  verify:
-    uses: ./.github/workflows/verify.yml
+  # 1. Mandatory test suite gate (blocks release if tests fail)
+  test:
+    uses: ./.github/workflows/checkers/test.yml
 
-  # 2. Parallel binary builds (6 matrix jobs run concurrently)
+  # 2. Non-blocking version check
+  verify:
+    uses: ./.github/workflows/checkers/verify.yml
+
+  # 3. Parallel binary builds (runs only after test passes)
   build-binaries:
+    needs: test
     uses: ./.github/workflows/build-binary.yml
 
   # 3. Create GitHub Release once binaries are ready & auto-sync manifest SHA256 hashes
