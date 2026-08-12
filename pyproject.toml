@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tokens-md"
-version = "0.0.8"
+version = "0.0.9"
 description = "Convert files to token-efficient Markdown for LLM prompts."
 readme = "README.md"
 requires-python = ">=3.10"
