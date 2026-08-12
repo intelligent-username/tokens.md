@@ -1,5 +1,7 @@
-"""Hard token budget allocator: fit content to a context window via an
-escalating cascade of five pruning passes."""
+"""
+Allocate token limit
+And run 5 pruning passes.
+"""
 
 from __future__ import annotations
 

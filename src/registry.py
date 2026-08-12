@@ -1,8 +1,9 @@
-"""Pluggable converter registry.
+"""
+Pluggable converter registry.
 
-A :class:`Converter` knows which file extensions it owns and how to turn a
-single input file into a Markdown file on disk. The :class:`Registry` dispatches
-a path to the matching handler, and :func:`convert_file` is the convenience
+Convert class to know file extensions are owned & how to turn a 
+single input file into a Markdown file on disk. The Registry dispatches
+a path to the matching handler, and convert_file is the convenience
 entry point used by the pipeline and CLI.
 """
 

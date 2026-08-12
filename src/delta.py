@@ -1,4 +1,4 @@
-"""Token delta inspector: print how many tokens were saved by conversion."""
+"""Token delta printer"""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Thin, safe wrapper around pyperclip for copying text to the clipboard."""
+"""Wrapper around pyperclip for copying text to the clipboard."""
 
 from __future__ import annotations
 

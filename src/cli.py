@@ -1,8 +1,5 @@
-"""Unified ``tmd`` command-line interface.
-
-Subcommands: ``convert``, ``clip``, ``watch``, ``fetch``, ``repo``, ``merge``,
-``delta``. Bare ``tmd`` runs ``convert`` with defaults for backward
-compatibility.
+"""
+tmd CLI
 """
 
 from __future__ import annotations

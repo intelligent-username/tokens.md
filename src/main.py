@@ -1,4 +1,6 @@
-"""Alternative entry point: run the CLI via ``python src/main.py``.
+"""
+Simplest entry point to the project
+    run the CLI via ``python src/main.py``.
 
 ``tmd`` (the installed console script) and this module are two different ways
 to invoke the same CLI. Running the script directly needs no editable install —

@@ -1,3 +1,7 @@
+"""
+Classes for keeping track of soon-to-convert files
+"""
+
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from pathlib import Path

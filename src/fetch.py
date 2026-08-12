@@ -1,3 +1,7 @@
+"""
+Fetch data from the web
+"""
+
 import logging
 import re
 import time

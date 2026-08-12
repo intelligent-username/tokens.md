@@ -1,4 +1,6 @@
-"""Multi-file combiner: merge many files into one master Markdown document."""
+"""
+Combines multiple ifles into one.
+"""
 
 from __future__ import annotations
 

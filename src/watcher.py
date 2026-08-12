@@ -1,4 +1,4 @@
-"""Background watcher: convert new files dropped into a hot folder."""
+"""Background watcher: convert new files added to a hot folder live."""
 
 from __future__ import annotations
 

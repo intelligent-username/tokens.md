@@ -1,4 +1,5 @@
-"""Optional-dependency helpers with friendly error messages.
+"""
+Optional-dependency helpers with friendly error messages.
 
 The heavy third-party packages (``trafilatura``, ``tiktoken``, ``pyperclip``,
 ``watchdog``, ``pymupdf4llm``, ``pathspec``, ``sumy``) are imported lazily so

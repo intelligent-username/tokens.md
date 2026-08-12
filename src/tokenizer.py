@@ -1,7 +1,5 @@
-"""Shared token-counting utilities built on tiktoken.
-
-Single source of truth for token math, used by the delta inspector and the
-budget allocator.
+"""
+tiktoken wrapper for token counting
 """
 
 from __future__ import annotations

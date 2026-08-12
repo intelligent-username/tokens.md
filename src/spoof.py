@@ -1,4 +1,4 @@
-"""Standalone Spoofer class engine for tokens.md fetching."""
+"""Spoofer engine for web-based fetching."""
 
 from __future__ import annotations
 

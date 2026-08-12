@@ -1,4 +1,4 @@
-"""Magic-byte format detection, used as a fallback when the extension is unknown."""
+"""Magic-byte format detection, fallback for when extension is unknown."""
 
 from __future__ import annotations
 
