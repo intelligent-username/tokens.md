@@ -188,26 +188,6 @@ Files are merged in sorted path order.
 
 ---
 
-## `tmd delta` — token savings report
-
-Shows the token reduction for files already converted.
-
-```bash
-tmd delta input/ -o output/
-```
-
-| Flag | Default | Meaning |
-|---|---|---|
-| `SOURCE` | (required) | Directory, file, or glob pattern of source files |
-| `-o, --output DIR` | `output` | Directory containing the converted `.md` files |
-| `--encoding NAME` | `o200k_base` | tiktoken encoding |
-
-Output, one line per file:
-
-```
-PDF (142,000 tokens) -> Markdown (12,400 tokens) [-91.2%]
-```
-
 ---
 
 ## `tmd ui` — local web UI
@@ -312,11 +292,12 @@ These only apply when running `tmd ui` or the backend directly.
 
 ---
 
-## Developer Tools
+## Developer / Advanced Tools
 
-These are strictly developer commands for maintaining backend and frontend code quality. Do not expect anything else from them, they're not part of the CLI product.
+These are advanced inspector and developer commands. They are hidden from `tmd --help` by default.
 
 ```bash
+tmd delta input/ -o output/     # Inspect token reduction for pre-converted files
 tmd lint                          # Quiet parallel check (Ruff + Prettier + ESLint)
 tmd lint -v                       # Verbose linter output
 tmd lint --fix                    # Auto-fix formatting and lint errors
@@ -327,5 +308,6 @@ tmd test -v                       # Verbose test output with stack traces
 
 | Subcommand | Meaning |
 |---|---|
+| `tmd delta` | Post-hoc inspection tool that calculates token reduction for files already converted in an output folder. |
 | `tmd lint` | Checks backend Python files (`ruff`) and frontend TypeScript/CSS files (`prettier` & `next lint`) in parallel. |
 | `tmd test` | Runs backend pytest suite (with coverage) and frontend vitest suite (with coverage) in parallel and prints a unified summary table. |

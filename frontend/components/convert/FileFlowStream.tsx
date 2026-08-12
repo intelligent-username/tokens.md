@@ -48,13 +48,13 @@ export function FileFlowStream({ converting, done, percent, merged = false, barR
       {/* Center Flow Badge */}
       <div className="absolute inset-auto flex items-center justify-center">
         {done && percent !== undefined && !merged ? (
-          <span className="inline-flex items-center gap-0.5 rounded-full bg-zinc-950/90 border border-emerald-500/40 px-2.5 py-0.5 text-xs font-mono font-bold text-emerald-400 shadow-glow backdrop-blur-md">−{Math.abs(percent).toFixed(1)}%</span>
+          <span className="inline-flex items-center gap-0.5 rounded-full bg-card/95 border border-border px-2.5 py-0.5 text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 shadow-glow backdrop-blur-md">−{Math.abs(percent).toFixed(1)}%</span>
         ) : done && merged ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-zinc-950/90 border border-emerald-500/40 px-2.5 py-0.5 text-xs font-mono font-bold text-emerald-400 shadow-glow backdrop-blur-md">
+          <span className="inline-flex items-center gap-1 rounded-full bg-card/95 border border-border px-2.5 py-0.5 text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 shadow-glow backdrop-blur-md">
             <Check size={12} /> merged
           </span>
         ) : converting ? (
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400 shadow-[0_0_10px_#16DE81] border border-emerald-500/40">
+          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shadow-[0_0_10px_#16DE81] border border-emerald-500/40">
             <Sparkle size={14} className="animate-spin" />
           </span>
         ) : (

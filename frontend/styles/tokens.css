@@ -47,24 +47,24 @@
   --shadow-glow-soft: 0 0 80px -30px rgba(22, 222, 129, 0.35);
   --shadow-glow: 0 0 24px -8px rgba(22, 222, 129, 0.6);
 
-  /* ---- Semantic tokens, light mode (studio cool slate + navy complementary) ----
+  /* ---- Semantic tokens, light mode (modern muted slate + soft emerald accents) ----
      Every background token is paired with a foreground token. */
-  --color-background: #e8eef5;
-  --color-foreground: #0f172a;
-  --color-card: rgba(255, 255, 255, 0.85);
-  --color-card-foreground: #0f172a;
-  --color-muted: #f1f5f9;
+  --color-background: #d6deeb;
+  --color-foreground: #1e293b;
+  --color-card: rgba(228, 235, 244, 0.85);
+  --color-card-foreground: #1e293b;
+  --color-muted: #cbd5e1;
   --color-muted-foreground: #475569;
-  --color-primary: #10b981;
-  --color-primary-foreground: #0b1428;
-  --color-secondary: #e2e8f0;
-  --color-secondary-foreground: #0f172a;
-  --color-accent: #d1fae5;
+  --color-primary: #059669;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #c4d0e1;
+  --color-secondary-foreground: #1e293b;
+  --color-accent: #a7f3d0;
   --color-accent-foreground: #065f46;
   --color-destructive: #dc2626;
   --color-destructive-foreground: #fdfbfa;
-  --color-border: rgba(148, 163, 184, 0.45);
-  --color-ring: #10b981;
+  --color-border: rgba(100, 116, 139, 0.28);
+  --color-ring: #059669;
 }
 
 /* ---- Semantic tokens, dark mode (default theme) ---- */
@@ -89,31 +89,23 @@
 
 /* ---- Glass surface internals, light mode ---- */
 :root {
-  --glass-blur: 20px;
-  --glass-saturation: 140%;
-  --glass-catchlight: rgba(255, 255, 255, 0.9);
-  --glass-depth: transparent;
-  --glass-drop: rgba(12, 21, 38, 0.25);
-  --card-solid: #fcfdfc;
+  --glass-blur: 24px;
+  --glass-saturation: 130%;
+  --glass-catchlight: rgba(255, 255, 255, 0.5);
+  --glass-depth: rgba(15, 23, 42, 0.04);
+  --glass-drop: rgba(15, 23, 42, 0.12);
+  --card-solid: #d6deeb;
+  --backdrop-glow: rgba(16, 185, 129, 0.12);
+  --backdrop-glow-far: rgba(16, 185, 129, 0.06);
+  --backdrop-grid: rgba(30, 41, 59, 0.05);
+  --backdrop-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
 }
 
-/* ---- Glass surface internals, dark mode ---- */
 .dark {
   --glass-catchlight: rgba(255, 255, 255, 0.1);
   --glass-depth: rgba(255, 255, 255, 0.03);
   --glass-drop: rgba(0, 0, 0, 0.6);
   --card-solid: #1a2235;
-}
-
-/* ---- Canvas backdrop internals ---- */
-:root {
-  --backdrop-glow: rgba(22, 222, 129, 0.1);
-  --backdrop-glow-far: rgba(22, 222, 129, 0.05);
-  --backdrop-grid: rgba(12, 21, 38, 0.045);
-  --backdrop-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.35'/%3E%3C/svg%3E");
-}
-
-.dark {
   --backdrop-glow: rgba(22, 222, 129, 0.14);
   --backdrop-glow-far: rgba(22, 222, 129, 0.06);
   --backdrop-grid: rgba(255, 255, 255, 0.035);

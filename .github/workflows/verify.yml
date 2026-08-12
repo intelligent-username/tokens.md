@@ -1,0 +1,12 @@
+name: Verify Version
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  verify:
+    uses: ./.github/workflows/checker-verify.yml

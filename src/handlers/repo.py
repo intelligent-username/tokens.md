@@ -133,14 +133,31 @@ class RepoConverter(Converter):
     extensions = frozenset()
     name = "repo"
 
-    def convert(self, input_path: Path, output_dir: Path, exclude: Iterable[str] | None = None, **kwargs: object) -> Path:
-        output_dir.mkdir(parents=True, exist_ok=True)
-        root = input_path.resolve()
+    def convert(self, input_path: Path | str, output_dir: Path, exclude: Iterable[str] | None = None, **kwargs: object) -> Path:
+        import subprocess
+        import tempfile
 
+        output_dir.mkdir(parents=True, exist_ok=True)
+        raw_str = str(input_path).strip()
+
+        if raw_str.startswith(("http://", "https://", "git@")) or raw_str.endswith(".git"):
+            repo_name = raw_str.rstrip("/").split("/")[-1].removesuffix(".git") or "repository"
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                tmp_path = Path(tmp_dir) / repo_name
+                res = subprocess.run(["git", "clone", "--depth", "1", raw_str, str(tmp_path)], capture_output=True, text=True)
+                if res.returncode != 0:
+                    raise RuntimeError(f"Failed to clone git repository {raw_str}: {res.stderr.strip()}")
+                return self._convert_local(tmp_path, output_dir, exclude=exclude, repo_name=repo_name)
+        else:
+            root = Path(input_path).resolve()
+            return self._convert_local(root, output_dir, exclude=exclude, repo_name=root.name)
+
+    def _convert_local(self, root: Path, output_dir: Path, exclude: Iterable[str] | None = None, repo_name: str | None = None) -> Path:
+        name = repo_name or root.name
         spec = self._load_gitignore(root, exclude)
         files = self._collect_files(root, spec)
 
-        sections: list[str] = [f"# Repository: {root.name}", ""]
+        sections: list[str] = [f"# Repository: {name}", ""]
         sections.append("## Tree")
         sections.append(_build_tree(root, files))
         sections.append("")
@@ -163,7 +180,7 @@ class RepoConverter(Converter):
                 sections.append(content)
             sections.append("")
 
-        manifest = output_dir / f"{root.name}.md"
+        manifest = output_dir / f"{name}.md"
         manifest.write_text("\n".join(sections), encoding="utf-8")
         return manifest
 

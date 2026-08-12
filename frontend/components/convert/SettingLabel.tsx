@@ -41,9 +41,9 @@ export function SettingLabel({ htmlFor, label, tooltip }: SettingLabelProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.96 }}
             transition={{ duration: 0.15 }}
-            className="absolute bottom-full left-0 mb-2 z-50 w-72 rounded-card border border-emerald-500/40 bg-zinc-950/95 p-3 text-xs text-foreground shadow-2xl backdrop-blur-md pointer-events-none"
+            className="absolute bottom-full left-0 mb-2 z-50 w-72 rounded-card border border-border bg-card/95 p-3 text-xs text-card-foreground shadow-2xl backdrop-blur-md pointer-events-none"
           >
-            <div className="font-bold text-emerald-400 mb-1 flex items-center gap-1.5">
+            <div className="font-bold text-emerald-600 dark:text-emerald-400 mb-1 flex items-center gap-1.5">
               <Info size={14} /> {label}
             </div>
             <p className="text-[11px] leading-relaxed text-muted-foreground">{tooltip}</p>

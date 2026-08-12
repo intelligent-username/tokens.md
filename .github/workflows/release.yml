@@ -11,18 +11,18 @@ permissions:
 jobs:
   # 1. Mandatory test suite gate (blocks release if tests fail)
   test:
-    uses: ./.github/workflows/checkers/test.yml
+    uses: ./.github/workflows/checker-test.yml
 
   # 2. Non-blocking version check
   verify:
-    uses: ./.github/workflows/checkers/verify.yml
+    uses: ./.github/workflows/checker-verify.yml
 
   # 3. Parallel binary builds (runs only after test passes)
   build-binaries:
     needs: test
     uses: ./.github/workflows/build-binary.yml
 
-  # 3. Create GitHub Release once binaries are ready & auto-sync manifest SHA256 hashes
+  # 4. Create GitHub Release once binaries are ready & auto-sync manifest SHA256 hashes
   github-release:
     name: Create GitHub Release & Update Manifests
     needs: build-binaries
@@ -72,7 +72,7 @@ jobs:
             git push origin HEAD:main
           fi
 
-  # 4. Publish to PyPI
+  # 5. Publish to PyPI
   pypi:
     needs: build-binaries
     uses: ./.github/workflows/publish-pypi.yml

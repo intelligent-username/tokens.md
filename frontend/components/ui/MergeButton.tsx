@@ -41,7 +41,7 @@ export function MergeButton({ label, onClick, loading = false, disabled = false 
       type="button"
       onClick={onClick}
       disabled={busy}
-      className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-control bg-primary px-4 font-sans text-sm font-bold text-zinc-950 shadow-glow transition-colors hover:bg-emerald-400 active:bg-emerald-600", busy && "cursor-not-allowed opacity-60 hover:bg-primary active:bg-primary")}
+      className={cn("inline-flex h-10 items-center justify-center gap-2 rounded-control bg-primary px-4 font-sans text-sm font-bold text-primary-foreground shadow-glow transition-colors hover:bg-emerald-600 dark:hover:bg-emerald-400 active:bg-emerald-700 dark:active:bg-emerald-600", busy && "cursor-not-allowed opacity-60 hover:bg-primary active:bg-primary")}
     >
       {loading ? <Spinner size={16} weight="regular" className="animate-spin" aria-hidden="true" /> : null}
       {loading ? busyLabelFor(label) : (label ?? copy.convertIdle)}

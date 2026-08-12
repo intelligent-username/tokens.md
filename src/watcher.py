@@ -14,7 +14,7 @@ from typing import Any
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
-from .handlers.pymupdf import pdf_to_markdown
+from .merger import resolve_to_markdown
 from .registry import UnsupportedFormatError
 
 logger = logging.getLogger(__name__)
@@ -97,7 +97,7 @@ class WatcherHandler(FileSystemEventHandler):
                 self._emit("skipped", path, error="still changing")
                 return False
             self._emit("converting", path)
-            markdown = pdf_to_markdown(path, **self.convert_kwargs)
+            markdown = resolve_to_markdown(path, **self.convert_kwargs)
             out_path = self.output_dir / f"{path.stem}.md"
             out_path.write_text(markdown, encoding="utf-8")
             if self.clip:

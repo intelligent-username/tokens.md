@@ -52,7 +52,7 @@ export function Toggle({ checked, onChange, label, description, tooltip, disable
       </div>
 
       <div className={cn("relative flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-all border", checked ? "bg-emerald-500 border-emerald-400/60 shadow-[0_0_10px_rgba(22,222,129,0.35)]" : "bg-muted border-border/80", disabled && "opacity-50 cursor-not-allowed")}>
-        <span className={cn("h-3.5 w-3.5 rounded-full transition-transform transform shadow-sm", checked ? "translate-x-[16px] bg-zinc-950 font-bold" : "translate-x-0 bg-muted-foreground/80")} />
+        <span className={cn("h-3.5 w-3.5 rounded-full transition-transform transform shadow-sm", checked ? "translate-x-[16px] bg-primary-foreground font-bold" : "translate-x-0 bg-muted-foreground/80")} />
       </div>
 
       <AnimatePresence>
@@ -64,9 +64,9 @@ export function Toggle({ checked, onChange, label, description, tooltip, disable
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.96 }}
             transition={{ duration: 0.15 }}
-            className="absolute bottom-full left-0 mb-2 z-50 w-72 rounded-card border border-emerald-500/40 bg-zinc-950/95 p-3 text-xs text-foreground shadow-2xl backdrop-blur-md pointer-events-none"
+            className="absolute bottom-full left-0 mb-2 z-50 w-72 rounded-card border border-border bg-card/95 p-3 text-xs text-card-foreground shadow-2xl backdrop-blur-md pointer-events-none"
           >
-            <div className="font-bold text-emerald-400 mb-1 flex items-center gap-1.5">
+            <div className="font-bold text-emerald-600 dark:text-emerald-400 mb-1 flex items-center gap-1.5">
               <Info size={14} /> {label}
             </div>
             <p className="text-[11px] leading-relaxed text-muted-foreground">{tooltip}</p>

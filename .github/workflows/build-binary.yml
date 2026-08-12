@@ -5,19 +5,19 @@ on:
 
 jobs:
   build-linux-x64:
-    uses: ./.github/workflows/builders/build-linux-x64.yml
+    uses: ./.github/workflows/builder-linux-x64.yml
 
   build-linux-arm64:
-    uses: ./.github/workflows/builders/build-linux-arm64.yml
+    uses: ./.github/workflows/builder-linux-arm64.yml
 
   build-macos-arm64:
-    uses: ./.github/workflows/builders/build-macos-arm64.yml
+    uses: ./.github/workflows/builder-macos-arm64.yml
 
   build-macos-x64:
-    uses: ./.github/workflows/builders/build-macos-x64.yml
+    uses: ./.github/workflows/builder-macos-x64.yml
 
   build-windows-x64:
-    uses: ./.github/workflows/builders/build-windows-x64.yml
+    uses: ./.github/workflows/builder-windows-x64.yml
 
   build-windows-arm64:
-    uses: ./.github/workflows/builders/build-windows-arm64.yml
+    uses: ./.github/workflows/builder-windows-arm64.yml
