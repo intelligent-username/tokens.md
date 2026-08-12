@@ -132,6 +132,80 @@ def _extract_meta_markdown(html: str) -> str:
     return "\n\n".join(parts)
 
 
+def _fetch_github_repo(url: str, output_dir: Path) -> Path:
+    import subprocess
+    import tempfile
+    from .handlers.repo import RepoConverter, _build_tree
+
+    clean_url = url.strip().rstrip("/")
+    if clean_url.endswith(".git"):
+        clean_url = clean_url[:-4]
+    repo_name = clean_url.split("/")[-1] or "repository"
+    if repo_name.endswith(".md"):
+        repo_name = repo_name[:-3]
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        tmp_path = Path(tmp_dir) / repo_name
+        res = subprocess.run(["git", "clone", "--depth", "1", url, str(tmp_path)], capture_output=True, text=True)
+        if res.returncode != 0:
+            raise UnsupportedFormatError(f"Failed to clone git repository {url}: {res.stderr.strip()}")
+
+        converter = RepoConverter()
+        spec = converter._load_gitignore(tmp_path, None)
+        files = converter._collect_files(tmp_path, spec)
+        tree_str = _build_tree(tmp_path, files)
+
+        readme_path: Path | None = None
+        for candidate in sorted(tmp_path.glob("README*")):
+            if candidate.is_file():
+                readme_path = candidate
+                break
+
+        sections: list[str] = []
+        if readme_path is not None:
+            try:
+                readme_text = readme_path.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                readme_text = ""
+
+            readme_lines = readme_text.splitlines()
+            title_line = ""
+            rest_lines: list[str] = []
+
+            found_title = False
+            for line in readme_lines:
+                if not found_title and line.strip().startswith("# "):
+                    title_line = line.strip()
+                    found_title = True
+                else:
+                    rest_lines.append(line)
+
+            if not title_line:
+                title_line = f"# {repo_name}"
+
+            sections.append(title_line)
+            sections.append("")
+            sections.append("## Directory Structure")
+            sections.append("```")
+            sections.append(tree_str)
+            sections.append("```")
+            sections.append("")
+            rest_content = "\n".join(rest_lines).strip()
+            if rest_content:
+                sections.append(rest_content)
+        else:
+            sections.append(f"# Repository: {repo_name}")
+            sections.append("")
+            sections.append("## Directory Structure")
+            sections.append("```")
+            sections.append(tree_str)
+            sections.append("```")
+
+        output_path = output_dir / f"{repo_name}.md"
+        output_path.write_text("\n".join(sections), encoding="utf-8")
+        return output_path
+
+
 def fetch_url(url: str, output_dir: Path, **kwargs: object) -> Path:
     """Download ``url`` and write clean article Markdown into ``output_dir``.
 
@@ -144,6 +218,15 @@ def fetch_url(url: str, output_dir: Path, **kwargs: object) -> Path:
         raise UnsupportedFormatError("Non-existent or unreachable link")
 
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    parsed = urlparse(raw_url)
+    if "github.com" in parsed.netloc.lower():
+        path_parts = [p for p in parsed.path.strip("/").split("/") if p]
+        if len(path_parts) == 2 or (len(path_parts) == 3 and path_parts[2].endswith(".git")):
+            try:
+                return _fetch_github_repo(raw_url, output_dir)
+            except Exception as exc:
+                logger.warning("GitHub repo fetch failed for %s, falling back to page fetch: %s", raw_url, exc)
 
     # Use require() to get a patchable fetcher (allows test_api.py to mock require)
     fetcher = require("trafilatura")

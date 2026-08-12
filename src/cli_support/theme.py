@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import click
 import typer
 import typer.core
@@ -35,7 +37,7 @@ class CLITheme:
 
 
 class OrderGroup(typer.core.TyperGroup):
-    def format_help(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
+    def format_help(self, ctx: Any, formatter: Any) -> None:
         if self.help:
             console.print(f"{self.help}\n")
 
@@ -92,10 +94,12 @@ class OrderGroup(typer.core.TyperGroup):
         opt_table = Table(box=None, show_header=False, pad_edge=False, padding=(0, 2), expand=False)
         opt_table.add_column("Option", style=CLITheme.ACCENT_STYLE, min_width=col1_width, max_width=col1_width, no_wrap=True)
         opt_table.add_column("Description", style="default")
-        opt_table.add_row("--pages PAGES", "Comma-separated zero-based page indices e.g. '0,1' (convert, merge, clip)")
-        opt_table.add_row("--strip-headers-footers", "Strip repeating headers & footers from PDFs (convert, merge, clip)")
-        opt_table.add_row("--write-images", "Extract embedded images to image path (convert, merge, clip)")
-        opt_table.add_row("--budget INT", "Token ceiling budget for pruning (merge)")
+        opt_table.add_row("-m, --merge", "Merge converted files into a single master document (convert)")
+        opt_table.add_row("-b, --budget INT", "Hard token ceiling budget for pruning (convert, merge)")
+        opt_table.add_row("-f, --full", "Include full source code contents for all files (repo)")
+        opt_table.add_row("--pages PAGES", "Comma-separated zero-based page indices e.g. '0,1' (convert, merge)")
+        opt_table.add_row("--strip-headers-footers", "Strip repeating headers & footers from PDFs (convert, merge)")
+        opt_table.add_row("--write-images", "Extract embedded images to image path (convert, merge)")
         opt_table.add_row("--clip", "Copy converted output directly to clipboard (convert)")
 
         opt_panel = Panel(
@@ -109,10 +113,22 @@ class OrderGroup(typer.core.TyperGroup):
         )
         console.print(opt_panel)
 
-        # Epilog Example
+        # Epilog Examples & Notes
         console.print()
         console.print(
             f'[{CLITheme.LABEL}]Example:[/{CLITheme.LABEL}] [{CLITheme.MUTED}]tmd[/{CLITheme.MUTED}] [{CLITheme.PRIMARY_STYLE}]convert[/{CLITheme.PRIMARY_STYLE}] [{CLITheme.SECONDARY_STYLE}].[/{CLITheme.SECONDARY_STYLE}] [{CLITheme.ACCENT_STYLE}]--loc="out"[/{CLITheme.ACCENT_STYLE}]'
         )
-        console.print(f"[{CLITheme.COMMENT}]# Converts all supported files in current repo[/{CLITheme.COMMENT}]")
-        console.print(f"[{CLITheme.COMMENT}]# into Markdown and writes to out/ folder[/{CLITheme.COMMENT}]")
+        console.print(f"         [{CLITheme.COMMENT}]# Converts all supported files in current repo[/{CLITheme.COMMENT}]")
+        console.print(f"         [{CLITheme.COMMENT}]# into Markdown and writes to out/ folder[/{CLITheme.COMMENT}]")
+
+        console.print()
+        console.print(
+            f"[{CLITheme.LABEL}]NOTE:[/{CLITheme.LABEL}]    [{CLITheme.MUTED}]Multiple Arguments and Options are acceptable; they must be space-separated.[/{CLITheme.MUTED}]\n"
+        )
+        console.print(
+            f'[{CLITheme.LABEL}]Example:[/{CLITheme.LABEL}] [{CLITheme.MUTED}]tmd[/{CLITheme.MUTED}] [{CLITheme.PRIMARY_STYLE}]convert[/{CLITheme.PRIMARY_STYLE}] [{CLITheme.SECONDARY_STYLE}]./docs AtoTC.pdf final_slide.pptx [/{CLITheme.SECONDARY_STYLE}] [{CLITheme.ACCENT_STYLE}]--merge -b 4000 --clip[/{CLITheme.ACCENT_STYLE}]'
+        )
+        console.print(
+                f"         [{CLITheme.COMMENT}]# Converts the ./docs/ folder and the AtoTC.pdf and final_slide.pptx files into markdown,\n"
+                f"         # merges them together, prunes to 4k budget, and copies to clipboard[/{CLITheme.COMMENT}]"
+        )

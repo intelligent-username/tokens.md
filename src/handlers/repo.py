@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 from collections.abc import Iterable
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from ..deps import require
 from ..registry import Converter
@@ -118,12 +118,37 @@ def _lang_for(path: Path) -> str:
 
 
 def _build_tree(root: Path, files: Iterable[Path]) -> str:
-    """Build an indented directory tree of the included files."""
+    """Build an indented directory tree with directories listed first (alphabetical),
+    followed by files (alphabetical).
+    """
+    rel_paths = [p.relative_to(root) for p in files]
+
+    def _create_node() -> dict[str, Any]:
+        return {"dirs": {}, "files": []}
+
+    tree_root = _create_node()
+
+    for rel in rel_paths:
+        curr = tree_root
+        for part in rel.parts[:-1]:
+            if part not in curr["dirs"]:
+                curr["dirs"][part] = _create_node()
+            curr = curr["dirs"][part]
+        curr["files"].append(rel.name)
+
     lines: list[str] = []
-    for path in sorted(files, key=lambda p: str(p).lower()):
-        rel = path.relative_to(root)
-        depth = len(rel.parts) - 1
-        lines.append("  " * depth + rel.name)
+
+    def _render(node: dict[str, Any], depth: int = 0) -> None:
+        indent = "  " * depth
+        # 1. Subdirectories first (alphabetical)
+        for dir_name in sorted(node["dirs"].keys(), key=str.lower):
+            lines.append(f"{indent}{dir_name}/")
+            _render(node["dirs"][dir_name], depth + 1)
+        # 2. Files second (alphabetical)
+        for file_name in sorted(set(node["files"]), key=str.lower):
+            lines.append(f"{indent}{file_name}")
+
+    _render(tree_root, depth=0)
     return "\n".join(lines)
 
 
@@ -133,7 +158,7 @@ class RepoConverter(Converter):
     extensions = frozenset()
     name = "repo"
 
-    def convert(self, input_path: Path | str, output_dir: Path, exclude: Iterable[str] | None = None, **kwargs: object) -> Path:
+    def convert(self, input_path: Path | str, output_dir: Path, exclude: Iterable[str] | None = None, full: bool = False, **kwargs: object) -> Path:
         import subprocess
         import tempfile
 
@@ -141,44 +166,103 @@ class RepoConverter(Converter):
         raw_str = str(input_path).strip()
 
         if raw_str.startswith(("http://", "https://", "git@")) or raw_str.endswith(".git"):
-            repo_name = raw_str.rstrip("/").split("/")[-1].removesuffix(".git") or "repository"
+            clean_str = raw_str.rstrip("/")
+            if clean_str.endswith(".git"):
+                clean_str = clean_str[:-4]
+            repo_name = clean_str.split("/")[-1] or "repository"
+            if repo_name.endswith(".md"):
+                repo_name = repo_name[:-3]
             with tempfile.TemporaryDirectory() as tmp_dir:
                 tmp_path = Path(tmp_dir) / repo_name
                 res = subprocess.run(["git", "clone", "--depth", "1", raw_str, str(tmp_path)], capture_output=True, text=True)
                 if res.returncode != 0:
                     raise RuntimeError(f"Failed to clone git repository {raw_str}: {res.stderr.strip()}")
-                return self._convert_local(tmp_path, output_dir, exclude=exclude, repo_name=repo_name)
+                return self._convert_local(tmp_path, output_dir, exclude=exclude, repo_name=repo_name, full=full)
         else:
             root = Path(input_path).resolve()
-            return self._convert_local(root, output_dir, exclude=exclude, repo_name=root.name)
+            repo_name = root.name
+            if repo_name.endswith(".md"):
+                repo_name = repo_name[:-3]
+            return self._convert_local(root, output_dir, exclude=exclude, repo_name=repo_name, full=full)
 
-    def _convert_local(self, root: Path, output_dir: Path, exclude: Iterable[str] | None = None, repo_name: str | None = None) -> Path:
+    def _convert_local(self, root: Path, output_dir: Path, exclude: Iterable[str] | None = None, repo_name: str | None = None, full: bool = False) -> Path:
         name = repo_name or root.name
+        if name.endswith(".md"):
+            name = name[:-3]
         spec = self._load_gitignore(root, exclude)
         files = self._collect_files(root, spec)
 
-        sections: list[str] = [f"# Repository: {name}", ""]
-        sections.append("## Tree")
-        sections.append(_build_tree(root, files))
-        sections.append("")
-        sections.append("## Files")
-        sections.append("")
+        tree_str = _build_tree(root, files)
 
-        for path in sorted(files, key=lambda p: str(p).lower()):
-            rel = path.relative_to(root)
-            sections.append(f"=== FILE: {rel.as_posix()} ===")
-            lang = _lang_for(path)
+        readme_path: Path | None = None
+        for candidate in sorted(root.glob("README*")):
+            if candidate.is_file():
+                readme_path = candidate
+                break
+
+        sections: list[str] = []
+
+        if readme_path is not None:
             try:
-                content = path.read_text(encoding="utf-8", errors="replace")
+                readme_text = readme_path.read_text(encoding="utf-8", errors="replace")
             except OSError:
-                content = ""
-            if lang:
-                sections.append(f"```{lang}")
-                sections.append(content)
-                sections.append("```")
-            else:
-                sections.append(content)
+                readme_text = ""
+
+            readme_lines = readme_text.splitlines()
+            title_line = ""
+            rest_lines: list[str] = []
+
+            found_title = False
+            for line in readme_lines:
+                if not found_title and line.strip().startswith("# "):
+                    title_line = line.strip()
+                    found_title = True
+                else:
+                    rest_lines.append(line)
+
+            if not title_line:
+                title_line = f"# {name}"
+
+            sections.append(title_line)
             sections.append("")
+            sections.append("## Directory Structure")
+            sections.append("```")
+            sections.append(tree_str)
+            sections.append("```")
+            sections.append("")
+            rest_content = "\n".join(rest_lines).strip()
+            if rest_content:
+                sections.append(rest_content)
+                sections.append("")
+        else:
+            sections.append(f"# Repository: {name}")
+            sections.append("")
+            sections.append("## Directory Structure")
+            sections.append("```")
+            sections.append(tree_str)
+            sections.append("```")
+            sections.append("")
+
+        if full:
+            sections.append("## Repository Files")
+            sections.append("")
+            for path in sorted(files, key=lambda p: str(p).lower()):
+                rel = path.relative_to(root)
+                sections.append(f"=== FILE: {rel.as_posix()} ===")
+                lang = _lang_for(path)
+                try:
+                    content = path.read_text(encoding="utf-8", errors="replace")
+                except OSError:
+                    content = ""
+                if lang:
+                    sections.append(f"```{lang}")
+                    sections.append(content)
+                    sections.append("```")
+                else:
+                    sections.append(content)
+                sections.append("")
+
+
 
         manifest = output_dir / f"{name}.md"
         manifest.write_text("\n".join(sections), encoding="utf-8")
@@ -190,7 +274,9 @@ class RepoConverter(Converter):
         patterns: list[str] = []
         gitignore = root / ".gitignore"
         if gitignore.exists():
-            patterns.extend(line.strip() for line in gitignore.read_text(encoding="utf-8", errors="replace").splitlines() if line.strip() and not line.strip().startswith("#"))
+            patterns.extend(
+                line.strip() for line in gitignore.read_text(encoding="utf-8", errors="replace").splitlines() if line.strip() and not line.strip().startswith("#")
+            )
         if exclude:
             patterns.extend(exclude)
         return pathspec.PathSpec.from_lines("gitwildmatch", patterns)
@@ -198,7 +284,7 @@ class RepoConverter(Converter):
     def _collect_files(self, root: Path, spec: pathspec.PathSpec) -> list[Path]:
         files: list[Path] = []
         for dirpath, dirnames, filenames in os.walk(root):
-            dirnames[:] = [d for d in dirnames if not self._ignored(root, Path(dirpath) / d, spec)]
+            dirnames[:] = [d for d in dirnames if d != ".git" and not self._ignored(root, Path(dirpath) / d, spec)]
             for filename in filenames:
                 path = Path(dirpath) / filename
                 if self._ignored(root, path, spec):
@@ -211,4 +297,7 @@ class RepoConverter(Converter):
     @staticmethod
     def _ignored(root: Path, path: Path, spec: pathspec.PathSpec) -> bool:
         rel = path.relative_to(root).as_posix()
+        parts = rel.split("/")
+        if any(part == ".git" for part in parts):
+            return True
         return spec.match_file(rel)

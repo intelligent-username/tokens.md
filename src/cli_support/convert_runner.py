@@ -9,7 +9,9 @@ from pathlib import Path
 import typer
 from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
 
+from ..budget import format_prune_report, prune_to_budget
 from ..file_selector import select_files
+from ..merger import merge_files
 from ..registry import UnsupportedFormatError, convert_file
 from ..tokenizer import DEFAULT_ENCODING, count_raw_file_tokens, count_tokens, delta_percent, format_tokens
 from .constants import EXIT_CODE_ERROR, PROGRESS_BAR_COMPLETE_STYLE, PROGRESS_BAR_STYLE
@@ -17,8 +19,21 @@ from .theme import console
 from .utils import _convert_kwargs, _default_extensions, _parse_extensions, _resolve_output_dir, _truncate_desc
 
 
-def convert_impl(source: str = "input", output: str = "output", loc: str | None = None, recursive: bool = False, extensions: str | None = None, strip_headers_footers: bool = False, write_images: bool = False, image_path: str | None = None, pages: str | None = None, clip: bool = False) -> None:
-    """Convert files to Markdown."""
+def convert_impl(
+    source: str = "input",
+    output: str = "output",
+    loc: str | None = None,
+    recursive: bool = False,
+    extensions: str | None = None,
+    strip_headers_footers: bool = False,
+    write_images: bool = False,
+    image_path: str | None = None,
+    pages: str | None = None,
+    clip: bool = False,
+    merge: bool = False,
+    budget: int | None = None,
+) -> None:
+    """Convert files to Markdown, with optional merging and token budgeting."""
     output_dir = _resolve_output_dir(output, loc)
     files = select_files(source, extensions=_parse_extensions(extensions if extensions is not None else _default_extensions()), recursive=recursive)
     if not files:
@@ -27,7 +42,14 @@ def convert_impl(source: str = "input", output: str = "output", loc: str | None 
 
     kwargs = _convert_kwargs(strip_headers_footers, write_images, image_path, pages)
 
-    with Progress(SpinnerColumn(spinner_name="dots"), TextColumn("{task.description}"), BarColumn(bar_width=22, style=PROGRESS_BAR_STYLE, complete_style=PROGRESS_BAR_COMPLETE_STYLE), TaskProgressColumn(), console=console, transient=False) as progress:
+    with Progress(
+        SpinnerColumn(spinner_name="dots"),
+        TextColumn("{task.description}"),
+        BarColumn(bar_width=22, style=PROGRESS_BAR_STYLE, complete_style=PROGRESS_BAR_COMPLETE_STYLE),
+        TaskProgressColumn(),
+        console=console,
+        transient=False,
+    ) as progress:
         task_map = {}
         for path in files:
             label = _truncate_desc(f"Converting {path.name}", 44)
@@ -52,6 +74,12 @@ def convert_impl(source: str = "input", output: str = "output", loc: str | None 
             try:
                 out = convert_file(path, output_dir, **kwargs)
                 markdown = out.read_text(encoding="utf-8", errors="replace")
+
+                if budget is not None and not merge:
+                    result = prune_to_budget(markdown, budget, DEFAULT_ENCODING)
+                    out.write_text(result.content, encoding="utf-8")
+                    markdown = result.content
+
                 source_tokens = count_raw_file_tokens(path)
                 target_tokens = count_tokens(markdown, DEFAULT_ENCODING)
 
@@ -85,7 +113,8 @@ def convert_impl(source: str = "input", output: str = "output", loc: str | None 
     combined: list[str] = []
     total_source = 0
     total_target = 0
-    for _path, out, markdown, source_tokens, target_tokens, exc in results:
+    successful_paths: list[Path] = []
+    for path, out, markdown, source_tokens, target_tokens, exc in results:
         if exc is not None:
             failures += 1
         elif out is not None and markdown is not None:
@@ -93,14 +122,39 @@ def convert_impl(source: str = "input", output: str = "output", loc: str | None 
             converted_count += 1
             total_source += source_tokens
             total_target += target_tokens
+            successful_paths.append(path)
 
-    if clip and combined:
+    if merge and successful_paths:
+        if output.endswith((".md", ".markdown")):
+            merged_filename = Path(output).name
+            merged_out_dir = _resolve_output_dir(str(Path(output).parent), loc)
+            merged_path = merged_out_dir / merged_filename
+        else:
+            merged_path = output_dir / "merged.md"
+
+        merge_files(successful_paths, merged_path, encoding=DEFAULT_ENCODING, include_tokens=budget is not None, **kwargs)
+
+        if budget is not None:
+            result = prune_to_budget(merged_path.read_text(encoding="utf-8"), budget, DEFAULT_ENCODING)
+            merged_path.write_text(result.content, encoding="utf-8")
+            console.print(format_prune_report(result, budget, DEFAULT_ENCODING))
+
+        merged_text = merged_path.read_text(encoding="utf-8", errors="replace")
+        total_target = count_tokens(merged_text, DEFAULT_ENCODING)
+        console.print(f"[green]Merged[/green] {len(successful_paths)} file(s) -> {merged_path} [dim cyan]({format_tokens(total_target)} tokens)[/dim cyan]")
+
+        if clip:
+            from ..clipboard import copy_to_clipboard
+
+            copy_to_clipboard(merged_text)
+            console.print(f"[cyan]Copied merged output[/cyan] to clipboard.")
+    elif clip and combined:
         from ..clipboard import copy_to_clipboard
 
         copy_to_clipboard("\n\n".join(combined))
         console.print(f"[cyan]Copied[/cyan] {len(combined)} file(s) to clipboard.")
 
-    if converted_count:
+    if converted_count and not merge:
         pct = delta_percent(total_source, total_target)
         console.print(f"[bold]TOTAL[/bold] ({format_tokens(total_source)} tokens) -> ({format_tokens(total_target)} tokens) [{pct:+.1f}%]")
 

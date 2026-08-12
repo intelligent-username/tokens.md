@@ -16,7 +16,7 @@ from ..file_selector import select_files
 from ..handlers.repo import RepoConverter
 from ..merger import merge_files
 from ..registry import UnsupportedFormatError
-from ..tokenizer import DEFAULT_ENCODING, count_raw_file_tokens, count_tokens, delta_percent, format_tokens
+from ..tokenizer import DEFAULT_ENCODING, count_raw_file_tokens, count_tokens, count_tokens_in_file, delta_percent, format_tokens
 from .constants import (
     DEFAULT_MERGED_FILENAME,
     DEFAULT_OUTPUT_DIR,
@@ -100,6 +100,8 @@ def convert(
     image_path: str | None = typer.Option(None, "--image-path", help="Custom directory for extracted images."),
     pages: str | None = typer.Option(None, "--pages", help="Comma-separated zero-based page indices (e.g. '0,1,4')."),
     clip: bool = typer.Option(False, "--clip", help="Copy combined Markdown output to clipboard."),
+    merge: bool = typer.Option(False, "-m", "--merge", help="Merge all converted files into a single unified Markdown document."),
+    budget: int | None = typer.Option(None, "-b", "--budget", help="Prune output to fit a hard token budget limit."),
 ) -> None:
     """Convert files to Markdown."""
     convert_impl(
@@ -113,55 +115,12 @@ def convert(
         image_path=image_path,
         pages=pages,
         clip=clip,
+        merge=merge,
+        budget=budget,
     )
 
 
-@app.command()
-def clip(
-    source: str = typer.Argument(..., help="File or directory to convert."),
-    write: bool = typer.Option(False, "--write", help="Also save .md files to output directory."),
-    output: str = typer.Option(DEFAULT_OUTPUT_DIR, "-o", "--output", help="Output directory (used with --write)."),
-    loc: str | None = typer.Option(
-        None,
-        "--loc",
-        help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs).",
-    ),
-    strip_headers_footers: bool = typer.Option(False, "--strip-headers-footers", help="Strip running headers and footers from each page."),
-    write_images: bool = typer.Option(False, "--write-images", help="Extract embedded images to disk."),
-    image_path: str | None = typer.Option(None, "--image-path", help="Custom directory for extracted images."),
-    pages: str | None = typer.Option(None, "--pages", help="Comma-separated zero-based page indices (e.g. '0,1,4')."),
-) -> None:
-    """Convert on the fly and copy Markdown to the clipboard."""
-    from ..clipboard import copy_to_clipboard
-    from ..merger import resolve_to_markdown
 
-    source_path = Path(source)
-    if source_path.is_file():
-        paths = [source_path]
-    else:
-        paths = select_files(source_path, extensions=_parse_extensions(_default_extensions()))
-    if not paths:
-        typer.echo(f"No matching files found in {source}.")
-        raise typer.Exit(code=EXIT_CODE_ERROR)
-
-    kwargs = _convert_kwargs(strip_headers_footers, write_images, image_path, pages)
-    parts: list[str] = []
-    for path in paths:
-        try:
-            parts.append(resolve_to_markdown(path, **kwargs))
-        except UnsupportedFormatError as exc:
-            console.print(f"[yellow]Skipped[/yellow] {path.name}: {exc}")
-            continue
-        if write:
-            output_dir = _resolve_output_dir(output, loc)
-            (output_dir / f"{path.stem}.md").write_text(parts[-1], encoding="utf-8")
-
-    if not parts:
-        raise typer.Exit(code=EXIT_CODE_ERROR)
-
-    combined = "\n\n".join(parts)
-    copy_to_clipboard(combined)
-    console.print(f"[cyan]Copied[/cyan] {len(combined)} chars / {len(combined.splitlines())} lines to clipboard.")
 
 
 @app.command()
@@ -230,12 +189,14 @@ def repo(
         help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs).",
     ),
     exclude: list[str] = typer.Option([], "--exclude", help="Extra gitignore patterns."),
+    full: bool = typer.Option(False, "-f", "--full", help="Include full source code contents for all repository files."),
 ) -> None:
     """Collapse a repository into a single Markdown manifest."""
     output_dir = _resolve_output_dir(output, loc)
     try:
-        out = RepoConverter().convert(directory, output_dir, exclude=exclude)
-        console.print(f"[green]Repo manifest[/green] -> {out.name}")
+        out = RepoConverter().convert(directory, output_dir, exclude=exclude, full=full)
+        tokens = count_tokens_in_file(out)
+        console.print(f"[green]Repo manifest[/green] -> {out} [dim cyan]({format_tokens(tokens)} tokens)[/dim cyan]")
     except Exception as exc:
         console.print(f"[red]Error[/red] {exc}")
         raise typer.Exit(code=EXIT_CODE_ERROR)
@@ -258,7 +219,7 @@ def merge(
     no_toc: bool = typer.Option(False, "--no-toc", help="Skip generating Table of Contents header."),
     delta: bool = typer.Option(False, "--delta", help="Print token savings delta summary after merging."),
 ) -> None:
-    """Merge many files into one master Markdown document."""
+    """Merge selected files into one master Markdown document."""
     files = select_files(source, extensions=_parse_extensions(_default_extensions()), recursive=recursive)
     if not files:
         typer.echo(f"No matching files found in {source}.")

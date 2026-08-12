@@ -55,28 +55,6 @@ Unsupported formats exit with code `1` and print a clear message. If a required 
 
 ---
 
-## `tmd clip` — convert to clipboard
-
-Converts a file or folder and copies the Markdown to your clipboard, no disk writes required.
-
-```bash
-tmd clip report.pdf
-tmd clip docs/
-tmd clip report.pdf --write           # also save to disk
-tmd clip report.pdf --write -o out/
-```
-
-| Flag | Default | Meaning |
-|---|---|---|
-| `SOURCE` | (required) | File or directory |
-| `--write` | off | Also save `.md` files to the output directory |
-| `-o, --output DIR` | `output` | Used only with `--write` |
-| `--strip-headers-footers`, `--write-images`, `--image-path`, `--pages` | | Same as `convert` |
-
-Prints the character and line count of what was copied.
-
----
-
 ## `tmd watch` — hot-folder daemon
 
 Watches a directory and converts new files as they appear.
@@ -130,8 +108,9 @@ tmd repo ./my-project --exclude "*.lock" --exclude "build/"
 
 | Flag | Default | Meaning |
 |---|---|---|
-| `DIRECTORY` | (required) | Repository root |
+| `DIRECTORY` | (required) | Repository root path or Git URL |
 | `-o, --output DIR` | `output` | Output directory |
+| `-f, --full` | off | Include full source code contents for all files |
 | `--exclude PATTERN` | none | Extra gitignore-style exclude pattern (repeatable) |
 
 Output structure:
