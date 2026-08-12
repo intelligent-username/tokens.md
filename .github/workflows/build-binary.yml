@@ -4,108 +4,20 @@ on:
   workflow_call:
 
 jobs:
-  build:
-    name: Build (${{ matrix.os }} / ${{ matrix.arch }})
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runner: ubuntu-22.04
-            os: linux
-            arch: x64
-            artifact: tmd-linux-x64
-            exe: tmd-linux-x64
+  build-linux-x64:
+    uses: ./.github/workflows/builders/build-linux-x64.yml
 
-          - runner: ubuntu-24.04-arm
-            os: linux
-            arch: arm64
-            artifact: tmd-linux-arm64
-            exe: tmd-linux-arm64
+  build-linux-arm64:
+    uses: ./.github/workflows/builders/build-linux-arm64.yml
 
-          - runner: macos-latest    # Apple Silicon (M-series)
-            os: macos
-            arch: arm64
-            artifact: tmd-macos-arm64
-            exe: tmd-macos-arm64
+  build-macos-arm64:
+    uses: ./.github/workflows/builders/build-macos-arm64.yml
 
-          - runner: windows-latest  # Windows x64 (runs natively on x64 & via emulation on ARM64)
-            os: windows
-            arch: x64
-            artifact: tmd-windows-x64.exe
-            exe: tmd-windows-x64.exe
+  build-macos-x64:
+    uses: ./.github/workflows/builders/build-macos-x64.yml
 
-    steps:
-      - uses: actions/checkout@v4
+  build-windows-x64:
+    uses: ./.github/workflows/builders/build-windows-x64.yml
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-
-      - name: Setup sccache
-        uses: mozilla/sccache-action@v0.0.8
-
-      - name: Configure Compiler Caches
-        shell: bash
-        run: |
-          echo "PYTHONUNBUFFERED=1" >> $GITHUB_ENV
-          if [ "${{ matrix.os }}" = "windows" ]; then
-            echo "CC=sccache cl" >> $GITHUB_ENV
-            echo "CXX=sccache cl" >> $GITHUB_ENV
-          fi
-
-      - name: Cache Nuitka
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/Nuitka
-            ~/AppData/Local/Nuitka/Nuitka/Cache
-            .nuitka
-          key: nuitka-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('**/*.py', 'pyproject.toml') }}
-          restore-keys: |
-            nuitka-${{ matrix.os }}-${{ matrix.arch }}-
-
-      - name: Install dependencies
-        run: pip install nuitka ordered-set zstandard -e .
-
-      - name: Build binary (Unix)
-        if: runner.os != 'Windows'
-        run: |
-          python -m nuitka \
-            --onefile \
-            --output-filename=${{ matrix.exe }} \
-            --include-package=src \
-            --include-package=backend \
-            --follow-imports \
-            --assume-yes-for-downloads \
-            --jobs=4 \
-            --linux-onefile-icon=assets/tmd.png \
-            tmd_runner.py
-
-      - name: Build binary (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          python -m nuitka `
-            --onefile `
-            --output-filename=${{ matrix.exe }} `
-            --include-package=src `
-            --include-package=backend `
-            --follow-imports `
-            --assume-yes-for-downloads `
-            --jobs=4 `
-            --windows-icon-from-ico=assets/tmd.ico `
-            tmd_runner.py
-
-      - name: Smoke test
-        shell: bash
-        run: |
-          ./${{ matrix.exe }} --version
-          ./${{ matrix.exe }} --help
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.artifact }}
-          path: ${{ matrix.exe }}
+  build-windows-arm64:
+    uses: ./.github/workflows/builders/build-windows-arm64.yml

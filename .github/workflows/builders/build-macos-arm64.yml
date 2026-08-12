@@ -1,0 +1,62 @@
+name: Build macOS ARM64
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    name: Build (macOS / ARM64)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Setup sccache
+        uses: mozilla/sccache-action@v0.0.8
+
+      - name: Configure Compiler Caches
+        shell: bash
+        run: |
+          echo "PYTHONUNBUFFERED=1" >> $GITHUB_ENV
+
+      - name: Cache Nuitka
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/Nuitka
+            .nuitka
+          key: nuitka-macos-arm64-${{ hashFiles('**/*.py', 'pyproject.toml') }}
+          restore-keys: |
+            nuitka-macos-arm64-
+
+      - name: Install dependencies
+        run: pip install nuitka ordered-set zstandard -e .
+
+      - name: Build binary
+        run: |
+          python -m nuitka \
+            --onefile \
+            --output-filename=tmd-macos-arm64 \
+            --include-package=src \
+            --include-package=backend \
+            --follow-imports \
+            --assume-yes-for-downloads \
+            --jobs=4 \
+            --linux-onefile-icon=assets/tmd.png \
+            tmd_runner.py
+
+      - name: Smoke test
+        shell: bash
+        run: |
+          ./tmd-macos-arm64 --version
+          ./tmd-macos-arm64 --help
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tmd-macos-arm64
+          path: tmd-macos-arm64
