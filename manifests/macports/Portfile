@@ -6,7 +6,7 @@ name                tmd
 version             "0.0.5"
 categories          textproc devel
 platforms           darwin
-supported_archs     x86_64 arm64
+supported_archs     arm64
 license             AGPL-3
 maintainers         {github:intelligent-username}
 description         Convert files to token-efficient Markdown for LLM prompts
@@ -15,30 +15,17 @@ long_description    {*}${description}. Supports PDF, DOCX, PPTX, XLSX, ODT, \
                     Jupyter notebooks, and whole code repositories.
 homepage            https://github.com/intelligent-username/tokens.md
 
-if {${build_arch} eq "arm64"} {
-    distfiles       tmd-macos-arm64
-    master_sites    https://github.com/intelligent-username/tokens.md/releases/download/v${version}/
-    checksums       rmd160  REPLACE_WITH_RIPEMD160_ARM64 \
+distfiles           tmd-macos-arm64
+master_sites        https://github.com/intelligent-username/tokens.md/releases/download/v${version}/
+checksums           rmd160  REPLACE_WITH_RIPEMD160_ARM64 \
                     sha256  REPLACE_WITH_SHA256_MACOS_ARM64 \
                     size    REPLACE_WITH_SIZE_ARM64
-} else {
-    distfiles       tmd-macos-x64
-    master_sites    https://github.com/intelligent-username/tokens.md/releases/download/v${version}/
-    checksums       rmd160  REPLACE_WITH_RIPEMD160_X64 \
-                    sha256  REPLACE_WITH_SHA256_MACOS_X64 \
-                    size    REPLACE_WITH_SIZE_X64
-}
 
 use_configure       no
 build               {}
 
 destroot {
-    if {${build_arch} eq "arm64"} {
-        set binary ${worksrcpath}/tmd-macos-arm64
-    } else {
-        set binary ${worksrcpath}/tmd-macos-x64
-    }
-    file copy ${binary} ${destroot}${prefix}/bin/tmd
+    file copy ${worksrcpath}/tmd-macos-arm64 ${destroot}${prefix}/bin/tmd
     file attributes ${destroot}${prefix}/bin/tmd -permissions 0755
 }
 

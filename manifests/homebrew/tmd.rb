@@ -11,13 +11,8 @@ class Tmd < Formula
   end
 
   on_macos do
-    if Hardware::CPU.arm?
-      url "https://github.com/intelligent-username/tokens.md/releases/download/v#{version}/tmd-macos-arm64"
-      sha256 "REPLACE_WITH_SHA256_MACOS_ARM64"
-    else
-      url "https://github.com/intelligent-username/tokens.md/releases/download/v#{version}/tmd-macos-x64"
-      sha256 "REPLACE_WITH_SHA256_MACOS_X64"
-    end
+    url "https://github.com/intelligent-username/tokens.md/releases/download/v#{version}/tmd-macos-arm64"
+    sha256 "REPLACE_WITH_SHA256_MACOS_ARM64"
   end
 
   on_linux do

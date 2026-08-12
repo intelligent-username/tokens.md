@@ -40,6 +40,7 @@ tmd convert docs/ --clip
 |---|---|---|
 | `SOURCE` | `input` | Directory, file path, or glob pattern |
 | `-o, --output DIR` | `output` | Output directory |
+| `--loc [DIR]` | none | Target folder. Bare `--loc` or `""` writes to `.`, or specify folder (e.g. `--loc=outputs`) |
 | `-r, --recursive` | off | Recurse into subdirectories |
 | `-e, --extensions` | all supported | Comma-separated extension filter (e.g. `pdf,docx`) |
 | `--strip-headers-footers` | off | Strip running headers and footers from each page |

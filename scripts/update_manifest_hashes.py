@@ -32,8 +32,6 @@ def main() -> None:
         print(f"  {name}: {sha}")
 
     win_x64 = hashes.get("tmd-windows-x64.exe", "")
-    win_arm64 = hashes.get("tmd-windows-arm64.exe", "")
-    mac_x64 = hashes.get("tmd-macos-x64", "")
     mac_arm64 = hashes.get("tmd-macos-arm64", "")
     linux_x64 = hashes.get("tmd-linux-x64", "")
     linux_arm64 = hashes.get("tmd-linux-arm64", "")
@@ -43,7 +41,6 @@ def main() -> None:
     if brew_file.exists():
         text = brew_file.read_text(encoding="utf-8")
         text = re.sub(r'sha256\s+["\'](REPLACE_WITH_SHA256_MACOS_ARM64|[a-f0-9]{64})["\']', f'sha256 "{mac_arm64}"', text, count=1)
-        text = re.sub(r'sha256\s+["\'](REPLACE_WITH_SHA256_MACOS_X64|[a-f0-9]{64})["\']', f'sha256 "{mac_x64}"', text, count=1)
         text = re.sub(r'sha256\s+["\'](REPLACE_WITH_SHA256_LINUX_ARM64|[a-f0-9]{64})["\']', f'sha256 "{linux_arm64}"', text, count=1)
         text = re.sub(r'sha256\s+["\'](REPLACE_WITH_SHA256_LINUX_X64|[a-f0-9]{64})["\']', f'sha256 "{linux_x64}"', text, count=1)
         brew_file.write_text(text, encoding="utf-8")
@@ -54,7 +51,6 @@ def main() -> None:
     if scoop_file.exists():
         text = scoop_file.read_text(encoding="utf-8")
         text = re.sub(r'"hash":\s*["\'](REPLACE_WITH_SHA256_WINDOWS_X64|[a-f0-9]{64})["\']', f'"hash": "{win_x64}"', text, count=1)
-        text = re.sub(r'"hash":\s*["\'](REPLACE_WITH_SHA256_WINDOWS_ARM64|[a-f0-9]{64})["\']', f'"hash": "{win_arm64}"', text, count=1)
         scoop_file.write_text(text, encoding="utf-8")
         print("Updated Scoop manifest.")
 
@@ -63,7 +59,6 @@ def main() -> None:
     if winget_file.exists():
         text = winget_file.read_text(encoding="utf-8")
         text = re.sub(r'InstallerSha256:\s*(REPLACE_WITH_SHA256_WINDOWS_X64|[a-f0-9]{64})', f'InstallerSha256: {win_x64}', text, count=1)
-        text = re.sub(r'InstallerSha256:\s*(REPLACE_WITH_SHA256_WINDOWS_ARM64|[a-f0-9]{64})', f'InstallerSha256: {win_arm64}', text, count=1)
         winget_file.write_text(text, encoding="utf-8")
         print("Updated Winget manifest.")
 
@@ -72,7 +67,6 @@ def main() -> None:
     if choco_file.exists():
         text = choco_file.read_text(encoding="utf-8")
         text = re.sub(r'checksum64\s*=\s*["\'](REPLACE_WITH_SHA256_WINDOWS_X64|[a-f0-9]{64})["\']', f"checksum64     = '{win_x64}'", text)
-        text = re.sub(r'checksumArm64\s*=\s*["\'](REPLACE_WITH_SHA256_WINDOWS_ARM64|[a-f0-9]{64})["\']', f"checksumArm64  = '{win_arm64}'", text)
         choco_file.write_text(text, encoding="utf-8")
         print("Updated Chocolatey manifest.")
 
@@ -90,7 +84,6 @@ def main() -> None:
     if macports_file.exists():
         text = macports_file.read_text(encoding="utf-8")
         text = re.sub(r'sha256\s+(REPLACE_WITH_SHA256_MACOS_ARM64|[a-f0-9]{64})', f'sha256  {mac_arm64}', text)
-        text = re.sub(r'sha256\s+(REPLACE_WITH_SHA256_MACOS_X64|[a-f0-9]{64})', f'sha256  {mac_x64}', text)
         macports_file.write_text(text, encoding="utf-8")
         print("Updated MacPorts manifest.")
 

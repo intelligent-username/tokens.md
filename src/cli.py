@@ -9,12 +9,21 @@ from __future__ import annotations
 
 import threading
 import webbrowser
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, List, Optional, Sequence
 
 import typer
 from rich.console import Console
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    SpinnerColumn,
+    TaskProgressColumn,
+    TextColumn,
+    TimeRemainingColumn,
+)
 
 from . import __version__
 from .budget import format_prune_report, prune_to_budget
@@ -33,7 +42,10 @@ from .tokenizer import (
 )
 
 app = typer.Typer(
-    help="Convert files to token-efficient Markdown for LLM prompts.",
+    help=(
+        "Convert files to token-efficient Markdown for LLM prompts.\n\n"
+        'Example: tmd convert . --loc="out"               # Converts all supported files in the current repository into markdown and writes to out/ folder'
+    ),
     no_args_is_help=False,
     add_completion=False,
 )
@@ -93,7 +105,10 @@ def _main(
     ctx: typer.Context,
     version: bool = typer.Option(False, "--version", help="Show version and exit."),
 ) -> None:
-    """Bare ``tmd`` runs ``convert`` with defaults."""
+    """Convert files to token-efficient Markdown for LLM prompts.
+
+    Example: tmd convert . --loc="out"               # Converts all supported files in the current repository into markdown and writes to out/ folder
+    """
     if version:
         typer.echo(f"tmd {__version__}")
         raise typer.Exit()
@@ -102,9 +117,26 @@ def _main(
         convert_impl(source=str(source), output=str(source.parent / "output"))
 
 
+def _resolve_output_dir(output: str, loc: Optional[str] = None) -> Path:
+    """Resolve destination directory from --output or --loc option.
+
+    Bare --loc, --loc="", or --loc="." resolves to current directory '.'.
+    --loc="outputs" resolves to directory 'outputs/'.
+    If --loc is omitted, falls back to output.
+    """
+    if loc is not None:
+        target = "." if (loc.strip() == "" or loc == ".") else loc
+    else:
+        target = output
+    p = Path(target)
+    p.mkdir(parents=True, exist_ok=True)
+    return p
+
+
 def convert_impl(
     source: str = "input",
     output: str = "output",
+    loc: Optional[str] = None,
     recursive: bool = False,
     extensions: Optional[str] = None,
     strip_headers_footers: bool = False,
@@ -118,8 +150,7 @@ def convert_impl(
     Plain logic function so it can be called directly (e.g. from the bare
     ``tmd`` callback) without Typer's ``OptionInfo`` defaults.
     """
-    output_dir = Path(output)
-    output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir = _resolve_output_dir(output, loc)
     files = select_files(
         source,
         extensions=_parse_extensions(
@@ -133,18 +164,51 @@ def convert_impl(
 
     kwargs = _convert_kwargs(strip_headers_footers, write_images, image_path, pages)
 
-    def _convert_file_worker(path: Path):
-        try:
-            out = convert_file(path, output_dir, **kwargs)
-            markdown = out.read_text(encoding="utf-8", errors="replace")
-            source_tokens = count_raw_file_tokens(path)
-            target_tokens = count_tokens(markdown, DEFAULT_ENCODING)
-            return (path, out, markdown, source_tokens, target_tokens, None)
-        except UnsupportedFormatError as exc:
-            return (path, None, None, 0, 0, exc)
+    with Progress(
+        SpinnerColumn(spinner_name="dots"),
+        TextColumn("{task.description}"),
+        BarColumn(bar_width=20, style="dim white", complete_style="green"),
+        TaskProgressColumn(),
+        console=console,
+        transient=False,
+    ) as progress:
+        task_map = {
+            path: progress.add_task(f"[cyan]Converting[/cyan] {path.name}", total=100)
+            for path in files
+        }
 
-    with ThreadPoolExecutor() as executor:
-        results = list(executor.map(_convert_file_worker, files))
+        def _convert_file_worker(path: Path):
+            t_id = task_map[path]
+            progress.update(t_id, completed=10, description=f"[cyan]Converting[/cyan] {path.name}")
+            try:
+                progress.update(t_id, completed=40)
+                out = convert_file(path, output_dir, **kwargs)
+                progress.update(t_id, completed=85)
+                markdown = out.read_text(encoding="utf-8", errors="replace")
+                source_tokens = count_raw_file_tokens(path)
+                target_tokens = count_tokens(markdown, DEFAULT_ENCODING)
+
+                desc = (
+                    f"[green]Converted[/green] {path.name} -> {out.name} "
+                    f"({format_tokens(source_tokens)} -> {format_tokens(target_tokens)} tokens)"
+                )
+                progress.update(t_id, completed=100, description=desc)
+                return (path, out, markdown, source_tokens, target_tokens, None)
+            except UnsupportedFormatError as exc:
+                desc = f"[yellow]Skipped[/yellow] {path.name}: {exc}"
+                progress.update(t_id, completed=100, description=desc)
+                return (path, None, None, 0, 0, exc)
+
+        with ThreadPoolExecutor() as executor:
+            future_map = {
+                executor.submit(_convert_file_worker, path): path for path in files
+            }
+            results_dict = {}
+            for future in as_completed(future_map):
+                res = future.result()
+                results_dict[res[0]] = res
+
+    results = [results_dict[path] for path in files]
 
     failures = 0
     converted_count = 0
@@ -153,13 +217,8 @@ def convert_impl(
     total_target = 0
     for path, out, markdown, source_tokens, target_tokens, exc in results:
         if exc is not None:
-            console.print(f"[yellow]Skipped[/yellow] {path.name}: {exc}")
             failures += 1
         elif out is not None and markdown is not None:
-            console.print(
-                f"[green]Converted[/green] {path.name} -> {out.name} "
-                f"({format_tokens(source_tokens)} -> {format_tokens(target_tokens)} tokens)"
-            )
             combined.append(markdown)
             converted_count += 1
             total_source += source_tokens
@@ -186,6 +245,12 @@ def convert_impl(
 def convert(
     source: str = typer.Argument("input", help="Directory, file, or glob pattern."),
     output: str = typer.Option("output", "-o", "--output", help="Output directory."),
+    loc: Optional[str] = typer.Option(
+        None,
+        "--loc",
+        flag_value="",
+        help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs).",
+    ),
     recursive: bool = typer.Option(False, "-r", "--recursive", help="Recurse into subdirectories."),
     extensions: str = typer.Option(
         _default_extensions, "-e", "--extensions", help="Comma-separated extensions."
@@ -200,6 +265,7 @@ def convert(
     convert_impl(
         source=source,
         output=output,
+        loc=loc,
         recursive=recursive,
         extensions=extensions,
         strip_headers_footers=strip_headers_footers,
@@ -215,6 +281,12 @@ def clip(
     source: str = typer.Argument(..., help="File or directory to convert."),
     write: bool = typer.Option(False, "--write", help="Also save .md files to output."),
     output: str = typer.Option("output", "-o", "--output"),
+    loc: Optional[str] = typer.Option(
+        None,
+        "--loc",
+        flag_value="",
+        help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs).",
+    ),
     strip_headers_footers: bool = typer.Option(False, "--strip-headers-footers"),
     write_images: bool = typer.Option(False, "--write-images"),
     image_path: Optional[str] = typer.Option(None, "--image-path"),
@@ -242,8 +314,7 @@ def clip(
             console.print(f"[yellow]Skipped[/yellow] {path.name}: {exc}")
             continue
         if write:
-            output_dir = Path(output)
-            output_dir.mkdir(parents=True, exist_ok=True)
+            output_dir = _resolve_output_dir(output, loc)
             (output_dir / f"{path.stem}.md").write_text(parts[-1], encoding="utf-8")
 
     if not parts:
@@ -260,6 +331,12 @@ def clip(
 def watch(
     source: str = typer.Option("inbox", "-s", "--source", help="Hot folder to monitor."),
     output: str = typer.Option("output", "-o", "--output"),
+    loc: Optional[str] = typer.Option(
+        None,
+        "--loc",
+        flag_value="",
+        help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs).",
+    ),
     poll_interval: float = typer.Option(2.0, "--poll-interval", help="Stability wait in seconds."),
     clip: bool = typer.Option(False, "--clip"),
     once: bool = typer.Option(False, "--once", help="Process existing files and exit."),
@@ -273,9 +350,10 @@ def watch(
     from .watcher import run_watcher
 
     kwargs = _convert_kwargs(strip_headers_footers, write_images, image_path, pages)
+    output_dir = _resolve_output_dir(output, loc)
     run_watcher(
         Path(source),
-        Path(output),
+        output_dir,
         poll_interval=poll_interval,
         clip=clip,
         once=once,
@@ -288,12 +366,19 @@ def watch(
 def fetch(
     url: str = typer.Argument(..., help="URL to fetch."),
     output: str = typer.Option("output", "-o", "--output"),
+    loc: Optional[str] = typer.Option(
+        None,
+        "--loc",
+        flag_value="",
+        help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs).",
+    ),
 ) -> None:
     """Fetch a web page and save clean article Markdown."""
     from .fetch import fetch_url
 
+    output_dir = _resolve_output_dir(output, loc)
     try:
-        out = fetch_url(url, Path(output))
+        out = fetch_url(url, output_dir)
         console.print(f"[green]Fetched[/green] {url} -> {out.name}")
     except UnsupportedFormatError as exc:
         console.print(f"[red]Error[/red] {exc}")
@@ -304,10 +389,17 @@ def fetch(
 def repo(
     directory: str = typer.Argument(..., help="Repository directory."),
     output: str = typer.Option("output", "-o", "--output"),
+    loc: Optional[str] = typer.Option(
+        None,
+        "--loc",
+        flag_value="",
+        help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs).",
+    ),
     exclude: List[str] = typer.Option([], "--exclude", help="Extra gitignore patterns."),
 ) -> None:
     """Collapse a repository into a single Markdown manifest."""
-    out = RepoConverter().convert(Path(directory), Path(output), exclude=exclude)
+    output_dir = _resolve_output_dir(output, loc)
+    out = RepoConverter().convert(Path(directory), output_dir, exclude=exclude)
     console.print(f"[green]Repo manifest[/green] -> {out.name}")
 
 
@@ -315,6 +407,12 @@ def repo(
 def merge(
     source: str = typer.Argument(..., help="Directory, file, or glob pattern."),
     output: str = typer.Option("merged.md", "-o", "--output"),
+    loc: Optional[str] = typer.Option(
+        None,
+        "--loc",
+        flag_value="",
+        help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs).",
+    ),
     recursive: bool = typer.Option(False, "-r", "--recursive"),
     budget: Optional[int] = typer.Option(None, "--budget", help="Hard token budget."),
     encoding: str = typer.Option(DEFAULT_ENCODING, "--encoding"),
@@ -329,7 +427,14 @@ def merge(
         typer.echo(f"No matching files found in {source}.")
         raise typer.Exit(code=1)
 
-    output_path = Path(output)
+    if loc is not None:
+        out_dir = _resolve_output_dir(output, loc)
+        filename = Path(output).name if (output and output != "merged.md") else "merged.md"
+        output_path = out_dir / filename
+    else:
+        output_path = Path(output)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
     include_tokens = budget is not None or delta
     merge_files(
         files,
@@ -356,6 +461,12 @@ def merge(
 def delta(
     source: str = typer.Argument(..., help="Directory, file, or glob pattern."),
     output: str = typer.Option("output", "-o", "--output"),
+    loc: Optional[str] = typer.Option(
+        None,
+        "--loc",
+        flag_value="",
+        help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs).",
+    ),
     encoding: str = typer.Option(DEFAULT_ENCODING, "--encoding"),
 ) -> None:
     """Print a token delta summary for converted files."""
@@ -363,7 +474,8 @@ def delta(
     if not files:
         typer.echo(f"No matching files found in {source}.")
         raise typer.Exit(code=1)
-    outputs = [Path(output) / f"{path.stem}.md" for path in files]
+    output_dir = _resolve_output_dir(output, loc)
+    outputs = [output_dir / f"{path.stem}.md" for path in files]
     print_delta_summary(files, outputs, encoding)
 
 

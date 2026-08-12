@@ -124,8 +124,11 @@ After installing via `pip install -e .`, the `tmd` command is registered in your
 Navigate to the folder containing the files you want to convert and run the following commands. You may manipulate sub-folders and file names, or omit them to use the defaults.
 
 ```bash
-# Convert a folder or file to Markdown
-tmd convert input/ -o output/
+# Convert all supported files in current repository and write to out/ folder
+tmd convert . --loc="out"
+
+# Convert current folder into current directory
+tmd convert . --loc
 
 # Bare `tmd` command uses default input/ and output/ directories
 tmd
