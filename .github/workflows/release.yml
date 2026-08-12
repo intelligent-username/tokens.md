@@ -6,149 +6,21 @@ on:
 
 permissions:
   contents: write
-  id-token: write  # for PyPI trusted publishing
+  id-token: write
 
 jobs:
-  # ── Pre-flight Version Verification ───────────────────────────────────────
-  verify-version:
-    name: Verify Version Tag
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+  # 1. Non-blocking version check
+  verify:
+    uses: ./.github/workflows/verify.yml
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+  # 2. Parallel binary builds (4 matrix jobs run concurrently)
+  build-binaries:
+    uses: ./.github/workflows/build-binary.yml
 
-      - name: Check version alignment & sync manifests
-        run: |
-          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
-          PYPROJECT_VERSION=$(python -c "import tomllib, pathlib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")
-          
-          echo "Git Tag Version: $TAG_VERSION"
-          echo "pyproject.toml Version: $PYPROJECT_VERSION"
-          
-          if [ "$TAG_VERSION" != "$PYPROJECT_VERSION" ]; then
-            echo "::warning title=Version Mismatch::Git tag version ($TAG_VERSION) does not match pyproject.toml version ($PYPROJECT_VERSION)!"
-          else
-            echo "Version tag and pyproject.toml are aligned."
-          fi
-
-          python scripts/sync_version.py
-
-  # ── Binary builds ────────────────────────────────────────────────────────────
-  build:
-    name: Build (${{ matrix.os }} / ${{ matrix.arch }})
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - runner: ubuntu-22.04
-            os: linux
-            arch: x64
-            artifact: tmd-linux-x64
-            exe: tmd-linux-x64
-
-          - runner: ubuntu-24.04-arm
-            os: linux
-            arch: arm64
-            artifact: tmd-linux-arm64
-            exe: tmd-linux-arm64
-
-          - runner: macos-latest    # Apple Silicon
-            os: macos
-            arch: arm64
-            artifact: tmd-macos-arm64
-            exe: tmd-macos-arm64
-
-          - runner: windows-latest
-            os: windows
-            arch: x64
-            artifact: tmd-windows-x64.exe
-            exe: tmd-windows-x64.exe
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-
-      # Setup sccache compiler cache
-      - name: Setup sccache
-        uses: mozilla/sccache-action@v0.0.8
-
-      - name: Configure Compiler Caches
-        shell: bash
-        run: |
-          echo "PYTHONUNBUFFERED=1" >> $GITHUB_ENV
-          if [ "${{ matrix.os }}" = "windows" ]; then
-            echo "CC=sccache cl" >> $GITHUB_ENV
-            echo "CXX=sccache cl" >> $GITHUB_ENV
-          fi
-
-      # Cache Nuitka transpiled files & downloads
-      - name: Cache Nuitka
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/Nuitka
-            ~/AppData/Local/Nuitka/Nuitka/Cache
-            .nuitka
-          key: nuitka-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('**/*.py', 'pyproject.toml') }}
-          restore-keys: |
-            nuitka-${{ matrix.os }}-${{ matrix.arch }}-
-
-      - name: Install dependencies
-        run: pip install nuitka ordered-set zstandard -e .
-
-      - name: Build binary (Unix)
-        if: runner.os != 'Windows'
-        run: |
-          python -m nuitka \
-            --onefile \
-            --output-filename=${{ matrix.exe }} \
-            --include-package=src \
-            --include-package=backend \
-            --follow-imports \
-            --assume-yes-for-downloads \
-            --jobs=4 \
-            --linux-onefile-icon=assets/tmd.png \
-            tmd_runner.py
-
-      - name: Build binary (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          python -m nuitka `
-            --onefile `
-            --output-filename=${{ matrix.exe }} `
-            --include-package=src `
-            --include-package=backend `
-            --follow-imports `
-            --assume-yes-for-downloads `
-            --jobs=4 `
-            --windows-icon-from-ico=assets/tmd.ico `
-            tmd_runner.py
-
-      - name: Smoke test
-        shell: bash
-        run: |
-          ./${{ matrix.exe }} --version
-          ./${{ matrix.exe }} --help
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.artifact }}
-          path: ${{ matrix.exe }}
-
-  # ── GitHub Release ────────────────────────────────────────────────────────────
-  release:
+  # 3. Create GitHub Release once binaries are ready
+  github-release:
     name: Create GitHub Release
-    needs: build
+    needs: build-binaries
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -173,26 +45,7 @@ jobs:
           draft: false
           prerelease: false
 
-  # ── PyPI publish ─────────────────────────────────────────────────────────────
-  pypi-publish:
-    name: Publish to PyPI
-    needs: build
-    runs-on: ubuntu-latest
-    environment: pypi
-    permissions:
-      id-token: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-
-      - name: Build sdist and wheel
-        run: |
-          pip install build
-          python -m build
-
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+  # 4. Publish to PyPI
+  pypi:
+    needs: build-binaries
+    uses: ./.github/workflows/publish-pypi.yml
