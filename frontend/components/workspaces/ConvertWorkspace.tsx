@@ -869,7 +869,7 @@ export function ConvertWorkspace() {
       {files.length > 0 && activeMode === 'upload' ? (
         <div ref={rowsContainerRef} className="relative flex flex-col gap-3">
           <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-muted-foreground px-1">
-            <span>1. Input File ({files.length})</span>
+            <span>1. Input {files.length === 1 ? 'File' : 'Files'} ({files.length})</span>
             <span>2. Converted Markdown</span>
           </div>
 

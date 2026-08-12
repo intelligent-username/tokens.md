@@ -13,6 +13,10 @@ confinement: strict
 base: core22
 license: AGPL-3.0
 
+architectures:
+  - build-on: amd64
+  - build-on: arm64
+
 apps:
   tmd:
     command: bin/tmd
@@ -22,14 +26,26 @@ apps:
       - network
 
 parts:
-  tmd:
+  tmd-amd64:
     plugin: dump
     source: https://github.com/intelligent-username/tokens.md/releases/download/v0.0.5/tmd-linux-x64
     source-type: file
+    stage-packages:
+      - on amd64:
+          - libc6
     organize:
       tmd-linux-x64: bin/tmd
     stage:
       - bin/tmd
-    override-build: |
-      craftctl default
-      chmod +x $CRAFT_PART_INSTALL/bin/tmd
+
+  tmd-arm64:
+    plugin: dump
+    source: https://github.com/intelligent-username/tokens.md/releases/download/v0.0.5/tmd-linux-arm64
+    source-type: file
+    stage-packages:
+      - on arm64:
+          - libc6
+    organize:
+      tmd-linux-arm64: bin/tmd
+    stage:
+      - bin/tmd

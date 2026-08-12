@@ -23,17 +23,29 @@ jobs:
             artifact: tmd-linux-arm64
             exe: tmd-linux-arm64
 
-          - runner: macos-latest
+          - runner: macos-latest    # Apple Silicon (M-series)
             os: macos
             arch: arm64
             artifact: tmd-macos-arm64
             exe: tmd-macos-arm64
 
-          - runner: windows-latest
+          - runner: macos-13        # Intel Mac
+            os: macos
+            arch: x64
+            artifact: tmd-macos-x64
+            exe: tmd-macos-x64
+
+          - runner: windows-latest  # Windows x64
             os: windows
             arch: x64
             artifact: tmd-windows-x64.exe
             exe: tmd-windows-x64.exe
+
+          - runner: windows-latest-arm64  # Windows ARM64 (Surface Pro / Snapdragon X)
+            os: windows
+            arch: arm64
+            artifact: tmd-windows-arm64.exe
+            exe: tmd-windows-arm64.exe
 
     steps:
       - uses: actions/checkout@v4
