@@ -16,7 +16,7 @@ def test_watcher_handler_processes_file(tmp_path: Path) -> None:
     (src / "doc.txt").write_text("hello", encoding="utf-8")
 
     handler = WatcherHandler(out, (".txt",), poll_interval=0.0)
-    with patch("src.watcher.pdf_to_markdown", return_value="# Converted"):
+    with patch("src.watcher.resolve_to_markdown", return_value="# Converted"):
         handler._queue.put(src / "doc.txt")  # noqa: SLF001
         handler.drain()
 
@@ -32,7 +32,7 @@ def test_watcher_error_isolation(tmp_path: Path) -> None:
     (src / "doc.txt").write_text("hello", encoding="utf-8")
 
     handler = WatcherHandler(out, (".txt",), poll_interval=0.0)
-    with patch("src.watcher.pdf_to_markdown", side_effect=RuntimeError("boom")):
+    with patch("src.watcher.resolve_to_markdown", side_effect=RuntimeError("boom")):
         handler._queue.put(src / "doc.txt")  # noqa: SLF001
         handler.drain()
 
@@ -45,7 +45,7 @@ def test_run_watcher_once(tmp_path: Path) -> None:
     src.mkdir()
     (src / "doc.txt").write_text("hello", encoding="utf-8")
 
-    with patch("src.watcher.pdf_to_markdown", return_value="# Converted"):
+    with patch("src.watcher.resolve_to_markdown", return_value="# Converted"):
         run_watcher(src, out, poll_interval=0.0, once=True, extensions=(".txt",))
 
     assert (out / "doc.md").exists()

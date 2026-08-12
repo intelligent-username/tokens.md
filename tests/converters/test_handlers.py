@@ -164,3 +164,39 @@ def test_mathml_converter_node_types() -> None:
     assert "{x}^{2}" in mathml_to_latex('<math xmlns="http://www.w3.org/1998/Math/MathML"><msup><mi>x</mi><mn>2</mn></msup></math>')
     # unknown node -> fenced raw fallback, never empty, never raises
     assert mathml_to_latex("<math><bogus/></math>").startswith("```mathml")
+
+
+def test_pymupdf_write_images(tmp_path: Path) -> None:
+    """Verify that PyMuPDF extracts embedded images (e.g. defeat.png / grown.bmp) to disk when write_images=True."""
+    from src.deps import require
+    from src.handlers.pymupdf import pdf_to_markdown, PymupdfConverter
+
+    pymupdf = require("fitz", "PDF image extraction test")
+    dummy_dir = Path(__file__).parent.parent / "dummies"
+    png_img = dummy_dir / "defeat.png"
+    bmp_img = dummy_dir / "grown.bmp"
+
+    pdf_path = tmp_path / "doc_with_images.pdf"
+    doc = pymupdf.open()
+    page = doc.new_page()
+    page.insert_text((50, 50), "PDF with embedded test images")
+    if png_img.exists():
+        page.insert_image(pymupdf.Rect(50, 100, 250, 250), filename=str(png_img))
+    if bmp_img.exists():
+        page.insert_image(pymupdf.Rect(260, 100, 460, 250), filename=str(bmp_img))
+    doc.save(str(pdf_path))
+    doc.close()
+
+    # 1. Test string-returning entrypoint pdf_to_markdown
+    img_dir = tmp_path / "extracted_images"
+    md_text = pdf_to_markdown(pdf_path, write_images=True, image_path=img_dir)
+    assert "![" in md_text or "](" in md_text
+    extracted_files = list(img_dir.glob("*"))
+    assert len(extracted_files) > 0
+
+    # 2. Test Converter interface
+    out_dir = tmp_path / "out"
+    converter_out = PymupdfConverter().convert(pdf_path, out_dir, write_images=True)
+    assert converter_out.exists()
+    assert (out_dir / f"{pdf_path.stem}_images").exists()
+
