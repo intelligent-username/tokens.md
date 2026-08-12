@@ -139,6 +139,7 @@ def _extract_meta_markdown(html: str) -> str:
 def _fetch_github_repo(url: str, output_dir: Path) -> Path:
     import subprocess
     import tempfile
+
     from .handlers.repo import RepoConverter, _build_tree
 
     clean_url = url.strip().rstrip("/")

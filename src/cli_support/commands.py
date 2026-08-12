@@ -17,44 +17,16 @@ from ..handlers.repo import RepoConverter
 from ..merger import merge_files
 from ..registry import UnsupportedFormatError
 from ..tokenizer import DEFAULT_ENCODING, count_raw_file_tokens, count_tokens, count_tokens_in_file, delta_percent, format_tokens
-from .constants import (
-    DEFAULT_MERGED_FILENAME,
-    DEFAULT_OUTPUT_DIR,
-    DEFAULT_POLL_INTERVAL,
-    DEFAULT_SOURCE_DIR,
-    DEFAULT_UI_HOST,
-    DEFAULT_UI_PORT,
-    DEFAULT_WATCH_SOURCE,
-    EXIT_CODE_ERROR,
-)
+from .constants import DEFAULT_MERGED_FILENAME, DEFAULT_OUTPUT_DIR, DEFAULT_POLL_INTERVAL, DEFAULT_SOURCE_DIR, DEFAULT_UI_HOST, DEFAULT_UI_PORT, DEFAULT_WATCH_SOURCE, EXIT_CODE_ERROR
 from .convert_runner import convert_impl
 from .theme import OrderGroup, console
-from .utils import (
-    _convert_kwargs,
-    _default_extensions,
-    _default_source,
-    _find_free_port,
-    _parse_extensions,
-    _resolve_output_dir,
-)
+from .utils import _convert_kwargs, _default_extensions, _default_source, _find_free_port, _parse_extensions, _resolve_output_dir
 
-app = typer.Typer(
-    cls=OrderGroup,
-    help="Convert files to token-efficient Markdown for LLM prompts.",
-    no_args_is_help=False,
-    add_completion=False,
-    rich_markup_mode="rich",
-    options_metavar="",
-    context_settings={"help_option_names": []},
-)
+app = typer.Typer(cls=OrderGroup, help="Convert files to token-efficient Markdown for LLM prompts.", no_args_is_help=False, add_completion=False, rich_markup_mode="rich", options_metavar="", context_settings={"help_option_names": []})
 
 
 @app.callback(invoke_without_command=True)
-def _main(
-    ctx: typer.Context,
-    version: bool = typer.Option(False, "--version", "--v", "-v", hidden=True),
-    help_opt: bool = typer.Option(False, "--help", "-h", hidden=True),
-) -> None:
+def _main(ctx: typer.Context, version: bool = typer.Option(False, "--version", "--v", "-v", hidden=True), help_opt: bool = typer.Option(False, "--help", "-h", hidden=True)) -> None:
     """Convert files to token-efficient Markdown for LLM prompts."""
     if help_opt:
         console.print(ctx.get_help())
@@ -88,11 +60,7 @@ def help_cmd(ctx: typer.Context) -> None:
 def convert(
     source: str = typer.Argument(DEFAULT_SOURCE_DIR, help="Directory, file, or glob pattern."),
     output: str = typer.Option(DEFAULT_OUTPUT_DIR, "-o", "--output", help="Output directory."),
-    loc: str | None = typer.Option(
-        None,
-        "--loc",
-        help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs).",
-    ),
+    loc: str | None = typer.Option(None, "--loc", help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs)."),
     recursive: bool = typer.Option(False, "-r", "--recursive", help="Recurse into subdirectories."),
     extensions: str = typer.Option(_default_extensions, "-e", "--extensions", help="Comma-separated extensions filter."),
     strip_headers_footers: bool = typer.Option(False, "--strip-headers-footers", help="Strip running headers and footers from each page."),
@@ -104,34 +72,14 @@ def convert(
     budget: int | None = typer.Option(None, "-b", "--budget", help="Prune output to fit a hard token budget limit."),
 ) -> None:
     """Convert files to Markdown."""
-    convert_impl(
-        source=source,
-        output=output,
-        loc=loc,
-        recursive=recursive,
-        extensions=extensions,
-        strip_headers_footers=strip_headers_footers,
-        write_images=write_images,
-        image_path=image_path,
-        pages=pages,
-        clip=clip,
-        merge=merge,
-        budget=budget,
-    )
-
-
-
+    convert_impl(source=source, output=output, loc=loc, recursive=recursive, extensions=extensions, strip_headers_footers=strip_headers_footers, write_images=write_images, image_path=image_path, pages=pages, clip=clip, merge=merge, budget=budget)
 
 
 @app.command()
 def watch(
     source: str = typer.Option(DEFAULT_WATCH_SOURCE, "-s", "--source", help="Hot folder to monitor."),
     output: str = typer.Option(DEFAULT_OUTPUT_DIR, "-o", "--output", help="Output directory for converted files."),
-    loc: str | None = typer.Option(
-        None,
-        "--loc",
-        help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs).",
-    ),
+    loc: str | None = typer.Option(None, "--loc", help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs)."),
     poll_interval: float = typer.Option(DEFAULT_POLL_INTERVAL, "--poll-interval", help="Stability wait in seconds."),
     clip: bool = typer.Option(False, "--clip", help="Copy converted text to clipboard automatically."),
     once: bool = typer.Option(False, "--once", help="Process existing files and exit."),
@@ -146,26 +94,14 @@ def watch(
 
     kwargs = _convert_kwargs(strip_headers_footers, write_images, image_path, pages)
     output_dir = _resolve_output_dir(output, loc)
-    run_watcher(
-        Path(source),
-        output_dir,
-        poll_interval=poll_interval,
-        clip=clip,
-        once=once,
-        extensions=_parse_extensions(_default_extensions()),
-        **kwargs,
-    )
+    run_watcher(Path(source), output_dir, poll_interval=poll_interval, clip=clip, once=once, extensions=_parse_extensions(_default_extensions()), **kwargs)
 
 
 @app.command()
 def fetch(
     url: str = typer.Argument(..., help="URL to fetch."),
     output: str = typer.Option(DEFAULT_OUTPUT_DIR, "-o", "--output", help="Output directory for saved Markdown article."),
-    loc: str | None = typer.Option(
-        None,
-        "--loc",
-        help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs).",
-    ),
+    loc: str | None = typer.Option(None, "--loc", help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs)."),
 ) -> None:
     """Fetch a web page and save clean article Markdown."""
     from ..fetch import fetch_url
@@ -183,11 +119,7 @@ def fetch(
 def repo(
     directory: str = typer.Argument(..., help="Repository directory path or Git URL (e.g. '.' or 'https://github.com/user/repo')."),
     output: str = typer.Option(DEFAULT_OUTPUT_DIR, "-o", "--output", help="Output directory for generated manifest."),
-    loc: str | None = typer.Option(
-        None,
-        "--loc",
-        help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs).",
-    ),
+    loc: str | None = typer.Option(None, "--loc", help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs)."),
     exclude: list[str] = typer.Option([], "--exclude", help="Extra gitignore patterns."),
     full: bool = typer.Option(False, "-f", "--full", help="Include full source code contents for all repository files."),
 ) -> None:
@@ -206,11 +138,7 @@ def repo(
 def merge(
     source: str = typer.Argument(..., help="Directory, file, or glob pattern."),
     output: str = typer.Option(DEFAULT_MERGED_FILENAME, "-o", "--output", help="Output Markdown filename."),
-    loc: str | None = typer.Option(
-        None,
-        "--loc",
-        help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs).",
-    ),
+    loc: str | None = typer.Option(None, "--loc", help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs)."),
     recursive: bool = typer.Option(False, "-r", "--recursive", help="Recurse into subdirectories."),
     budget: int | None = typer.Option(None, "--budget", help="Hard token budget limit."),
     encoding: str = typer.Option(DEFAULT_ENCODING, "--encoding", help="tiktoken encoding for token counting."),
@@ -247,20 +175,14 @@ def merge(
     saved_tokens = max(0, total_source - total_target)
     pct = delta_percent(total_source, total_target)
 
-    console.print(
-        f"[green]Merged[/green] {len(files)} file(s) -> {output_path.name} [dim cyan](output ≈ {format_tokens(total_target)} tokens | saved ≈ {format_tokens(saved_tokens)} tokens [{pct:+.1f}%])[/dim cyan]"
-    )
+    console.print(f"[green]Merged[/green] {len(files)} file(s) -> {output_path.name} [dim cyan](output ≈ {format_tokens(total_target)} tokens | saved ≈ {format_tokens(saved_tokens)} tokens [{pct:+.1f}%])[/dim cyan]")
 
 
 @app.command(hidden=True)
 def delta(
     source: str = typer.Argument(..., help="Directory, file, or glob pattern."),
     output: str = typer.Option(DEFAULT_OUTPUT_DIR, "-o", "--output", help="Directory containing converted .md files."),
-    loc: str | None = typer.Option(
-        None,
-        "--loc",
-        help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs).",
-    ),
+    loc: str | None = typer.Option(None, "--loc", help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs)."),
     encoding: str = typer.Option(DEFAULT_ENCODING, "--encoding", help="tiktoken encoding for token counting."),
 ) -> None:
     """Print a token delta summary for converted files."""
@@ -274,11 +196,7 @@ def delta(
 
 
 @app.command()
-def ui(
-    host: str = typer.Option(DEFAULT_UI_HOST, "--host", help="Bind address (0.0.0.0 for LAN)."),
-    port: int = typer.Option(DEFAULT_UI_PORT, "--port", help="Port; auto-increments if busy."),
-    browser: bool = typer.Option(True, "--no-browser", help="Do not auto-open the browser."),
-) -> None:
+def ui(host: str = typer.Option(DEFAULT_UI_HOST, "--host", help="Bind address (0.0.0.0 for LAN)."), port: int = typer.Option(DEFAULT_UI_PORT, "--port", help="Port; auto-increments if busy."), browser: bool = typer.Option(True, "--no-browser", help="Do not auto-open the browser.")) -> None:
     """Launch the local web UI (API + built frontend)."""
     require("fastapi", "tmd ui")
     require("uvicorn", "tmd ui")
@@ -301,10 +219,7 @@ def ui(
 
 
 @app.command(hidden=True)
-def lint(
-    fix: bool = typer.Option(False, "--fix", help="Automatically fix linter and formatting errors."),
-    verbose: bool = typer.Option(False, "-v", "--v", "--verbose", help="Show detailed verbose linter outputs."),
-) -> None:
+def lint(fix: bool = typer.Option(False, "--fix", help="Automatically fix linter and formatting errors."), verbose: bool = typer.Option(False, "-v", "--v", "--verbose", help="Show detailed verbose linter outputs.")) -> None:
     """Hidden developer command: run linter script."""
     import subprocess
     import sys
@@ -324,9 +239,7 @@ def lint(
 
 
 @app.command(hidden=True)
-def test(
-    verbose: bool = typer.Option(False, "-v", "--v", "--verbose", help="Show detailed test outputs."),
-) -> None:
+def test(verbose: bool = typer.Option(False, "-v", "--v", "--verbose", help="Show detailed test outputs.")) -> None:
     """Hidden developer command: run test runner script."""
     import subprocess
     import sys
@@ -341,7 +254,3 @@ def test(
     res = subprocess.run(cmd)
     if res.returncode != 0:
         raise typer.Exit(code=EXIT_CODE_ERROR)
-
-
-
-

@@ -40,15 +40,7 @@ def _run_cmd(cmd: list[str], cwd: Path, env: dict[str, str] | None = None) -> tu
         executable_cmd[0] = f"{executable_cmd[0]}.cmd"
 
     try:
-        res = subprocess.run(
-            executable_cmd,
-            cwd=str(cwd),
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            env=env,
-        )
+        res = subprocess.run(executable_cmd, cwd=str(cwd), capture_output=True, text=True, encoding="utf-8", errors="replace", env=env)
         return res.returncode, res.stdout, res.stderr
     except Exception as exc:
         return 1, "", str(exc)
@@ -123,14 +115,7 @@ def run_tests(verbose: bool = False) -> int:
     fe_res: list[tuple[int, str, str] | None] = [None]
 
     try:
-        with Progress(
-            SpinnerColumn(spinner_name="dots"),
-            TextColumn("{task.description}"),
-            BarColumn(bar_width=22, style="dim", complete_style="bold green"),
-            TaskProgressColumn(),
-            console=console,
-            transient=False,
-        ) as progress:
+        with Progress(SpinnerColumn(spinner_name="dots"), TextColumn("{task.description}"), BarColumn(bar_width=22, style="dim", complete_style="bold green"), TaskProgressColumn(), console=console, transient=False) as progress:
             t_be = progress.add_task("[bold cyan]⟳[/bold cyan] [bright_white]Backend (pytest)[/bright_white]", total=100)
             t_fe = progress.add_task("[bold cyan]⟳[/bold cyan] [bright_white]Frontend (vitest)[/bright_white]", total=100)
 

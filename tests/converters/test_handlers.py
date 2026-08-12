@@ -169,7 +169,7 @@ def test_mathml_converter_node_types() -> None:
 def test_pymupdf_write_images(tmp_path: Path) -> None:
     """Verify that PyMuPDF extracts embedded images (e.g. defeat.png / grown.bmp) to disk when write_images=True."""
     from src.deps import require
-    from src.handlers.pymupdf import pdf_to_markdown, PymupdfConverter
+    from src.handlers.pymupdf import PymupdfConverter, pdf_to_markdown
 
     pymupdf = require("fitz", "PDF image extraction test")
     dummy_dir = Path(__file__).parent.parent / "dummies"
@@ -199,4 +199,3 @@ def test_pymupdf_write_images(tmp_path: Path) -> None:
     converter_out = PymupdfConverter().convert(pdf_path, out_dir, write_images=True)
     assert converter_out.exists()
     assert (out_dir / f"{pdf_path.stem}_images").exists()
-

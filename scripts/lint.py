@@ -92,9 +92,9 @@ def _check_frontend(fix: bool) -> tuple[int, int, int, int, str]:
     prettier_cmd = ["npx", "prettier", prettier_flag, "--ignore-path", ".prettierignore", "app", "components", "lib", "styles"]
     c1, out1, err1 = _run_cmd(prettier_cmd, FRONTEND_DIR)
 
-    eslint_cmd = ["npx", "next", "lint"]
+    eslint_cmd = ["npm", "run", "lint"]
     if fix:
-        eslint_cmd.append("--fix")
+        eslint_cmd.extend(["--", "--fix"])
     c2, out2, err2 = _run_cmd(eslint_cmd, FRONTEND_DIR)
 
     combined_out = f"{out1}\n{err1}\n{out2}\n{err2}".strip()

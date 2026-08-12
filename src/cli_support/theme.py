@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-import click
 import typer
 import typer.core
 from rich import box
@@ -41,9 +40,7 @@ class OrderGroup(typer.core.TyperGroup):
         if self.help:
             console.print(f"{self.help}\n")
 
-        console.print(
-            f"[{CLITheme.LABEL}]Usage:[/{CLITheme.LABEL}] [{CLITheme.MUTED}]tmd[/{CLITheme.MUTED}] [{CLITheme.PRIMARY_STYLE}]COMMAND[/{CLITheme.PRIMARY_STYLE}] [{CLITheme.SECONDARY_STYLE}][ARGS][/{CLITheme.SECONDARY_STYLE}] [{CLITheme.ACCENT_STYLE}][OPTIONS][/{CLITheme.ACCENT_STYLE}]\n"
-        )
+        console.print(f"[{CLITheme.LABEL}]Usage:[/{CLITheme.LABEL}] [{CLITheme.MUTED}]tmd[/{CLITheme.MUTED}] [{CLITheme.PRIMARY_STYLE}]COMMAND[/{CLITheme.PRIMARY_STYLE}] [{CLITheme.SECONDARY_STYLE}][ARGS][/{CLITheme.SECONDARY_STYLE}] [{CLITheme.ACCENT_STYLE}][OPTIONS][/{CLITheme.ACCENT_STYLE}]\n")
 
         col1_width = 24
 
@@ -60,15 +57,7 @@ class OrderGroup(typer.core.TyperGroup):
                 help_text = cmd.get_short_help_str(limit=120) or ""
                 cmd_table.add_row(name, help_text)
 
-        cmd_panel = Panel(
-            cmd_table,
-            title=f"[{CLITheme.PRIMARY_STYLE}]Commands[/{CLITheme.PRIMARY_STYLE}]",
-            title_align="left",
-            border_style=CLITheme.PRIMARY,
-            box=box.ROUNDED,
-            expand=False,
-            padding=(0, 1),
-        )
+        cmd_panel = Panel(cmd_table, title=f"[{CLITheme.PRIMARY_STYLE}]Commands[/{CLITheme.PRIMARY_STYLE}]", title_align="left", border_style=CLITheme.PRIMARY, box=box.ROUNDED, expand=False, padding=(0, 1))
         console.print(cmd_panel)
 
         # 2. Arguments Panel
@@ -79,15 +68,7 @@ class OrderGroup(typer.core.TyperGroup):
         arg_table.add_row("URL", "Web page link to fetch article markdown from")
         arg_table.add_row("DIRECTORY", "Repository directory to collapse for 'tmd repo'")
 
-        arg_panel = Panel(
-            arg_table,
-            title=f"[{CLITheme.SECONDARY_STYLE}]Arguments (Positional Targets)[/{CLITheme.SECONDARY_STYLE}]",
-            title_align="left",
-            border_style=CLITheme.SECONDARY,
-            box=box.ROUNDED,
-            expand=False,
-            padding=(0, 1),
-        )
+        arg_panel = Panel(arg_table, title=f"[{CLITheme.SECONDARY_STYLE}]Arguments (Positional Targets)[/{CLITheme.SECONDARY_STYLE}]", title_align="left", border_style=CLITheme.SECONDARY, box=box.ROUNDED, expand=False, padding=(0, 1))
         console.print(arg_panel)
 
         # 3. Options Panel
@@ -102,33 +83,18 @@ class OrderGroup(typer.core.TyperGroup):
         opt_table.add_row("--write-images", "Extract embedded images to image path (convert, merge)")
         opt_table.add_row("--clip", "Copy converted output directly to clipboard (convert)")
 
-        opt_panel = Panel(
-            opt_table,
-            title=f"[{CLITheme.ACCENT_STYLE}]Options & Flags[/{CLITheme.ACCENT_STYLE}]",
-            title_align="left",
-            border_style=CLITheme.ACCENT,
-            box=box.ROUNDED,
-            expand=False,
-            padding=(0, 1),
-        )
+        opt_panel = Panel(opt_table, title=f"[{CLITheme.ACCENT_STYLE}]Options & Flags[/{CLITheme.ACCENT_STYLE}]", title_align="left", border_style=CLITheme.ACCENT, box=box.ROUNDED, expand=False, padding=(0, 1))
         console.print(opt_panel)
 
         # Epilog Examples & Notes
         console.print()
-        console.print(
-            f'[{CLITheme.LABEL}]Example:[/{CLITheme.LABEL}] [{CLITheme.MUTED}]tmd[/{CLITheme.MUTED}] [{CLITheme.PRIMARY_STYLE}]convert[/{CLITheme.PRIMARY_STYLE}] [{CLITheme.SECONDARY_STYLE}].[/{CLITheme.SECONDARY_STYLE}] [{CLITheme.ACCENT_STYLE}]--loc="out"[/{CLITheme.ACCENT_STYLE}]'
-        )
+        console.print(f'[{CLITheme.LABEL}]Example:[/{CLITheme.LABEL}] [{CLITheme.MUTED}]tmd[/{CLITheme.MUTED}] [{CLITheme.PRIMARY_STYLE}]convert[/{CLITheme.PRIMARY_STYLE}] [{CLITheme.SECONDARY_STYLE}].[/{CLITheme.SECONDARY_STYLE}] [{CLITheme.ACCENT_STYLE}]--loc="out"[/{CLITheme.ACCENT_STYLE}]')
         console.print(f"         [{CLITheme.COMMENT}]# Converts all supported files in current repo[/{CLITheme.COMMENT}]")
         console.print(f"         [{CLITheme.COMMENT}]# into Markdown and writes to out/ folder[/{CLITheme.COMMENT}]")
 
         console.print()
+        console.print(f"[{CLITheme.LABEL}]NOTE:[/{CLITheme.LABEL}]    [{CLITheme.MUTED}]Multiple Arguments and Options are acceptable; they must be space-separated.[/{CLITheme.MUTED}]\n")
         console.print(
-            f"[{CLITheme.LABEL}]NOTE:[/{CLITheme.LABEL}]    [{CLITheme.MUTED}]Multiple Arguments and Options are acceptable; they must be space-separated.[/{CLITheme.MUTED}]\n"
+            f"[{CLITheme.LABEL}]Example:[/{CLITheme.LABEL}] [{CLITheme.MUTED}]tmd[/{CLITheme.MUTED}] [{CLITheme.PRIMARY_STYLE}]convert[/{CLITheme.PRIMARY_STYLE}] [{CLITheme.SECONDARY_STYLE}]./docs AtoTC.pdf final_slide.pptx [/{CLITheme.SECONDARY_STYLE}] [{CLITheme.ACCENT_STYLE}]--merge -b 4000 --clip[/{CLITheme.ACCENT_STYLE}]"
         )
-        console.print(
-            f'[{CLITheme.LABEL}]Example:[/{CLITheme.LABEL}] [{CLITheme.MUTED}]tmd[/{CLITheme.MUTED}] [{CLITheme.PRIMARY_STYLE}]convert[/{CLITheme.PRIMARY_STYLE}] [{CLITheme.SECONDARY_STYLE}]./docs AtoTC.pdf final_slide.pptx [/{CLITheme.SECONDARY_STYLE}] [{CLITheme.ACCENT_STYLE}]--merge -b 4000 --clip[/{CLITheme.ACCENT_STYLE}]'
-        )
-        console.print(
-                f"         [{CLITheme.COMMENT}]# Converts the ./docs/ folder and the AtoTC.pdf and final_slide.pptx files into markdown,\n"
-                f"         # merges them together, prunes to 4k budget, and copies to clipboard[/{CLITheme.COMMENT}]"
-        )
+        console.print(f"         [{CLITheme.COMMENT}]# Converts the ./docs/ folder and the AtoTC.pdf and final_slide.pptx files into markdown,\n         # merges them together, prunes to 4k budget, and copies to clipboard[/{CLITheme.COMMENT}]")

@@ -11,11 +11,11 @@ permissions:
 jobs:
   # 1. Mandatory test suite gate (blocks release if tests fail)
   test:
-    uses: ./.github/workflows/checker-test.yml
+    uses: ./.github/workflows/test.yml
 
   # 2. Non-blocking version check
   verify:
-    uses: ./.github/workflows/checker-verify.yml
+    uses: ./.github/workflows/verify.yml
 
   # 3. Parallel binary builds (runs only after test passes)
   build-binaries:

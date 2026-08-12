@@ -42,14 +42,7 @@ def convert_impl(
 
     kwargs = _convert_kwargs(strip_headers_footers, write_images, image_path, pages)
 
-    with Progress(
-        SpinnerColumn(spinner_name="dots"),
-        TextColumn("{task.description}"),
-        BarColumn(bar_width=22, style=PROGRESS_BAR_STYLE, complete_style=PROGRESS_BAR_COMPLETE_STYLE),
-        TaskProgressColumn(),
-        console=console,
-        transient=False,
-    ) as progress:
+    with Progress(SpinnerColumn(spinner_name="dots"), TextColumn("{task.description}"), BarColumn(bar_width=22, style=PROGRESS_BAR_STYLE, complete_style=PROGRESS_BAR_COMPLETE_STYLE), TaskProgressColumn(), console=console, transient=False) as progress:
         task_map = {}
         for path in files:
             label = _truncate_desc(f"Converting {path.name}", 44)
@@ -147,7 +140,7 @@ def convert_impl(
             from ..clipboard import copy_to_clipboard
 
             copy_to_clipboard(merged_text)
-            console.print(f"[cyan]Copied merged output[/cyan] to clipboard.")
+            console.print("[cyan]Copied merged output[/cyan] to clipboard.")
     elif clip and combined:
         from ..clipboard import copy_to_clipboard
 

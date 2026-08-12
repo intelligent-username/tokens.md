@@ -262,8 +262,6 @@ class RepoConverter(Converter):
                     sections.append(content)
                 sections.append("")
 
-
-
         manifest = output_dir / f"{name}.md"
         manifest.write_text("\n".join(sections), encoding="utf-8")
         return manifest
@@ -274,9 +272,7 @@ class RepoConverter(Converter):
         patterns: list[str] = []
         gitignore = root / ".gitignore"
         if gitignore.exists():
-            patterns.extend(
-                line.strip() for line in gitignore.read_text(encoding="utf-8", errors="replace").splitlines() if line.strip() and not line.strip().startswith("#")
-            )
+            patterns.extend(line.strip() for line in gitignore.read_text(encoding="utf-8", errors="replace").splitlines() if line.strip() and not line.strip().startswith("#"))
         if exclude:
             patterns.extend(exclude)
         return pathspec.PathSpec.from_lines("gitwildmatch", patterns)

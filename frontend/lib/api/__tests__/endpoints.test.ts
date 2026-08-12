@@ -7,24 +7,7 @@
  * non-XHR upload variant.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  budget,
-  clip,
-  convert,
-  delta,
-  downloadAllUrl,
-  downloadUrl,
-  fetchUrl,
-  listFiles,
-  merge,
-  repo,
-  sessionCancel,
-  sessionClose,
-  uploadFiles,
-  watchStart,
-  watchStatus,
-  watchStop,
-} from "../endpoints";
+import { budget, clip, convert, delta, downloadAllUrl, downloadUrl, fetchUrl, listFiles, merge, repo, sessionCancel, sessionClose, uploadFiles, watchStart, watchStatus, watchStop } from "../endpoints";
 import { API_BASE } from "../client";
 
 // ---------------------------------------------------------------------------
