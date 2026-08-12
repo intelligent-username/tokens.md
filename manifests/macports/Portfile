@@ -3,7 +3,7 @@
 PortSystem          1.0
 
 name                tmd
-version             "0.0.9"
+version             "0.0.10"
 categories          textproc devel
 platforms           darwin
 supported_archs     arm64
