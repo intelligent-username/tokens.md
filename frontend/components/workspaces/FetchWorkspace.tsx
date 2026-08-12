@@ -10,7 +10,6 @@ import { ConfigCard } from '@/components/ui/ConfigCard';
 import { MergeButton } from '@/components/ui/MergeButton';
 import { DownloadButton } from '@/components/ui/DownloadButton';
 import { CopyButton } from '@/components/ui/CopyButton';
-import { TokenFlowMeter } from '@/components/ui/TokenFlowMeter';
 import { MarkdownPreview } from '@/components/ui/MarkdownPreview';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
@@ -114,11 +113,7 @@ export function FetchWorkspace() {
         label={copy.fetchIdle}
       />
 
-      <TokenFlowMeter
-        state={meter.state}
-        sourceTokens={meter.sourceTokens}
-        targetTokens={meter.targetTokens}
-      />
+
 
       {running ? <LoadingState label={copy.fetchingBusy} /> : null}
       {error ? <ErrorState message={error} onRetry={run} /> : null}
@@ -139,7 +134,7 @@ export function FetchWorkspace() {
               <CopyButton text={text} label={copy.copyMarkdown} />
             </div>
           </div>
-          <MarkdownPreview markdown={text} filename={result.output_name} />
+          <MarkdownPreview content={text} />
         </div>
       ) : null}
 

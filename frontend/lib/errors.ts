@@ -20,7 +20,8 @@ export type ErrorLevel = 'banner' | 'inline' | 'row' | 'toast';
 
 /** Structured error body the backend returns (ux-flows §5.2). */
 export interface ErrorBody {
-  error: string;
+  error?: string;
+  code?: string;
   message: string;
   exit_code?: number;
   file?: string;

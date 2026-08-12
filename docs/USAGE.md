@@ -209,7 +209,7 @@ PDF (142,000 tokens) -> Markdown (12,400 tokens) [-91.2%]
 
 ## `tmd ui` — local web UI
 
-Launches the FastAPI backend and serves the built frontend at `http://127.0.0.1:8642`. The browser opens automatically.
+Launches the FastAPI backend and serves the web interface at `http://127.0.0.1:8642`. The browser opens automatically.
 
 ```bash
 tmd ui
@@ -224,7 +224,19 @@ tmd ui --no-browser      # don't auto-open the browser
 | `--port` | `8642` | Port (auto-increments up to +20 if busy) |
 | `--no-browser` | off | Skip auto-opening the browser |
 
-The API is available at `http://127.0.0.1:8642/api`. Interactive docs at `/docs` (Swagger UI). The frontend must be built first (`cd frontend && npm run build`).
+### Static UI Resolution & Dev Mode
+When `tmd ui` runs, it resolves the frontend interface in the following order:
+1. **Bundled Static Assets**: Checks for pre-packaged `tmd_ui_static/` inside the installed package directory.
+2. **Local Static Export**: Checks for `frontend/out/` in your workspace. If found, `tmd ui` serves both the API and UI directly on `http://127.0.0.1:8642`.
+3. **Frontend Not Built Warning**: If neither static folder is built, navigating to `http://127.0.0.1:8642` displays instructions on how to build the frontend (`cd frontend && npm run build`).
+
+To build the static UI for single-process hosting on `http://127.0.0.1:8642`, run:
+```bash
+cd frontend && npm install && npm run build
+```
+
+The REST API is available at `http://127.0.0.1:8642/api` with interactive Swagger docs at `/docs`.
+
 
 ---
 

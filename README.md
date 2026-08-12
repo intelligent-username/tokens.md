@@ -91,27 +91,31 @@ Both bare `tmd` and `python src/main.py` automatically resolve default `input/` 
 
 ### 2. Web Front End (`tmd ui` & Next.js)
 
-The single-page web interface wraps all `tmd` capabilities into an intuitive side-by-side visual workbench featuring drag-and-drop file upload, URL fetching, clipboard copying, and live token compression flow meters.
+The single-page web interface wraps all `tmd` capabilities into an intuitive side-by-side visual workbench featuring drag-and-drop file upload, URL fetching, clipboard copying, and token budgeting.
 
-**Method A: Single CLI Command**
+**Method A: Single CLI Command (`tmd ui`)**
 ```bash
 uv pip install -e ".[web]"
 tmd ui
 ```
-This launches the backend API on `http://127.0.0.1:8642` and opens the browser interface.
+This launches the backend server on `http://127.0.0.1:8642` and opens your browser.
 
-**Method B: Development Server (Frontend + Backend)**
+> **Note**: `tmd ui` automatically looks for built static assets inside `tmd_ui_static/` (installed package source) or `frontend/out/` (local repository source). If found, it serves both the REST API and the frontend directly on `http://127.0.0.1:8642` as a single unified process.
+
+**Method B: Standalone Development Servers**
+If you are developing or modifying the React/Next.js interface and want hot-reloading:
+
 1. Start the FastAPI backend server:
    ```bash
    python -m backend
    ```
-2. In a separate terminal, start the Next.js frontend dev server:
+2. In a separate terminal, start the Next.js development server:
    ```bash
    cd frontend
    npm install
    npm run dev
    ```
-3. Open `http://localhost:3000` in your web browser.
+3. Open `http://localhost:3000` in your web browser. (The Next.js dev server proxies API calls to `http://127.0.0.1:8642`).
 
 ### 3. CLI Usage (`tmd`)
 
@@ -145,7 +149,7 @@ mypy src
 
 ### Testing PyPI Releases in Isolated Docker Sandbox
 
-To test installed PyPI releases in an ephemeral, 100% isolated environment using `pipx` via Docker:
+To test installed PyPI releases in an ephemeral state, take the following steps:
 
 ```bash
 # Launch disposable Python container
@@ -161,6 +165,7 @@ export PATH="$HOME/.local/bin:$PATH"
 tmd --version
 tmd --help
 ```
+
 Exiting the shell (`exit`) automatically destroys the container and leaves zero footprint on your system.
 
 

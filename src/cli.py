@@ -390,8 +390,6 @@ def ui(
     app = create_app(settings)
     
     target_url = f"http://{host}:{chosen}"
-    if settings.ui_dir is None:
-        target_url = "http://localhost:3000"
 
     if browser:
         threading.Timer(

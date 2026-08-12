@@ -141,11 +141,11 @@ function extractText(node: ReactNode): string {
   return '';
 }
 
-function PreBlock({ node: _node, children }: Components['pre']) {
-  return <CodeBlock text={extractText(children)}>{children}</CodeBlock>;
+function PreBlock(props: { children?: ReactNode }) {
+  return <CodeBlock text={extractText(props.children)}>{props.children}</CodeBlock>;
 }
 
-function CodeText({ node: _node, className, children, ...rest }: Components['code']) {
+function CodeText({ className, children, ...rest }: { className?: string; children?: ReactNode }) {
   const block = typeof className === 'string' && className.includes('language-');
   return (
     <code {...rest} className={className} style={block ? blockCodeTextStyle : inlineCodeStyle}>
