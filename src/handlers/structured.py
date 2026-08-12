@@ -10,9 +10,7 @@ from pathlib import Path
 
 from ..registry import Converter, UnsupportedFormatError
 
-STRUCTURED_EXTENSIONS = frozenset(
-    {".json", ".xml", ".csv", ".yaml", ".yml", ".toml", ".ini", ".log"}
-)
+STRUCTURED_EXTENSIONS = frozenset({".json", ".xml", ".csv", ".yaml", ".yml", ".toml", ".ini", ".log"})
 
 
 def _as_json(path: Path) -> str:
@@ -73,9 +71,7 @@ class StructuredConverter(Converter):
             else:  # pragma: no cover - registry guarantees the extension
                 raise UnsupportedFormatError(f"Unsupported structured format {suffix}")
         except (ValueError, json.JSONDecodeError, xml.parsers.expat.ExpatError) as exc:
-            raise UnsupportedFormatError(
-                f"Could not parse {input_path.name}: {exc}"
-            ) from exc
+            raise UnsupportedFormatError(f"Could not parse {input_path.name}: {exc}") from exc
 
         output_path = output_dir / f"{input_path.stem}.md"
         output_path.write_text(content, encoding="utf-8")

@@ -18,6 +18,4 @@ class UnsupportedConverter(Converter):
 
         exts = ", ".join(sorted(ext.lstrip(".") for ext in DEFAULT_REGISTRY.extensions()))
         ext_label = input_path.suffix.lower() or "<no extension>"
-        raise UnsupportedFormatError(
-            f"Unsupported format '{ext_label}'. Supported formats: {exts}"
-        )
+        raise UnsupportedFormatError(f"Unsupported format '{ext_label}'. Supported formats: {exts}")

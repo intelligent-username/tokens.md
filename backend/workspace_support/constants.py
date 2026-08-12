@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import Pattern
+from re import Pattern
 
 SAFE_NAME_RE: Pattern[str] = re.compile(r"[^A-Za-z0-9._ -]+")
 MAX_NAME_LENGTH = 120

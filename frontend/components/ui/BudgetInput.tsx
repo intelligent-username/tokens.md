@@ -17,13 +17,7 @@ export interface BudgetInputProps {
  * Budget input component featuring dual numeric text input, unit selector,
  * and range slider for token ceiling configuration.
  */
-export function BudgetInput({
-  value,
-  unit,
-  onChange,
-  disabled = false,
-  className,
-}: BudgetInputProps) {
+export function BudgetInput({ value, unit, onChange, disabled = false, className }: BudgetInputProps) {
   const handleNumberChange = (e: ChangeEvent<HTMLInputElement>) => {
     const val = parseInt(e.target.value, 10);
     onChange(isNaN(val) ? 0 : Math.max(0, val), unit);
@@ -49,18 +43,7 @@ export function BudgetInput({
         </label>
         <div className="flex items-center gap-1 rounded-full bg-muted/60 p-0.5 border border-border/40">
           {(["KB", "MB", "Tokens"] as BudgetUnit[]).map((u) => (
-            <button
-              key={u}
-              type="button"
-              disabled={disabled}
-              onClick={() => handleUnitChange(u)}
-              className={cn(
-                "rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition-colors",
-                unit === u
-                  ? "bg-emerald-500 text-zinc-950 font-bold shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
+            <button key={u} type="button" disabled={disabled} onClick={() => handleUnitChange(u)} className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition-colors", unit === u ? "bg-emerald-500 text-zinc-950 font-bold shadow-sm" : "text-muted-foreground hover:text-foreground")}>
               {u}
             </button>
           ))}
@@ -81,16 +64,7 @@ export function BudgetInput({
         />
       </div>
 
-      <input
-        type="range"
-        min={10}
-        max={maxSlider}
-        step={stepSlider}
-        value={value}
-        disabled={disabled}
-        onChange={handleSliderChange}
-        className="w-full accent-emerald-500 cursor-pointer disabled:opacity-50"
-      />
+      <input type="range" min={10} max={maxSlider} step={stepSlider} value={value} disabled={disabled} onChange={handleSliderChange} className="w-full accent-emerald-500 cursor-pointer disabled:opacity-50" />
     </div>
   );
 }

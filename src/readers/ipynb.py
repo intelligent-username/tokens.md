@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from ..engine.model import CodeBlock, Document, Paragraph, RawMarkdown
+from ..engine.model import CodeBlock, Document, RawMarkdown
 from .base import Reader
 
 

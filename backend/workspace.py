@@ -94,12 +94,7 @@ class Workspace:
         """Register an uploaded file in the manifest and return its file_id."""
         with self._lock:
             file_id = uuid.uuid4().hex[:ID_HEX_LENGTH]
-            self._uploads[file_id] = {
-                "file_id": file_id,
-                "name": name,
-                "relpath": relpath,
-                "source_tokens": count_raw_file_tokens(dest),
-            }
+            self._uploads[file_id] = {"file_id": file_id, "name": name, "relpath": relpath, "source_tokens": count_raw_file_tokens(dest)}
             self._save_manifest()
             return file_id
 
@@ -121,13 +116,7 @@ class Workspace:
         """Register a converted output in the manifest and return its file_id."""
         with self._lock:
             file_id = uuid.uuid4().hex[:ID_HEX_LENGTH]
-            self._outputs[file_id] = {
-                "file_id": file_id,
-                "name": path.name,
-                "path": str(path),
-                "target_tokens": target_tokens,
-                "created": time.time(),
-            }
+            self._outputs[file_id] = {"file_id": file_id, "name": path.name, "path": str(path), "target_tokens": target_tokens, "created": time.time()}
             self._save_manifest()
             return file_id
 
@@ -175,17 +164,4 @@ class Workspace:
         shutil.rmtree(self.root, ignore_errors=True)
 
 
-__all__ = [
-    "NotFoundError",
-    "SAMPLES_DIR",
-    "TooLargeError",
-    "Workspace",
-    "WorkspaceError",
-    "cleanup_all",
-    "list_samples",
-    "read_sample",
-    "sanitize_name",
-    "sanitize_relpath",
-    "start_janitor",
-    "sweep_workspaces",
-]
+__all__ = ["NotFoundError", "SAMPLES_DIR", "TooLargeError", "Workspace", "WorkspaceError", "cleanup_all", "list_samples", "read_sample", "sanitize_name", "sanitize_relpath", "start_janitor", "sweep_workspaces"]

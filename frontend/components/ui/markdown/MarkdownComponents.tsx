@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import type { Components } from 'react-markdown';
-import { CodeText, PreBlock } from './CodeBlock';
-import { hrStyle, linkStyle, quoteStyle, tableStyle, tableWrapStyle, tdStyle, thStyle } from './styles';
+import type { Components } from "react-markdown";
+import { CodeText, PreBlock } from "./CodeBlock";
+import { hrStyle, linkStyle, quoteStyle, tableStyle, tableWrapStyle, tdStyle, thStyle } from "./styles";
 
 export const markdownComponents: Components = {
   pre: PreBlock,

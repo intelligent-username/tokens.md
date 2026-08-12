@@ -16,6 +16,5 @@ def test_copy_to_clipboard_calls_pyperclip() -> None:
 
 
 def test_copy_to_clipboard_raises_on_failure() -> None:
-    with patch("src.clipboard.pyperclip.copy", side_effect=Exception("no backend")):
-        with pytest.raises(RuntimeError):
-            copy_to_clipboard("hello")
+    with patch("src.clipboard.pyperclip.copy", side_effect=Exception("no backend")), pytest.raises(RuntimeError):
+        copy_to_clipboard("hello")

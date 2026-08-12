@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import tempfile
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any
 
 from .registry import convert_file
 from .tokenizer import DEFAULT_ENCODING, count_tokens, format_tokens
@@ -12,9 +13,7 @@ from .tokenizer import DEFAULT_ENCODING, count_tokens, format_tokens
 FILE_SEPARATOR = "=== FILE: {name} ==="
 
 
-def resolve_to_markdown(
-    path: Path, *, no_convert: bool = False, **convert_kwargs: Any
-) -> str:
+def resolve_to_markdown(path: Path, *, no_convert: bool = False, **convert_kwargs: Any) -> str:
     """Return the Markdown text for a single file.
 
     Markdown files are read directly; everything else is converted first via
@@ -35,9 +34,7 @@ def build_toc(entries: Sequence[tuple[str, str]]) -> str:
         lines.append(f"- {name}")
         for line in content.splitlines():
             stripped = line.strip()
-            if stripped.startswith("## "):
-                lines.append(f"  - {stripped}")
-            elif stripped.startswith("# "):
+            if stripped.startswith("## ") or stripped.startswith("# "):
                 lines.append(f"  - {stripped}")
     return "\n".join(lines)
 
@@ -53,17 +50,7 @@ def dedup_lines(text: str) -> str:
     return "\n".join(kept)
 
 
-def merge_files(
-    paths: Sequence[Path],
-    output_path: Path,
-    *,
-    no_convert: bool = False,
-    dedup: bool = False,
-    toc: bool = True,
-    encoding: str = DEFAULT_ENCODING,
-    include_tokens: bool = False,
-    **convert_kwargs: Any,
-) -> Path:
+def merge_files(paths: Sequence[Path], output_path: Path, *, no_convert: bool = False, dedup: bool = False, toc: bool = True, encoding: str = DEFAULT_ENCODING, include_tokens: bool = False, **convert_kwargs: Any) -> Path:
     """Merge ``paths`` into a single Markdown document at ``output_path``.
 
     Files are sorted by natural path order for deterministic output. Returns

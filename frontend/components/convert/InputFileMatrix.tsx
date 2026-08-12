@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useRef, useLayoutEffect, useState } from 'react';
-import type { FileMeta, MergeResponse } from '@/lib/api/types';
-import { useReducedMotion } from '@/lib/hooks/useReducedMotion';
-import { FileMatrixRow } from './FileMatrixRow';
-import { MergeFunnel, type FunnelGeom } from './FileFlowStream';
-import type { ConvertItemWithSession } from './ResultClipButton';
+import { useRef, useLayoutEffect, useState } from "react";
+import type { FileMeta, MergeResponse } from "@/lib/api/types";
+import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
+import { FileMatrixRow } from "./FileMatrixRow";
+import { MergeFunnel, type FunnelGeom } from "./FileFlowStream";
+import type { ConvertItemWithSession } from "./ResultClipButton";
 
 export interface InputFileMatrixProps {
   files: File[];
@@ -21,19 +21,7 @@ export interface InputFileMatrixProps {
   onClearAll: () => void;
 }
 
-export function InputFileMatrix({
-  files,
-  convertedMap,
-  uploadMetaMap,
-  unconvertedFiles,
-  mergeMode,
-  mergeResult,
-  running,
-  sessionId,
-  getFileKey,
-  onRemoveFile,
-  onClearAll,
-}: InputFileMatrixProps) {
+export function InputFileMatrix({ files, convertedMap, uploadMetaMap, unconvertedFiles, mergeMode, mergeResult, running, sessionId, getFileKey, onRemoveFile, onClearAll }: InputFileMatrixProps) {
   const [funnelGeom, setFunnelGeom] = useState<FunnelGeom | null>(null);
   const rowsContainerRef = useRef<HTMLDivElement | null>(null);
   const rowBarRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -43,18 +31,14 @@ export function InputFileMatrix({
     if (!mergeMode || files.length === 0) return;
     const container = rowsContainerRef.current;
     if (!container) return;
-    const bars = rowBarRefs.current
-      .map((el) => el?.getBoundingClientRect())
-      .filter((r): r is DOMRect => Boolean(r));
+    const bars = rowBarRefs.current.map((el) => el?.getBoundingClientRect()).filter((r): r is DOMRect => Boolean(r));
     if (bars.length === 0) return;
     const containerRect = container.getBoundingClientRect();
     setFunnelGeom({
       x0: bars[0].left - containerRect.left,
       x1: bars[0].right - containerRect.left,
       y0s: bars.map((r) => r.top + r.height / 2 - containerRect.top),
-      midY:
-        bars.reduce((a, r) => a + (r.top + r.height / 2), 0) / bars.length -
-        containerRect.top,
+      midY: bars.reduce((a, r) => a + (r.top + r.height / 2), 0) / bars.length - containerRect.top,
       height: containerRect.height,
     });
   }, [mergeMode, files.length, mergeResult, running]);
@@ -75,7 +59,7 @@ export function InputFileMatrix({
             </button>
           )}
           <span className="leading-none">
-            1. {files.length === 1 ? 'Input File' : 'Input Files'} ({files.length})
+            1. {files.length === 1 ? "Input File" : "Input Files"} ({files.length})
           </span>
         </div>
         <span className="leading-none">2. Converted Markdown</span>
@@ -107,13 +91,7 @@ export function InputFileMatrix({
         );
       })}
 
-      {funnelGeom && mergeMode ? (
-        <MergeFunnel
-          geom={funnelGeom}
-          active={running && !mergeResult}
-          reduced={reducedMotion}
-        />
-      ) : null}
+      {funnelGeom && mergeMode ? <MergeFunnel geom={funnelGeom} active={running && !mergeResult} reduced={reducedMotion} /> : null}
     </div>
   );
 }

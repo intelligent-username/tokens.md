@@ -5,7 +5,6 @@ from __future__ import annotations
 from html.parser import HTMLParser
 from pathlib import Path
 
-from ..deps import require
 from ..registry import Converter, UnsupportedFormatError
 
 HTML_EXTENSIONS = frozenset({".html", ".htm"})
@@ -44,15 +43,8 @@ class HtmlConverter(Converter):
 
         try:
             import trafilatura
-            extracted = trafilatura.extract(
-                html,
-                output_format="markdown",
-                include_links=True,
-                include_images=True,
-                include_tables=True,
-                include_formatting=True,
-                favor_precision=True,
-            )
+
+            extracted = trafilatura.extract(html, output_format="markdown", include_links=True, include_images=True, include_tables=True, include_formatting=True, favor_precision=True)
             if extracted:
                 content = extracted
         except Exception:

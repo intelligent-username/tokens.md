@@ -1,6 +1,6 @@
-import type { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from "react";
 
-export type ResultStatus = 'queued' | 'converting' | 'done' | 'skipped' | 'error';
+export type ResultStatus = "queued" | "converting" | "done" | "skipped" | "error";
 
 interface ResultCardProps {
   title: ReactNode;
@@ -11,57 +11,57 @@ interface ResultCardProps {
 }
 
 const cardStyle: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '10px',
-  padding: '14px 16px',
-  borderRadius: 'var(--radius-card)',
-  border: '1px solid var(--color-border)',
-  background: 'var(--color-card)',
+  display: "flex",
+  flexDirection: "column",
+  gap: "10px",
+  padding: "14px 16px",
+  borderRadius: "var(--radius-card)",
+  border: "1px solid var(--color-border)",
+  background: "var(--color-card)",
 };
 
 const headerStyle: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '10px',
+  display: "flex",
+  alignItems: "center",
+  gap: "10px",
 };
 
 const titleStyle: CSSProperties = {
-  flex: '1 1 auto',
-  minWidth: '0',
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
+  flex: "1 1 auto",
+  minWidth: "0",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
   fontWeight: 600,
-  fontSize: '14px',
-  color: 'var(--color-foreground)',
+  fontSize: "14px",
+  color: "var(--color-foreground)",
 };
 
 const metaStyle: CSSProperties = {
-  flex: '0 0 auto',
-  fontSize: '12px',
-  color: 'var(--color-muted-foreground)',
-  fontVariantNumeric: 'tabular-nums',
+  flex: "0 0 auto",
+  fontSize: "12px",
+  color: "var(--color-muted-foreground)",
+  fontVariantNumeric: "tabular-nums",
 };
 
 const actionsStyle: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  flex: '0 0 auto',
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  flex: "0 0 auto",
 };
 
 const bodyStyle: CSSProperties = {
-  fontSize: '13px',
-  color: 'var(--color-muted-foreground)',
+  fontSize: "13px",
+  color: "var(--color-muted-foreground)",
 };
 
 const DOT_COLOR: Record<ResultStatus, string> = {
-  queued: 'var(--color-muted-foreground)',
-  converting: 'var(--color-primary)',
-  done: 'var(--color-accent-foreground)',
-  skipped: 'var(--color-muted-foreground)',
-  error: 'var(--color-destructive)',
+  queued: "var(--color-muted-foreground)",
+  converting: "var(--color-primary)",
+  done: "var(--color-accent-foreground)",
+  skipped: "var(--color-muted-foreground)",
+  error: "var(--color-destructive)",
 };
 
 /**
@@ -76,11 +76,11 @@ export function ResultCard({ title, meta, actions, children, status }: ResultCar
           <span
             aria-hidden="true"
             style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
+              width: "8px",
+              height: "8px",
+              borderRadius: "50%",
               background: DOT_COLOR[status],
-              flex: '0 0 auto',
+              flex: "0 0 auto",
             }}
           />
         ) : null}

@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Info } from '@phosphor-icons/react';
+import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { Info } from "@phosphor-icons/react";
 
 export interface SettingLabelProps {
   htmlFor: string;
@@ -24,7 +24,7 @@ export function SettingLabel({ htmlFor, label, tooltip }: SettingLabelProps) {
       onFocus={() => setShowHover(true)}
       onBlur={() => setShowHover(false)}
       onKeyDown={(e) => {
-        if (e.key === 'Escape') setShowHover(false);
+        if (e.key === "Escape") setShowHover(false);
       }}
     >
       <label htmlFor={htmlFor} className="text-xs font-semibold text-foreground cursor-pointer">

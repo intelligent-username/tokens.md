@@ -19,7 +19,7 @@ export interface ConvertItem {
   target_tokens: number;
   percent: number;
   output_file_id?: string;
-  status?: 'queued' | 'converting' | 'done' | 'skipped' | 'error';
+  status?: "queued" | "converting" | "done" | "skipped" | "error";
   error?: string;
 }
 

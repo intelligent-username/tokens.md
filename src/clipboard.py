@@ -25,7 +25,4 @@ def copy_to_clipboard(text: str) -> None:
     try:
         pyperclip.copy(text)
     except Exception as exc:  # Catch any error from pyperclip
-        raise RuntimeError(
-            "Clipboard is not available on this platform. "
-            "Install xclip/xsel (Linux) or use a supported desktop session."
-        ) from exc
+        raise RuntimeError("Clipboard is not available on this platform. Install xclip/xsel (Linux) or use a supported desktop session.") from exc

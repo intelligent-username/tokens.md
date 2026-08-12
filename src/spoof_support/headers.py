@@ -2,25 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
-from .constants import (
-    UA_ANDROID_DEFAULT,
-    UA_IOS_DEFAULT,
-    UA_LINUX_DEFAULT,
-    UA_MACOS_DEFAULT,
-    UA_WINDOWS_DEFAULT,
-)
+from .constants import UA_ANDROID_DEFAULT, UA_IOS_DEFAULT, UA_LINUX_DEFAULT, UA_MACOS_DEFAULT, UA_WINDOWS_DEFAULT
 
 
 def spoof_ios(user_agent: str | None = None) -> dict[str, str]:
     """Spoof headers for iOS devices (iPhone / iPad / iPod)."""
     return {
-        "User-Agent": (
-            user_agent
-            if user_agent and ("iphone" in user_agent.lower() or "ipad" in user_agent.lower())
-            else UA_IOS_DEFAULT
-        ),
+        "User-Agent": (user_agent if user_agent and ("iphone" in user_agent.lower() or "ipad" in user_agent.lower()) else UA_IOS_DEFAULT),
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
         "Accept-Encoding": "gzip, deflate",
@@ -34,11 +24,7 @@ def spoof_ios(user_agent: str | None = None) -> dict[str, str]:
 def spoof_android(user_agent: str | None = None) -> dict[str, str]:
     """Spoof headers for Android mobile devices."""
     return {
-        "User-Agent": (
-            user_agent
-            if user_agent and "chrome" in user_agent.lower()
-            else UA_ANDROID_DEFAULT
-        ),
+        "User-Agent": (user_agent if user_agent and "chrome" in user_agent.lower() else UA_ANDROID_DEFAULT),
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
         "Accept-Encoding": "gzip, deflate",
@@ -56,11 +42,7 @@ def spoof_android(user_agent: str | None = None) -> dict[str, str]:
 def spoof_macos(user_agent: str | None = None) -> dict[str, str]:
     """Spoof headers for macOS devices."""
     return {
-        "User-Agent": (
-            user_agent
-            if user_agent and "mac" in user_agent.lower()
-            else UA_MACOS_DEFAULT
-        ),
+        "User-Agent": (user_agent if user_agent and "mac" in user_agent.lower() else UA_MACOS_DEFAULT),
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
         "Accept-Encoding": "gzip, deflate",
@@ -78,11 +60,7 @@ def spoof_macos(user_agent: str | None = None) -> dict[str, str]:
 def spoof_linux(user_agent: str | None = None) -> dict[str, str]:
     """Spoof headers for Linux / Ubuntu devices."""
     return {
-        "User-Agent": (
-            user_agent
-            if user_agent and "linux" in user_agent.lower()
-            else UA_LINUX_DEFAULT
-        ),
+        "User-Agent": (user_agent if user_agent and "linux" in user_agent.lower() else UA_LINUX_DEFAULT),
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
         "Accept-Language": "en-US,en;q=0.9",
         "Accept-Encoding": "gzip, deflate",
@@ -100,11 +78,7 @@ def spoof_linux(user_agent: str | None = None) -> dict[str, str]:
 def spoof_windows(user_agent: str | None = None) -> dict[str, str]:
     """Spoof headers for Windows devices."""
     return {
-        "User-Agent": (
-            user_agent
-            if user_agent and len(user_agent) > 10
-            else UA_WINDOWS_DEFAULT
-        ),
+        "User-Agent": (user_agent if user_agent and len(user_agent) > 10 else UA_WINDOWS_DEFAULT),
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
         "Accept-Language": "en-US,en;q=0.9",
         "Accept-Encoding": "gzip, deflate",

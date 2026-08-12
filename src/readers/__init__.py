@@ -15,20 +15,4 @@ from .subtitle import SubtitleReader
 from .tex import TexReader
 from .xlsx import XlsxReader
 
-__all__ = [
-    "Reader",
-    "ReaderConverter",
-    "DocxReader",
-    "PptxReader",
-    "XlsxReader",
-    "OdfReader",
-    "RtfReader",
-    "MsgReader",
-    "EmlReader",
-    "Azw3Reader",
-    "Azw4Reader",
-    "SubtitleReader",
-    "TexReader",
-    "IpynbReader",
-    "MarkdownReader",
-]
+__all__ = ["Reader", "ReaderConverter", "DocxReader", "PptxReader", "XlsxReader", "OdfReader", "RtfReader", "MsgReader", "EmlReader", "Azw3Reader", "Azw4Reader", "SubtitleReader", "TexReader", "IpynbReader", "MarkdownReader"]

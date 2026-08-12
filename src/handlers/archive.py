@@ -11,9 +11,7 @@ from pathlib import Path
 
 from ..registry import Converter, UnsupportedFormatError, convert_file
 
-ARCHIVE_EXTENSIONS = frozenset(
-    {".zip", ".tar", ".gz", ".tgz", ".bz2"}
-)
+ARCHIVE_EXTENSIONS = frozenset({".zip", ".tar", ".gz", ".tgz", ".bz2"})
 
 IGNORE_NAMES = {".DS_Store", "desktop.ini", "thumbs.db"}
 
@@ -64,9 +62,7 @@ class ArchiveConverter(Converter):
                 else:
                     raise UnsupportedFormatError(f"Unsupported archive format '{suffix}'")
             except Exception as exc:
-                raise UnsupportedFormatError(
-                    f"Could not extract archive '{input_path.name}': {exc}"
-                ) from exc
+                raise UnsupportedFormatError(f"Could not extract archive '{input_path.name}': {exc}") from exc
 
             extracted_files: list[Path] = []
             for root, _, filenames in os.walk(extract_dir):

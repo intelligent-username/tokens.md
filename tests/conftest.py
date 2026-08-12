@@ -9,7 +9,6 @@ from pathlib import Path
 
 import pytest
 
-
 # --- pytest plugins and output configuration --------------------------------
 # Install for better output:
 #   pip install pytest-sugar pytest-instafail
@@ -29,8 +28,9 @@ def tmd_workspace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 @pytest.fixture
 def client(tmd_workspace: Path):
     """FastAPI TestClient with an isolated temp workspace."""
-    from backend.app import create_app
     from fastapi.testclient import TestClient
+
+    from backend.app import create_app
 
     app = create_app()
     with TestClient(app) as test_client:
@@ -145,10 +145,7 @@ def sample_rtf(tmp_path: Path) -> Path:
 @pytest.fixture
 def sample_eml(tmp_path: Path) -> Path:
     path = tmp_path / "sample.eml"
-    path.write_text(
-        "From: a@example.com\nTo: b@example.com\nSubject: Hello\n\nBody text.\n",
-        encoding="utf-8",
-    )
+    path.write_text("From: a@example.com\nTo: b@example.com\nSubject: Hello\n\nBody text.\n", encoding="utf-8")
     return path
 
 
@@ -162,9 +159,7 @@ def sample_srt(tmp_path: Path) -> Path:
 @pytest.fixture
 def sample_tex(tmp_path: Path) -> Path:
     path = tmp_path / "sample.tex"
-    path.write_text(
-        "\\section{Introduction}\nSome body text here.\n", encoding="utf-8"
-    )
+    path.write_text("\\section{Introduction}\nSome body text here.\n", encoding="utf-8")
     return path
 
 
@@ -200,10 +195,7 @@ def sample_txt(tmp_path: Path) -> Path:
 @pytest.fixture
 def sample_html(tmp_path: Path) -> Path:
     path = tmp_path / "page.html"
-    path.write_text(
-        "<html><body><article><h1>Title</h1><p>Body text here.</p></article></body></html>",
-        encoding="utf-8",
-    )
+    path.write_text("<html><body><article><h1>Title</h1><p>Body text here.</p></article></body></html>", encoding="utf-8")
     return path
 
 
@@ -229,10 +221,7 @@ def _inject_docx_math(tmp_path: Path, omml: str) -> Path:
             data = zin.read(item.filename)
             if item.filename == "word/document.xml":
                 xml = data.decode("utf-8")
-                omml_xml = (
-                    '<w:p><m:oMathPara xmlns:m="http://schemas.openxmlformats.org/'
-                    f'officeDocument/2006/math">{omml}</m:oMathPara></w:p>'
-                )
+                omml_xml = f'<w:p><m:oMathPara xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">{omml}</m:oMathPara></w:p>'
                 # Insert OMML paragraph AFTER the first paragraph (after first </w:p>)
                 xml = xml.replace("</w:p>", "</w:p>" + omml_xml, 1)
                 data = xml.encode("utf-8")
@@ -244,19 +233,12 @@ def _inject_docx_math(tmp_path: Path, omml: str) -> Path:
 @pytest.fixture
 def sample_docx_math(tmp_path: Path) -> Path:
     # x^2 + 1 as OMML: <m:sSup><m:e><m:r><m:t>x</m:t></m:r></m:e><m:sup><m:r><m:t>2</m:t></m:r></m:sup></m:sSup>
-    omml = (
-        '<m:sSup><m:e><m:r><m:t>x</m:t></m:r></m:e>'
-        '<m:sup><m:r><m:t>2</m:t></m:r></m:sup></m:sSup>'
-        '<m:r><m:t>+1</m:t></m:r>'
-    )
+    omml = "<m:sSup><m:e><m:r><m:t>x</m:t></m:r></m:e><m:sup><m:r><m:t>2</m:t></m:r></m:sup></m:sSup><m:r><m:t>+1</m:t></m:r>"
     return _inject_docx_math(tmp_path, omml)
 
 
 @pytest.fixture
 def sample_tex_math(tmp_path: Path) -> Path:
     path = tmp_path / "math.tex"
-    path.write_text(
-        "\\section{Derivation}\nThe energy is $E = mc^2$.\n\\begin{equation}\n\\int_0^1 x^2 dx\n\\end{equation}\n",
-        encoding="utf-8",
-    )
+    path.write_text("\\section{Derivation}\nThe energy is $E = mc^2$.\n\\begin{equation}\n\\int_0^1 x^2 dx\n\\end{equation}\n", encoding="utf-8")
     return path

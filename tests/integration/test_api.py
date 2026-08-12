@@ -7,7 +7,6 @@ import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
 from fastapi.testclient import TestClient
 
 from backend.app import create_app
@@ -16,21 +15,11 @@ from backend.config import Settings
 JSON_BYTES = b'{"host": "localhost", "port": 8080}'
 
 
-def _upload(
-    client: TestClient,
-    name: str,
-    content: bytes,
-    paths: str = "[]",
-    session_id: str | None = None,
-) -> dict:
+def _upload(client: TestClient, name: str, content: bytes, paths: str = "[]", session_id: str | None = None) -> dict:
     data: dict[str, str] = {"paths": paths}
     if session_id:
         data["session_id"] = session_id
-    resp = client.post(
-        "/api/uploads",
-        files=[("files", (name, content, "application/octet-stream"))],
-        data=data,
-    )
+    resp = client.post("/api/uploads", files=[("files", (name, content, "application/octet-stream"))], data=data)
     assert resp.status_code == 201, resp.text
     return resp.json()
 
@@ -73,9 +62,7 @@ def test_convert(client: TestClient) -> None:
     body = _upload(client, "notes.json", JSON_BYTES)
     sid = body["session_id"]
     fid = body["files"][0]["file_id"]
-    resp = client.post(
-        "/api/convert", json={"session_id": sid, "file_ids": [fid]}
-    )
+    resp = client.post("/api/convert", json={"session_id": sid, "file_ids": [fid]})
     assert resp.status_code == 200
     result = resp.json()
     assert result["converted_count"] == 1
@@ -93,14 +80,7 @@ def test_merge_with_budget_and_delta(client: TestClient) -> None:
     fid_a = body["files"][0]["file_id"]
     body = _upload(client, "b.json", b'{"b": 2}', session_id=sid)
     fid_b = body["files"][0]["file_id"]
-    resp = client.post(
-        "/api/merge",
-        json={
-            "session_id": sid,
-            "file_ids": [fid_a, fid_b],
-            "options": {"budget": 100000, "delta": True},
-        },
-    )
+    resp = client.post("/api/merge", json={"session_id": sid, "file_ids": [fid_a, fid_b], "options": {"budget": 100000, "delta": True}})
     assert resp.status_code == 200, resp.text
     result = resp.json()
     assert result["output_file_id"]
@@ -110,10 +90,7 @@ def test_merge_with_budget_and_delta(client: TestClient) -> None:
 
 
 def test_budget_standalone(client: TestClient) -> None:
-    resp = client.post(
-        "/api/budget",
-        json={"session_id": "x", "text": "hello world " * 100, "budget": 10},
-    )
+    resp = client.post("/api/budget", json={"session_id": "x", "text": "hello world " * 100, "budget": 10})
     assert resp.status_code == 200
     result = resp.json()
     assert "fits" in result
@@ -141,12 +118,8 @@ def test_fetch(client: TestClient) -> None:
         def extract(self, downloaded: bytes, **kwargs: object) -> str:
             return "# Title\n\nBody text."
 
-    from unittest.mock import patch
-
     with patch("src.fetch.require", return_value=FakeTrafilatura()):
-        resp = client.post(
-            "/api/fetch", json={"url": "https://example.com/article"}
-        )
+        resp = client.post("/api/fetch", json={"url": "https://example.com/article"})
     assert resp.status_code == 200, resp.text
     result = resp.json()
     assert result["output_file_id"]
@@ -157,9 +130,7 @@ def test_repo(client: TestClient) -> None:
     body = _upload(client, "main.py", b"print('hi')\n", paths='["src/main.py"]')
     sid = body["session_id"]
     fid = body["files"][0]["file_id"]
-    resp = client.post(
-        "/api/repo", json={"session_id": sid, "file_ids": [fid]}
-    )
+    resp = client.post("/api/repo", json={"session_id": sid, "file_ids": [fid]})
     assert resp.status_code == 200, resp.text
     result = resp.json()
     assert result["output_file_id"]
@@ -248,11 +219,7 @@ def test_unknown_format_422(client: TestClient) -> None:
 
 def test_oversize_upload_413(tmd_workspace: Path) -> None:
     client = _client_with(max_upload_mb=1)
-    resp = client.post(
-        "/api/uploads",
-        files=[("files", ("big.json", b"x" * (2 * 1024 * 1024), "application/octet-stream"))],
-        data={"paths": "[]"},
-    )
+    resp = client.post("/api/uploads", files=[("files", ("big.json", b"x" * (2 * 1024 * 1024), "application/octet-stream"))], data={"paths": "[]"})
     assert resp.status_code == 413
     assert resp.json()["code"] == "too_large"
 
@@ -260,9 +227,7 @@ def test_oversize_upload_413(tmd_workspace: Path) -> None:
 def test_local_path_gated_off(client: TestClient, tmp_path: Path) -> None:
     target = tmp_path / "local.json"
     target.write_text('{"x": 1}', encoding="utf-8")
-    resp = client.post(
-        "/api/convert", json={"session_id": "s", "path": str(target)}
-    )
+    resp = client.post("/api/convert", json={"session_id": "s", "path": str(target)})
     assert resp.status_code == 403
     assert resp.json()["code"] == "local_paths_disabled"
 
@@ -271,9 +236,7 @@ def test_local_path_allowed(tmd_workspace: Path, tmp_path: Path) -> None:
     target = tmp_path / "local.json"
     target.write_text('{"x": 1}', encoding="utf-8")
     client = _client_with(allow_local_paths=True, local_paths_root=tmp_path)
-    resp = client.post(
-        "/api/convert", json={"session_id": "s", "path": str(target)}
-    )
+    resp = client.post("/api/convert", json={"session_id": "s", "path": str(target)})
     assert resp.status_code == 200, resp.text
     assert resp.json()["converted_count"] == 1
 
@@ -282,9 +245,7 @@ def test_local_path_outside_root(tmd_workspace: Path, tmp_path: Path) -> None:
     outside = tmp_path.parent / "outside.json"
     outside.write_text('{"x": 1}', encoding="utf-8")
     client = _client_with(allow_local_paths=True, local_paths_root=tmp_path)
-    resp = client.post(
-        "/api/convert", json={"session_id": "s", "path": str(outside)}
-    )
+    resp = client.post("/api/convert", json={"session_id": "s", "path": str(outside)})
     assert resp.status_code == 403
     assert resp.json()["code"] == "local_paths_disallowed"
 

@@ -57,10 +57,7 @@ def test_delta(sample_md: Path, tmp_path: Path) -> None:
 
 def test_clip_supports_all_formats(sample_docx_headed: Path, monkeypatch) -> None:
     captured: dict[str, str] = {}
-    monkeypatch.setattr(
-        "src.clipboard.copy_to_clipboard",
-        lambda text: captured.setdefault("text", text),
-    )
+    monkeypatch.setattr("src.clipboard.copy_to_clipboard", lambda text: captured.setdefault("text", text))
     result = runner.invoke(app, ["clip", str(sample_docx_headed)])
     assert result.exit_code == 0
     assert "# Chapter One" in captured.get("text", "")

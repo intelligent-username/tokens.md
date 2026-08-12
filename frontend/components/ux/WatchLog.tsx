@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
-import copy from '../../lib/copy';
-import { formatPercent, formatTokens } from './format';
-import type { WatchLogLine, WatchStatus, WatchTotals } from '../../lib/hooks/useWatchStream';
+import { useEffect, useRef } from "react";
+import copy from "../../lib/copy";
+import { formatPercent, formatTokens } from "./format";
+import type { WatchLogLine, WatchStatus, WatchTotals } from "../../lib/hooks/useWatchStream";
 
 interface WatchLogProps {
   lines: WatchLogLine[];
@@ -25,14 +25,14 @@ const STATUS_LABEL: Record<WatchStatus, string> = {
   stopped: copy.daemonStopped,
 };
 
-const KIND_COLOR: Record<WatchLogLine['kind'], string> = {
-  started: 'var(--color-accent-foreground, #90EEC2)',
-  queued: 'var(--color-muted-foreground, #AABBE4)',
-  converting: 'var(--color-primary, #16DE81)',
-  done: 'var(--color-emerald-300, #90EEC2)',
-  skipped: 'var(--color-muted-foreground, #AABBE4)',
-  error: '#FF8A8A',
-  stopped: 'var(--color-muted-foreground, #AABBE4)',
+const KIND_COLOR: Record<WatchLogLine["kind"], string> = {
+  started: "var(--color-accent-foreground, #90EEC2)",
+  queued: "var(--color-muted-foreground, #AABBE4)",
+  converting: "var(--color-primary, #16DE81)",
+  done: "var(--color-emerald-300, #90EEC2)",
+  skipped: "var(--color-muted-foreground, #AABBE4)",
+  error: "#FF8A8A",
+  stopped: "var(--color-muted-foreground, #AABBE4)",
 };
 
 /**
@@ -40,15 +40,7 @@ const KIND_COLOR: Record<WatchLogLine['kind'], string> = {
  * lines with per-file token counts and status colors. Auto-scroll pauses when
  * the user scrolls up and resumes when they return to the bottom.
  */
-export function WatchLog({
-  lines,
-  totals,
-  status,
-  summary,
-  onClear,
-  onProcessExisting,
-  canProcessExisting,
-}: WatchLogProps) {
+export function WatchLog({ lines, totals, status, summary, onClear, onProcessExisting, canProcessExisting }: WatchLogProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stickRef = useRef(true);
 
@@ -68,32 +60,31 @@ export function WatchLog({
   return (
     <div
       style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px',
-        borderRadius: '20px',
-        border: '1px solid var(--color-border, rgba(255,255,255,0.12))',
-        background: 'var(--color-card, rgba(255,255,255,0.06))',
-        overflow: 'hidden',
+        display: "flex",
+        flexDirection: "column",
+        gap: "10px",
+        borderRadius: "20px",
+        border: "1px solid var(--color-border, rgba(255,255,255,0.12))",
+        background: "var(--color-card, rgba(255,255,255,0.06))",
+        overflow: "hidden",
       }}
     >
       <div
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          padding: '12px 16px',
-          borderBottom: '1px solid var(--color-border, rgba(255,255,255,0.12))',
-          fontSize: '13px',
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          padding: "12px 16px",
+          borderBottom: "1px solid var(--color-border, rgba(255,255,255,0.12))",
+          fontSize: "13px",
         }}
       >
         <StatusDot status={status} />
-        <span style={{ flex: '1 1 auto', fontWeight: 600 }}>{STATUS_LABEL[status]}</span>
+        <span style={{ flex: "1 1 auto", fontWeight: 600 }}>{STATUS_LABEL[status]}</span>
         {totals && totals.files > 0 ? (
-          <span style={{ fontVariantNumeric: 'tabular-nums', opacity: 0.85 }}>
-            {totals.files} files · {formatTokens(totals.source_tokens)} →{' '}
-            {formatTokens(totals.target_tokens)} tokens
-            {totals.percent ? ` · ${formatPercent(totals.percent)}` : ''}
+          <span style={{ fontVariantNumeric: "tabular-nums", opacity: 0.85 }}>
+            {totals.files} files · {formatTokens(totals.source_tokens)} → {formatTokens(totals.target_tokens)} tokens
+            {totals.percent ? ` · ${formatPercent(totals.percent)}` : ""}
           </span>
         ) : null}
         <button type="button" onClick={onClear} disabled={lines.length === 0}>
@@ -108,34 +99,34 @@ export function WatchLog({
         aria-label={copy.watchLogLabel}
         onScroll={onScroll}
         style={{
-          height: '280px',
-          overflowY: 'auto',
-          padding: '12px 16px',
-          fontFamily: 'var(--font-mono, ui-monospace, Menlo, monospace)',
-          fontSize: '13px',
-          lineHeight: '1.7',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '2px',
+          height: "280px",
+          overflowY: "auto",
+          padding: "12px 16px",
+          fontFamily: "var(--font-mono, ui-monospace, Menlo, monospace)",
+          fontSize: "13px",
+          lineHeight: "1.7",
+          display: "flex",
+          flexDirection: "column",
+          gap: "2px",
         }}
       >
         {lines.length === 0 ? (
-          <div style={{ opacity: 0.6, fontStyle: 'italic' }}>{copy.watchIdle}</div>
+          <div style={{ opacity: 0.6, fontStyle: "italic" }}>{copy.watchIdle}</div>
         ) : (
           lines.map((line) => (
-            <div key={line.id} style={{ color: KIND_COLOR[line.kind], whiteSpace: 'pre-wrap' }}>
+            <div key={line.id} style={{ color: KIND_COLOR[line.kind], whiteSpace: "pre-wrap" }}>
               {line.text}
             </div>
           ))
         )}
       </div>
 
-      {status === 'stopped' && summary ? (
+      {status === "stopped" && summary ? (
         <div
           style={{
-            padding: '12px 16px',
-            borderTop: '1px solid var(--color-border, rgba(255,255,255,0.12))',
-            fontSize: '13px',
+            padding: "12px 16px",
+            borderTop: "1px solid var(--color-border, rgba(255,255,255,0.12))",
+            fontSize: "13px",
             opacity: 0.9,
           }}
         >
@@ -145,12 +136,12 @@ export function WatchLog({
 
       <div
         style={{
-          display: 'flex',
-          gap: '8px',
-          padding: '0 16px 12px',
+          display: "flex",
+          gap: "8px",
+          padding: "0 16px 12px",
         }}
       >
-        {(status === 'disconnected' || status === 'stopped') && canProcessExisting ? (
+        {(status === "disconnected" || status === "stopped") && canProcessExisting ? (
           <button type="button" onClick={onProcessExisting}>
             {copy.processExisting}
           </button>
@@ -161,21 +152,16 @@ export function WatchLog({
 }
 
 function StatusDot({ status }: { status: WatchStatus }) {
-  const color =
-    status === 'watching'
-      ? 'var(--color-primary, #16DE81)'
-      : status === 'reconnecting' || status === 'connecting'
-        ? '#F2C94C'
-        : 'var(--color-muted-foreground, #AABBE4)';
+  const color = status === "watching" ? "var(--color-primary, #16DE81)" : status === "reconnecting" || status === "connecting" ? "#F2C94C" : "var(--color-muted-foreground, #AABBE4)";
   return (
     <span
       aria-hidden="true"
       style={{
-        width: '8px',
-        height: '8px',
-        borderRadius: '50%',
+        width: "8px",
+        height: "8px",
+        borderRadius: "50%",
         background: color,
-        boxShadow: status === 'watching' ? `0 0 8px ${color}` : 'none',
+        boxShadow: status === "watching" ? `0 0 8px ${color}` : "none",
       }}
     />
   );

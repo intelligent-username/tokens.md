@@ -12,8 +12,7 @@ export interface DownloadButtonProps {
   disabled?: boolean;
 }
 
-const buttonClass =
-  "inline-flex h-9 items-center gap-1.5 rounded-control border border-border bg-secondary/50 px-3 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50";
+const buttonClass = "inline-flex h-9 items-center gap-1.5 rounded-control border border-border bg-secondary/50 px-3 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50";
 
 /**
  * Download action: a server URL anchor OR a client-side Blob download of
@@ -51,12 +50,7 @@ export function DownloadButton({ url, content, filename = "download.md", label, 
   };
 
   return (
-    <button
-      type="button"
-      onClick={downloadBlob}
-      disabled={disabled || content === undefined}
-      className={buttonClass}
-    >
+    <button type="button" onClick={downloadBlob} disabled={disabled || content === undefined} className={buttonClass}>
       <Download size={16} weight="regular" aria-hidden="true" />
       {label ?? copy.download}
     </button>

@@ -18,7 +18,7 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 function applyTheme(theme: Theme, animate = true) {
   if (typeof document === "undefined") return;
-  
+
   if (animate && "startViewTransition" in document) {
     try {
       const transition = (document as any).startViewTransition(() => {
@@ -103,14 +103,7 @@ export function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <button
-        type="button"
-        role="switch"
-        aria-checked={true}
-        aria-label="Theme toggle"
-        className="relative inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-control border border-border/80 bg-secondary/60 text-secondary-foreground shadow-sm"
-        suppressHydrationWarning
-      >
+      <button type="button" role="switch" aria-checked={true} aria-label="Theme toggle" className="relative inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-control border border-border/80 bg-secondary/60 text-secondary-foreground shadow-sm" suppressHydrationWarning>
         <span className="flex items-center justify-center">
           <Moon size={18} weight="fill" className="text-amber-300 drop-shadow-[0_0_8px_rgba(252,211,77,0.6)]" />
         </span>
@@ -138,11 +131,7 @@ export function ThemeToggle() {
           transition={{ duration: 0.2, ease: "easeOut" }}
           className="flex items-center justify-center"
         >
-          {isDark ? (
-            <Moon size={18} weight="fill" className="text-amber-300 drop-shadow-[0_0_8px_rgba(252,211,77,0.6)]" />
-          ) : (
-            <SunDim size={19} weight="duotone" className="text-amber-500 drop-shadow-[0_0_6px_rgba(245,158,11,0.5)]" />
-          )}
+          {isDark ? <Moon size={18} weight="fill" className="text-amber-300 drop-shadow-[0_0_8px_rgba(252,211,77,0.6)]" /> : <SunDim size={19} weight="duotone" className="text-amber-500 drop-shadow-[0_0_6px_rgba(245,158,11,0.5)]" />}
         </motion.div>
       </AnimatePresence>
     </motion.button>

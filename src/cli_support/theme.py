@@ -41,13 +41,7 @@ class OrderGroup(typer.core.TyperGroup):
         if self.help:
             console.print(f"{self.help}\n")
 
-        console.print(
-            f" [{CLITheme.LABEL}]Usage:[/{CLITheme.LABEL}] "
-            f"[{CLITheme.MUTED}]tmd[/{CLITheme.MUTED}] "
-            f"[{CLITheme.PRIMARY_STYLE}]COMMAND[/{CLITheme.PRIMARY_STYLE}] "
-            f"[{CLITheme.SECONDARY_STYLE}][ARGS][/{CLITheme.SECONDARY_STYLE}] "
-            f"[{CLITheme.ACCENT_STYLE}][OPTIONS][/{CLITheme.ACCENT_STYLE}]\n"
-        )
+        console.print(f" [{CLITheme.LABEL}]Usage:[/{CLITheme.LABEL}] [{CLITheme.MUTED}]tmd[/{CLITheme.MUTED}] [{CLITheme.PRIMARY_STYLE}]COMMAND[/{CLITheme.PRIMARY_STYLE}] [{CLITheme.SECONDARY_STYLE}][ARGS][/{CLITheme.SECONDARY_STYLE}] [{CLITheme.ACCENT_STYLE}][OPTIONS][/{CLITheme.ACCENT_STYLE}]\n")
 
         # 1. Commands Panel
         cmd_table = Table(box=None, show_header=False, pad_edge=False)
@@ -62,14 +56,7 @@ class OrderGroup(typer.core.TyperGroup):
                 help_text = cmd.get_short_help_str(limit=120) or ""
                 cmd_table.add_row(name, help_text)
 
-        cmd_panel = Panel(
-            cmd_table,
-            title=f"[{CLITheme.PRIMARY_STYLE}]Commands[/{CLITheme.PRIMARY_STYLE}]",
-            title_align="left",
-            border_style=CLITheme.PRIMARY,
-            box=box.ROUNDED,
-            expand=False,
-        )
+        cmd_panel = Panel(cmd_table, title=f"[{CLITheme.PRIMARY_STYLE}]Commands[/{CLITheme.PRIMARY_STYLE}]", title_align="left", border_style=CLITheme.PRIMARY, box=box.ROUNDED, expand=False)
         console.print(cmd_panel)
 
         # 2. Arguments Panel
@@ -80,14 +67,7 @@ class OrderGroup(typer.core.TyperGroup):
         arg_table.add_row("URL", "Web page link to fetch article markdown from")
         arg_table.add_row("DIRECTORY", "Repository directory to collapse for 'tmd repo'")
 
-        arg_panel = Panel(
-            arg_table,
-            title=f"[{CLITheme.SECONDARY_STYLE}]Arguments (Positional Targets)[/{CLITheme.SECONDARY_STYLE}]",
-            title_align="left",
-            border_style=CLITheme.SECONDARY,
-            box=box.ROUNDED,
-            expand=False,
-        )
+        arg_panel = Panel(arg_table, title=f"[{CLITheme.SECONDARY_STYLE}]Arguments (Positional Targets)[/{CLITheme.SECONDARY_STYLE}]", title_align="left", border_style=CLITheme.SECONDARY, box=box.ROUNDED, expand=False)
         console.print(arg_panel)
 
         # 3. Options Panel
@@ -100,25 +80,10 @@ class OrderGroup(typer.core.TyperGroup):
         opt_table.add_row("--budget INT", "Token ceiling budget for pruning (merge)")
         opt_table.add_row("--clip", "Copy converted output directly to clipboard (convert)")
 
-        opt_panel = Panel(
-            opt_table,
-            title=f"[{CLITheme.ACCENT_STYLE}]Options & Flags[/{CLITheme.ACCENT_STYLE}]",
-            title_align="left",
-            border_style=CLITheme.ACCENT,
-            box=box.ROUNDED,
-            expand=False,
-        )
+        opt_panel = Panel(opt_table, title=f"[{CLITheme.ACCENT_STYLE}]Options & Flags[/{CLITheme.ACCENT_STYLE}]", title_align="left", border_style=CLITheme.ACCENT, box=box.ROUNDED, expand=False)
         console.print(opt_panel)
 
         # Epilog Example
         console.print()
-        console.print(
-            f" [{CLITheme.LABEL}]Example:[/{CLITheme.LABEL}] "
-            f"[{CLITheme.MUTED}]tmd[/{CLITheme.MUTED}] "
-            f"[{CLITheme.PRIMARY_STYLE}]convert[/{CLITheme.PRIMARY_STYLE}] "
-            f"[{CLITheme.SECONDARY_STYLE}].[/{CLITheme.SECONDARY_STYLE}] "
-            f'[{CLITheme.ACCENT_STYLE}]--loc="out"[/{CLITheme.ACCENT_STYLE}]'
-        )
-        console.print(
-            f"         [{CLITheme.COMMENT}]# Converts all supported files in the current repository into markdown and writes to out/ folder[/{CLITheme.COMMENT}]"
-        )
+        console.print(f' [{CLITheme.LABEL}]Example:[/{CLITheme.LABEL}] [{CLITheme.MUTED}]tmd[/{CLITheme.MUTED}] [{CLITheme.PRIMARY_STYLE}]convert[/{CLITheme.PRIMARY_STYLE}] [{CLITheme.SECONDARY_STYLE}].[/{CLITheme.SECONDARY_STYLE}] [{CLITheme.ACCENT_STYLE}]--loc="out"[/{CLITheme.ACCENT_STYLE}]')
+        console.print(f"         [{CLITheme.COMMENT}]# Converts all supported files in the current repository into markdown and writes to out/ folder[/{CLITheme.COMMENT}]")

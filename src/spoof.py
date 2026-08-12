@@ -2,31 +2,19 @@
 
 from __future__ import annotations
 
-import warnings
-from typing import Callable
+from collections.abc import Callable
 
 try:
     import urllib3
+
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 except Exception:
     pass
 
-from .spoof_support.constants import CHROME_CIPHERS, DEFAULT_TIMEOUT_SEC
+from .spoof_support.constants import DEFAULT_TIMEOUT_SEC
 from .spoof_support.decompress import decompress_body
-from .spoof_support.fetchers import (
-    fetch_via_curl_cffi,
-    fetch_via_requests,
-    fetch_via_urllib,
-)
-from .spoof_support.headers import (
-    get_headers,
-    spoof_android,
-    spoof_ios,
-    spoof_linux,
-    spoof_macos,
-    spoof_selector,
-    spoof_windows,
-)
+from .spoof_support.fetchers import fetch_via_curl_cffi, fetch_via_requests, fetch_via_urllib
+from .spoof_support.headers import get_headers, spoof_android, spoof_ios, spoof_linux, spoof_macos, spoof_selector, spoof_windows
 
 
 class Spoofer:

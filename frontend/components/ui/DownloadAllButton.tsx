@@ -22,10 +22,7 @@ export function DownloadAllButton({ sessionId, label, disabled }: DownloadAllBut
       onClick={(e) => {
         if (disabled) e.preventDefault();
       }}
-      className={cn(
-        "inline-flex h-9 items-center gap-1.5 rounded-control border border-border bg-secondary/50 px-3 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary",
-        disabled && "pointer-events-none opacity-50",
-      )}
+      className={cn("inline-flex h-9 items-center gap-1.5 rounded-control border border-border bg-secondary/50 px-3 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary", disabled && "pointer-events-none opacity-50")}
     >
       <FileZip size={16} weight="regular" aria-hidden="true" />
       {label ?? copy.downloadAll}

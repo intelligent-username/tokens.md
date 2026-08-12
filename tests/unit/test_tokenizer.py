@@ -4,14 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from src.tokenizer import (
-    count_pdf_tokens,
-    count_tokens,
-    count_tokens_in_file,
-    delta_percent,
-    format_tokens,
-    get_encoding,
-)
+from src.tokenizer import count_pdf_tokens, count_tokens, count_tokens_in_file, delta_percent, format_tokens, get_encoding
 
 
 def test_count_tokens_basic() -> None:

@@ -30,13 +30,9 @@ class ReaderConverter(Converter):
         except UnsupportedFormatError:
             raise
         except Exception as exc:  # any parser/library error -> friendly failure
-            raise UnsupportedFormatError(
-                f"Could not convert {input_path.name}: {exc}"
-            ) from exc
+            raise UnsupportedFormatError(f"Could not convert {input_path.name}: {exc}") from exc
         if not document.blocks:
-            raise UnsupportedFormatError(
-                f"No content could be extracted from {input_path.name}"
-            )
+            raise UnsupportedFormatError(f"No content could be extracted from {input_path.name}")
         markdown = self._renderer.render(document)
         output_path = output_dir / f"{input_path.stem}.md"
         output_path.write_text(markdown, encoding="utf-8")

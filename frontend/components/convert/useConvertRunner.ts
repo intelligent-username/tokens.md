@@ -1,22 +1,22 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import copy from '@/lib/copy';
-import { convert, fetchUrl, merge } from '@/lib/api/endpoints';
-import type { ConvertResponse, FileMeta, MergeResponse, UploadResponse } from '@/lib/api/types';
-import { uploadFiles } from '@/lib/api/upload';
-import { useClipboard } from '@/lib/hooks/useClipboard';
-import { useJob } from '@/lib/hooks/useJob';
-import { useToast } from '@/lib/hooks/useToast';
-import { useUpload } from '@/lib/hooks/useUpload';
-import { useWorkspaceState } from '@/lib/hooks/useWorkspaceState';
-import type { BudgetUnit } from '@/components/ui/BudgetInput';
-import type { ConvertItemWithSession } from './ResultClipButton';
-import { copyConvertedOutputs, copyMergedOutput } from './runnerClipboard';
-import { calculateBudgetTokens, formatTargetUrl, getFileKey } from './runnerUtils';
+import { useState } from "react";
+import copy from "@/lib/copy";
+import { convert, fetchUrl, merge } from "@/lib/api/endpoints";
+import type { ConvertResponse, FileMeta, MergeResponse, UploadResponse } from "@/lib/api/types";
+import { uploadFiles } from "@/lib/api/upload";
+import { useClipboard } from "@/lib/hooks/useClipboard";
+import { useJob } from "@/lib/hooks/useJob";
+import { useToast } from "@/lib/hooks/useToast";
+import { useUpload } from "@/lib/hooks/useUpload";
+import { useWorkspaceState } from "@/lib/hooks/useWorkspaceState";
+import type { BudgetUnit } from "@/components/ui/BudgetInput";
+import type { ConvertItemWithSession } from "./ResultClipButton";
+import { copyConvertedOutputs, copyMergedOutput } from "./runnerClipboard";
+import { calculateBudgetTokens, formatTargetUrl, getFileKey } from "./runnerUtils";
 
 export interface UseConvertRunnerOptions {
-  activeMode: 'upload' | 'input';
+  activeMode: "upload" | "input";
   inputUrl: string;
   files: File[];
   setFiles: (files: File[]) => void;
@@ -32,22 +32,7 @@ export interface UseConvertRunnerOptions {
   pages: string;
 }
 
-export function useConvertRunner({
-  activeMode,
-  inputUrl,
-  files,
-  setFiles,
-  mergeEnabled,
-  includeToc,
-  budgetEnabled,
-  budgetValue,
-  budgetUnit,
-  recursive,
-  extensions,
-  stripHeadersFooters,
-  writeImages,
-  pages,
-}: UseConvertRunnerOptions) {
+export function useConvertRunner({ activeMode, inputUrl, files, setFiles, mergeEnabled, includeToc, budgetEnabled, budgetValue, budgetUnit, recursive, extensions, stripHeadersFooters, writeImages, pages }: UseConvertRunnerOptions) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [convertedMap, setConvertedMap] = useState<Record<string, ConvertItemWithSession>>({});
   const [uploadMetaMap, setUploadMetaMap] = useState<Record<string, FileMeta>>({});
@@ -68,20 +53,20 @@ export function useConvertRunner({
       setRunning(true);
       setError(null);
       try {
-        if (activeMode === 'input' && inputUrl.trim()) {
+        if (activeMode === "input" && inputUrl.trim()) {
           const targetUrl = formatTargetUrl(inputUrl);
           try {
             const res = await fetchUrl({
               url: targetUrl,
-              user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+              user_agent: typeof navigator !== "undefined" ? navigator.userAgent : undefined,
             });
-            const sid = res.session_id || 'fetch-session';
+            const sid = res.session_id || "fetch-session";
             setSessionId(sid);
             setInputResult({
               results: [
                 {
-                  file_id: 'fetch-1',
-                  name: res.output_name || 'fetched_article.md',
+                  file_id: "fetch-1",
+                  name: res.output_name || "fetched_article.md",
                   source_tokens: res.source_tokens ?? 0,
                   target_tokens: res.target_tokens ?? 0,
                   percent: res.percent ?? 0,
@@ -94,9 +79,9 @@ export function useConvertRunner({
               total_target_tokens: res.target_tokens ?? 0,
               total_percent: res.percent ?? 0,
             });
-            toast('URL converted to Markdown', 'success');
+            toast("URL converted to Markdown", "success");
           } catch (err) {
-            setError(err instanceof Error ? err.message : 'Unable to fetch or convert URL');
+            setError(err instanceof Error ? err.message : "Unable to fetch or convert URL");
           } finally {
             setRunning(false);
           }
@@ -111,7 +96,7 @@ export function useConvertRunner({
               files.map((f) => f.name),
               undefined,
               (loaded) => report.advance(0, loaded),
-              report.signal,
+              report.signal
             );
           });
           const sid = up!.session_id;
@@ -127,7 +112,7 @@ export function useConvertRunner({
             },
           });
           setMergeResult(mres);
-          toast(copy.mergedNFiles(files.length), 'success');
+          toast(copy.mergedNFiles(files.length), "success");
         } else {
           const targetFiles = unconvertedFiles.length > 0 ? unconvertedFiles : files;
           if (targetFiles.length === 0) return;
@@ -139,7 +124,7 @@ export function useConvertRunner({
               targetFiles.map((f) => f.name),
               undefined,
               (loaded) => report.advance(0, loaded),
-              report.signal,
+              report.signal
             );
           });
           const sid = up!.session_id;
@@ -159,7 +144,10 @@ export function useConvertRunner({
               write_images: writeImages,
               pages: pages || undefined,
               extensions: extensions
-                ? extensions.split(',').map((s) => s.trim()).filter(Boolean)
+                ? extensions
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter(Boolean)
                 : undefined,
             },
           });
@@ -181,10 +169,10 @@ export function useConvertRunner({
             return nextMap;
           });
 
-          toast(copy.convertedNFiles(res.results.length), 'success');
+          toast(copy.convertedNFiles(res.results.length), "success");
         }
       } catch (e) {
-        setError(e instanceof Error ? e.message : copy.conversionFailed(''));
+        setError(e instanceof Error ? e.message : copy.conversionFailed(""));
       } finally {
         setRunning(false);
       }
@@ -233,9 +221,9 @@ export function useConvertRunner({
     if (mergeResult && sessionId) {
       try {
         await copyMergedOutput(sessionId, mergeResult, copyText);
-        toast('Merged Markdown copied to clipboard', 'success');
+        toast("Merged Markdown copied to clipboard", "success");
       } catch {
-        toast(copy.clipBlocked, 'error');
+        toast(copy.clipBlocked, "error");
       }
       return;
     }
@@ -244,9 +232,9 @@ export function useConvertRunner({
 
     try {
       await copyConvertedOutputs(convertedItems, sessionId, copyText);
-      toast('All converted Markdown copied to clipboard', 'success');
+      toast("All converted Markdown copied to clipboard", "success");
     } catch {
-      toast(copy.clipBlocked, 'error');
+      toast(copy.clipBlocked, "error");
     }
   };
 

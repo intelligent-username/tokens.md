@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 export interface FileProgress {
   name: string;
@@ -69,7 +69,7 @@ export function useUpload(files: File[]): {
         setPerFile((prev) => ({
           ...prev,
           [index]: {
-            name: prev[index]?.name ?? filesRef.current[index]?.name ?? '',
+            name: prev[index]?.name ?? filesRef.current[index]?.name ?? "",
             totalBytes,
             uploadedBytes: 0,
             percent: 0,
@@ -81,12 +81,7 @@ export function useUpload(files: File[]): {
           const current = prev[index];
           if (!current) return prev;
           const done = current.totalBytes > 0 && uploadedBytes >= current.totalBytes;
-          const percent =
-            current.totalBytes > 0
-              ? Math.min(100, Math.round((uploadedBytes / current.totalBytes) * 100))
-              : done
-                ? 100
-                : 0;
+          const percent = current.totalBytes > 0 ? Math.min(100, Math.round((uploadedBytes / current.totalBytes) * 100)) : done ? 100 : 0;
           return { ...prev, [index]: { ...current, uploadedBytes, percent, done } };
         }),
       fail: (index, error) =>
@@ -125,7 +120,7 @@ export function useUpload(files: File[]): {
     () => () => {
       controllerRef.current?.abort();
     },
-    [],
+    []
   );
 
   return { progress, perFile, upload, cancel };

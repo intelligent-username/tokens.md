@@ -17,6 +17,6 @@ class PruneResult:
 
 @dataclass
 class _Section:
-    heading: str          # heading line, e.g. "## Table of Contents"; "" if none
-    body: list[str]       # body lines (after heading) until next heading
+    heading: str  # heading line, e.g. "## Table of Contents"; "" if none
+    body: list[str]  # body lines (after heading) until next heading
     density: float = 0.0  # computed once after pass 1, reused in passes 2-4

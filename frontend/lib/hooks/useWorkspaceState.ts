@@ -1,25 +1,10 @@
-'use client';
+"use client";
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from "react";
 
-export type WorkspaceStateName =
-  | 'empty'
-  | 'idle'
-  | 'uploading'
-  | 'processing'
-  | 'streaming'
-  | 'success'
-  | 'partial-failure'
-  | 'error'
-  | 'cancelled';
+export type WorkspaceStateName = "empty" | "idle" | "uploading" | "processing" | "streaming" | "success" | "partial-failure" | "error" | "cancelled";
 
-export type QueueItemStatus =
-  | 'queued'
-  | 'uploading'
-  | 'converting'
-  | 'done'
-  | 'failed'
-  | 'cancelled';
+export type QueueItemStatus = "queued" | "uploading" | "converting" | "done" | "failed" | "cancelled";
 
 export interface QueueItem {
   id: string;
@@ -47,22 +32,22 @@ function toItems(files: File[]): QueueItem[] {
     file,
     name: file.name,
     size: file.size,
-    status: 'queued' as const,
+    status: "queued" as const,
   }));
 }
 
 /** Derive the §4.2 machine state from item statuses. */
 function deriveState(items: QueueItem[]): WorkspaceStateName {
-  if (items.length === 0) return 'empty';
+  if (items.length === 0) return "empty";
   const statuses = new Set(items.map((i) => i.status));
-  if (statuses.has('cancelled')) return 'cancelled';
-  if (statuses.has('uploading')) return 'uploading';
-  if (statuses.has('converting')) return 'processing';
-  if (statuses.has('failed')) {
-    return statuses.has('done') ? 'partial-failure' : 'error';
+  if (statuses.has("cancelled")) return "cancelled";
+  if (statuses.has("uploading")) return "uploading";
+  if (statuses.has("converting")) return "processing";
+  if (statuses.has("failed")) {
+    return statuses.has("done") ? "partial-failure" : "error";
   }
-  if (statuses.has('done')) return 'success';
-  return 'idle';
+  if (statuses.has("done")) return "success";
+  return "idle";
 }
 
 /**
@@ -73,7 +58,7 @@ function deriveState(items: QueueItem[]): WorkspaceStateName {
  */
 export function useWorkspaceState(
   initial: File[] = [],
-  handlers?: WorkspaceHandlers,
+  handlers?: WorkspaceHandlers
 ): {
   state: WorkspaceStateName;
   queue: QueueItem[];
@@ -87,43 +72,25 @@ export function useWorkspaceState(
   handlersRef.current = handlers;
 
   const setQueue = useCallback((files: File[] | QueueItem[]) => {
-    setQueueState(
-      files.length > 0 && 'file' in files[0]
-        ? (files as QueueItem[])
-        : toItems(files as File[]),
-    );
+    setQueueState(files.length > 0 && "file" in files[0] ? (files as QueueItem[]) : toItems(files as File[]));
   }, []);
 
   const run = useCallback(() => {
-    const items = queue.map((item) =>
-      item.status === 'queued' || item.status === 'failed'
-        ? { ...item, status: 'uploading' as const, error: undefined }
-        : item,
-    );
-    const active = items.filter(
-      (i) => i.status === 'uploading' || i.status === 'converting',
-    );
+    const items = queue.map((item) => (item.status === "queued" || item.status === "failed" ? { ...item, status: "uploading" as const, error: undefined } : item));
+    const active = items.filter((i) => i.status === "uploading" || i.status === "converting");
     handlersRef.current?.onRun?.(active);
     setQueueState(items);
   }, [queue]);
 
   const cancel = useCallback(() => {
-    const items = queue.map((item) =>
-      item.status === 'queued' || item.status === 'uploading' || item.status === 'converting'
-        ? { ...item, status: 'cancelled' as const }
-        : item,
-    );
+    const items = queue.map((item) => (item.status === "queued" || item.status === "uploading" || item.status === "converting" ? { ...item, status: "cancelled" as const } : item));
     handlersRef.current?.onCancel?.(items);
     setQueueState(items);
   }, [queue]);
 
   const retryFailed = useCallback(() => {
-    const items = queue.map((item) =>
-      item.status === 'failed'
-        ? { ...item, status: 'uploading' as const, error: undefined }
-        : item,
-    );
-    const failed = items.filter((i) => i.status === 'uploading');
+    const items = queue.map((item) => (item.status === "failed" ? { ...item, status: "uploading" as const, error: undefined } : item));
+    const failed = items.filter((i) => i.status === "uploading");
     handlersRef.current?.onRetry?.(failed);
     setQueueState(items);
   }, [queue]);

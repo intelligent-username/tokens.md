@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import socket
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Optional, Sequence
+from typing import Any
 
 from ..registry import DEFAULT_REGISTRY
 from .constants import PORT_SEARCH_RANGE, TRUNCATE_DESC_LENGTH
@@ -23,16 +24,8 @@ def _parse_extensions(value: str) -> Sequence[str]:
     return result
 
 
-def _convert_kwargs(
-    strip_headers_footers: bool,
-    write_images: bool,
-    image_path: Optional[str],
-    pages: Optional[str],
-) -> dict[str, Any]:
-    kwargs: dict[str, Any] = {
-        "strip_headers_footers": strip_headers_footers,
-        "write_images": write_images,
-    }
+def _convert_kwargs(strip_headers_footers: bool, write_images: bool, image_path: str | None, pages: str | None) -> dict[str, Any]:
+    kwargs: dict[str, Any] = {"strip_headers_footers": strip_headers_footers, "write_images": write_images}
     if image_path:
         kwargs["image_path"] = image_path
     if pages:
@@ -53,7 +46,7 @@ def _default_source() -> Path:
     return in_dir
 
 
-def _resolve_output_dir(output: str, loc: Optional[str] = None) -> Path:
+def _resolve_output_dir(output: str, loc: str | None = None) -> Path:
     """Resolve destination directory from --output or --loc option."""
     if loc is not None:
         target = "." if (loc.strip() == "" or loc == ".") else loc

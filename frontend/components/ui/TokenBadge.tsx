@@ -14,8 +14,7 @@ export interface TokenBadgeProps {
  * Emerald when tokens were saved, neutral at 0, red when they increased.
  */
 export function TokenBadge({ before, after, deltaPercent: pct, size = "sm" }: TokenBadgeProps) {
-  const percent =
-    pct ?? (before !== undefined && after !== undefined ? deltaPercent(before, after) : 0);
+  const percent = pct ?? (before !== undefined && after !== undefined ? deltaPercent(before, after) : 0);
   const saved = percent > 0;
   const increased = percent < 0;
   const sign = saved ? "−" : increased ? "+" : "";
@@ -24,12 +23,7 @@ export function TokenBadge({ before, after, deltaPercent: pct, size = "sm" }: To
   return (
     <span className="inline-flex items-center gap-2">
       {before !== undefined && after !== undefined ? (
-        <span
-          className={cn(
-            "font-mono tabular-nums text-muted-foreground",
-            size === "md" ? "text-sm" : "text-xs",
-          )}
-        >
+        <span className={cn("font-mono tabular-nums text-muted-foreground", size === "md" ? "text-sm" : "text-xs")}>
           {formatTokens(before)} → {formatTokens(after)}
         </span>
       ) : null}
@@ -39,7 +33,7 @@ export function TokenBadge({ before, after, deltaPercent: pct, size = "sm" }: To
           size === "md" ? "text-sm" : "text-xs",
           saved && "bg-accent text-accent-foreground",
           increased && "bg-destructive/15 text-red-600 dark:text-red-400",
-          !saved && !increased && "bg-muted text-muted-foreground",
+          !saved && !increased && "bg-muted text-muted-foreground"
         )}
       >
         {label}

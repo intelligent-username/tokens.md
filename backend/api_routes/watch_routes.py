@@ -12,14 +12,7 @@ from src.registry import DEFAULT_REGISTRY
 from src.tokenizer import count_raw_file_tokens, count_tokens_in_file, delta_percent
 from src.watcher import run_watcher
 
-from ..schemas import (
-    WatchOptions,
-    WatchStartRequest,
-    WatchStartResponse,
-    WatchStatusResponse,
-    WatchStopRequest,
-    WatchStopResponse,
-)
+from ..schemas import WatchOptions, WatchStartRequest, WatchStartResponse, WatchStatusResponse, WatchStopRequest, WatchStopResponse
 from ..workspace import Workspace
 from .common import _convert_kwargs
 
@@ -34,39 +27,13 @@ def watch_start(req: WatchStartRequest, request: Request) -> WatchStartResponse:
     extensions = opts.extensions or sorted(DEFAULT_REGISTRY.extensions())
     convert_kwargs = _convert_kwargs(opts.convert_opts)
     manager.start_watch(req.session_id)
-    thread = threading.Thread(
-        target=_watch_thread,
-        args=(req.session_id, ws, opts, extensions, convert_kwargs, manager),
-        daemon=True,
-    )
+    thread = threading.Thread(target=_watch_thread, args=(req.session_id, ws, opts, extensions, convert_kwargs, manager), daemon=True)
     thread.start()
-    manager.emit(
-        req.session_id,
-        {
-            "type": "watch.started",
-            "data": {
-                "watch_id": req.session_id,
-                "source": str(ws.uploads_dir),
-                "output": str(ws.output_dir),
-                "poll_interval": opts.poll_interval,
-            },
-        },
-    )
-    return WatchStartResponse(
-        watch_id=req.session_id,
-        source=str(ws.uploads_dir),
-        output=str(ws.output_dir),
-    )
+    manager.emit(req.session_id, {"type": "watch.started", "data": {"watch_id": req.session_id, "source": str(ws.uploads_dir), "output": str(ws.output_dir), "poll_interval": opts.poll_interval}})
+    return WatchStartResponse(watch_id=req.session_id, source=str(ws.uploads_dir), output=str(ws.output_dir))
 
 
-def _watch_thread(
-    sid: str,
-    ws: Workspace,
-    opts: WatchOptions,
-    extensions: list[str],
-    convert_kwargs: dict[str, Any],
-    manager: Any,
-) -> None:
+def _watch_thread(sid: str, ws: Workspace, opts: WatchOptions, extensions: list[str], convert_kwargs: dict[str, Any], manager: Any) -> None:
     totals = {"files": 0, "source_tokens": 0, "target_tokens": 0}
 
     def emit_event(event: dict[str, object]) -> None:
@@ -94,17 +61,7 @@ def _watch_thread(
         manager.emit(sid, {"type": "watch.file", "data": data})
 
     try:
-        run_watcher(
-            ws.uploads_dir,
-            ws.output_dir,
-            poll_interval=opts.poll_interval,
-            clip=False,
-            once=opts.once,
-            extensions=extensions,
-            stop_event=manager.stop_event(sid),
-            on_event=emit_event,
-            **convert_kwargs,
-        )
+        run_watcher(ws.uploads_dir, ws.output_dir, poll_interval=opts.poll_interval, clip=False, once=opts.once, extensions=extensions, stop_event=manager.stop_event(sid), on_event=emit_event, **convert_kwargs)
     finally:
         manager.stop_watch(sid)
         manager.emit(sid, {"type": "watch.stopped", "data": {"reason": "requested"}})
@@ -121,12 +78,7 @@ def stop_watch(req: WatchStopRequest, request: Request) -> WatchStopResponse:
 def watch_status(session_id: str, request: Request) -> WatchStatusResponse:
     manager = request.app.state.ws_manager
     totals = manager.get_totals(session_id)
-    return WatchStatusResponse(
-        running=manager.is_running(session_id),
-        files_processed=totals.get("files", 0),
-        source_tokens=totals.get("source_tokens", 0),
-        target_tokens=totals.get("target_tokens", 0),
-    )
+    return WatchStatusResponse(running=manager.is_running(session_id), files_processed=totals.get("files", 0), source_tokens=totals.get("source_tokens", 0), target_tokens=totals.get("target_tokens", 0))
 
 
 @router.websocket("/ws")

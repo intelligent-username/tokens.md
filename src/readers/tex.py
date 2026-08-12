@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from ..engine.model import CodeBlock, Document, Heading, Paragraph, Quote
+from ..engine.model import Document, Heading, Paragraph
 from .base import Reader
 
 _SECTION_RE = re.compile(r"\\(?:part|chapter|section|subsection|subsubsection)\*?\{(.+?)\}")

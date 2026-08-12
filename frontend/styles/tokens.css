@@ -6,35 +6,35 @@
 
 @theme {
   /* ---- Emerald scale (hue 152, brand #16DE81) ---- */
-  --color-emerald-50:  #F2FCF7;
-  --color-emerald-100: #E5F9F0;
-  --color-emerald-200: #C6F5DF;
-  --color-emerald-300: #90EEC2;
-  --color-emerald-400: #52E9A3;
-  --color-emerald-500: #16DE81;
-  --color-emerald-600: #12B96B;
-  --color-emerald-700: #0F9958;
-  --color-emerald-800: #0C7D48;
-  --color-emerald-900: #095C35;
-  --color-emerald-950: #042E1A;
+  --color-emerald-50: #f2fcf7;
+  --color-emerald-100: #e5f9f0;
+  --color-emerald-200: #c6f5df;
+  --color-emerald-300: #90eec2;
+  --color-emerald-400: #52e9a3;
+  --color-emerald-500: #16de81;
+  --color-emerald-600: #12b96b;
+  --color-emerald-700: #0f9958;
+  --color-emerald-800: #0c7d48;
+  --color-emerald-900: #095c35;
+  --color-emerald-950: #042e1a;
 
   /* ---- Navy scale (hue 222, canvas #0B1428) ---- */
-  --color-navy-50:  #F3F6FB;
-  --color-navy-100: #E8EDF8;
-  --color-navy-200: #CFD9F2;
-  --color-navy-300: #AABBE4;
-  --color-navy-400: #7B95D1;
-  --color-navy-500: #4E6FBC;
-  --color-navy-600: #3B589B;
-  --color-navy-700: #2F477F;
+  --color-navy-50: #f3f6fb;
+  --color-navy-100: #e8edf8;
+  --color-navy-200: #cfd9f2;
+  --color-navy-300: #aabbe4;
+  --color-navy-400: #7b95d1;
+  --color-navy-500: #4e6fbc;
+  --color-navy-600: #3b589b;
+  --color-navy-700: #2f477f;
   --color-navy-800: #243866;
-  --color-navy-900: #18284E;
-  --color-navy-950: #0B1428;
+  --color-navy-900: #18284e;
+  --color-navy-950: #0b1428;
 
   /* ---- Fonts ---- */
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-sans:    "Manrope", ui-sans-serif, system-ui, sans-serif;
-  --font-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
   /* ---- Radii (one documented scale) ---- */
   --radius: 20px;
@@ -49,40 +49,40 @@
 
   /* ---- Semantic tokens, light mode (studio cool slate + navy complementary) ----
      Every background token is paired with a foreground token. */
-  --color-background: #E8EEF5;
-  --color-foreground: #0F172A;
+  --color-background: #e8eef5;
+  --color-foreground: #0f172a;
   --color-card: rgba(255, 255, 255, 0.85);
-  --color-card-foreground: #0F172A;
-  --color-muted: #F1F5F9;
+  --color-card-foreground: #0f172a;
+  --color-muted: #f1f5f9;
   --color-muted-foreground: #475569;
-  --color-primary: #10B981;
-  --color-primary-foreground: #0B1428;
-  --color-secondary: #E2E8F0;
-  --color-secondary-foreground: #0F172A;
-  --color-accent: #D1FAE5;
-  --color-accent-foreground: #065F46;
-  --color-destructive: #DC2626;
-  --color-destructive-foreground: #FDFBFA;
+  --color-primary: #10b981;
+  --color-primary-foreground: #0b1428;
+  --color-secondary: #e2e8f0;
+  --color-secondary-foreground: #0f172a;
+  --color-accent: #d1fae5;
+  --color-accent-foreground: #065f46;
+  --color-destructive: #dc2626;
+  --color-destructive-foreground: #fdfbfa;
   --color-border: rgba(148, 163, 184, 0.45);
-  --color-ring: #10B981;
+  --color-ring: #10b981;
 }
 
 /* ---- Semantic tokens, dark mode (default theme) ---- */
 .dark {
   --color-background: var(--color-navy-950);
-  --color-foreground: #E9F6EE;
+  --color-foreground: #e9f6ee;
   --color-card: rgba(255, 255, 255, 0.06);
-  --color-card-foreground: #E9F6EE;
+  --color-card-foreground: #e9f6ee;
   --color-muted: rgba(255, 255, 255, 0.04);
   --color-muted-foreground: var(--color-navy-300);
   --color-primary: var(--color-emerald-500);
   --color-primary-foreground: var(--color-navy-950);
   --color-secondary: rgba(255, 255, 255, 0.08);
-  --color-secondary-foreground: #E9F6EE;
+  --color-secondary-foreground: #e9f6ee;
   --color-accent: rgba(22, 222, 129, 0.15);
   --color-accent-foreground: var(--color-emerald-300);
-  --color-destructive: #DC2626;
-  --color-destructive-foreground: #FDFBFA;
+  --color-destructive: #dc2626;
+  --color-destructive-foreground: #fdfbfa;
   --color-border: rgba(255, 255, 255, 0.12);
   --color-ring: var(--color-emerald-400);
 }
@@ -94,7 +94,7 @@
   --glass-catchlight: rgba(255, 255, 255, 0.9);
   --glass-depth: transparent;
   --glass-drop: rgba(12, 21, 38, 0.25);
-  --card-solid: #FCFDFC;
+  --card-solid: #fcfdfc;
 }
 
 /* ---- Glass surface internals, dark mode ---- */
@@ -102,7 +102,7 @@
   --glass-catchlight: rgba(255, 255, 255, 0.1);
   --glass-depth: rgba(255, 255, 255, 0.03);
   --glass-drop: rgba(0, 0, 0, 0.6);
-  --card-solid: #1A2235;
+  --card-solid: #1a2235;
 }
 
 /* ---- Canvas backdrop internals ---- */
@@ -146,7 +146,8 @@ body,
 .glass,
 [class*="bg-card"],
 [class*="bg-background"] {
-  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-              color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }

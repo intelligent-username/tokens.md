@@ -5,7 +5,7 @@ from __future__ import annotations
 from ..tokenizer import count_tokens
 from .constants import HEADING_RE, IMAGE_PATTERN, PASS2_KEEP_RATIO, PASS3_MAX_RATIO, PASS3_MIN_RATIO
 from .models import PruneResult, _Section
-from .section_utils import _density, _is_boilerplate, _rebuild, _textrank_prune
+from .section_utils import _is_boilerplate, _rebuild, _textrank_prune
 
 
 def _pass1_boilerplate(content: str, removed: list[str]) -> str:
@@ -45,9 +45,11 @@ def _pass3_medium(sections: list[_Section], removed: list[str], encoding: str) -
 
 def _pass4_drop_sections(sections: list[_Section], removed: list[str], encoding: str, budget: int) -> str:
     """Drop whole sections, lowest density first (deeper headings first on ties)."""
+
     def depth(s: _Section) -> int:
         m = HEADING_RE.match(s.heading)
         return len(m.group(0).strip()) if m else 0
+
     for s in sorted(sections, key=lambda s: (s.density, -depth(s))):
         if count_tokens(_rebuild(sections), encoding) <= budget:
             break
@@ -66,9 +68,7 @@ def _pass5_truncate(content: str, removed: list[str], encoding: str, budget: int
     return "\n".join(kept)
 
 
-def _finalize(
-    result: PruneResult, content: str, original_tokens: int, removed: list[str], budget: int, encoding: str
-) -> PruneResult:
+def _finalize(result: PruneResult, content: str, original_tokens: int, removed: list[str], budget: int, encoding: str) -> PruneResult:
     result.content = content
     result.removed_blocks = removed
     result.removed_tokens = original_tokens - count_tokens(content, encoding)

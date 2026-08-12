@@ -2,12 +2,7 @@
 
 from __future__ import annotations
 
-from src.budget import (
-    BOILERPLATE_PATTERNS,
-    IMAGE_PATTERN,
-    format_prune_report,
-    prune_to_budget,
-)
+from src.budget import BOILERPLATE_PATTERNS, IMAGE_PATTERN, format_prune_report, prune_to_budget
 
 
 def test_fits_budget_no_change() -> None:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+
 from .constants import MAX_NAME_LENGTH, SAFE_NAME_RE
 
 

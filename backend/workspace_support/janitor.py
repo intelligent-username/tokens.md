@@ -14,9 +14,7 @@ from .constants import JANITOR_CHECK_INTERVAL_SEC, SECONDS_PER_HOUR, WORKSPACE_D
 def start_janitor(ttl_hours: int) -> threading.Event:
     """Start a daemon janitor thread; return a stop event."""
     stop = threading.Event()
-    thread = threading.Thread(
-        target=_janitor_loop, args=(ttl_hours, stop), daemon=True
-    )
+    thread = threading.Thread(target=_janitor_loop, args=(ttl_hours, stop), daemon=True)
     thread.start()
     return stop
 

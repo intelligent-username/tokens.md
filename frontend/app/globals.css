@@ -50,18 +50,19 @@
   pointer-events: none;
   background-color: var(--color-background);
   background-image:
-    radial-gradient(58rem 40rem at 16% 8%, var(--backdrop-glow), transparent 62%),
-    radial-gradient(42rem 30rem at 86% 84%, var(--backdrop-glow-far), transparent 60%),
-    linear-gradient(var(--backdrop-grid) 1px, transparent 1px),
-    linear-gradient(90deg, var(--backdrop-grid) 1px, transparent 1px),
+    radial-gradient(58rem 40rem at 16% 8%, var(--backdrop-glow), transparent 62%), radial-gradient(42rem 30rem at 86% 84%, var(--backdrop-glow-far), transparent 60%), linear-gradient(var(--backdrop-grid) 1px, transparent 1px), linear-gradient(90deg, var(--backdrop-grid) 1px, transparent 1px),
     var(--backdrop-noise);
-  background-size: auto, auto, 44px 44px, 44px 44px, 180px 180px;
+  background-size:
+    auto,
+    auto,
+    44px 44px,
+    44px 44px,
+    180px 180px;
 }
 
 /* ---- Neon glow for the token glyph and logo image accents ---- */
 .glyph-glow {
-  filter: invert(56%) sepia(85%) saturate(1350%) hue-rotate(105deg) brightness(95%) contrast(95%)
-    drop-shadow(0 0 8px rgba(22, 222, 129, 0.6));
+  filter: invert(56%) sepia(85%) saturate(1350%) hue-rotate(105deg) brightness(95%) contrast(95%) drop-shadow(0 0 8px rgba(22, 222, 129, 0.6));
 }
 
 /* ---- Global reduced-motion fallback ---- */

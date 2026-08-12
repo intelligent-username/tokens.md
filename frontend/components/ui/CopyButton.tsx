@@ -31,16 +31,9 @@ export function CopyButton({ text, label, onCopied }: CopyButtonProps) {
       onClick={() => void handleClick()}
       aria-label={visible}
       title={visible}
-      className={cn(
-        "inline-flex h-9 items-center gap-1.5 rounded-control border border-border bg-secondary/50 px-3 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary",
-        copied && "border-emerald-500/40 text-emerald-500",
-      )}
+      className={cn("inline-flex h-9 items-center gap-1.5 rounded-control border border-border bg-secondary/50 px-3 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary", copied && "border-emerald-500/40 text-emerald-500")}
     >
-      {copied ? (
-        <Check size={16} weight="regular" aria-hidden="true" />
-      ) : (
-        <Copy size={16} weight="regular" aria-hidden="true" />
-      )}
+      {copied ? <Check size={16} weight="regular" aria-hidden="true" /> : <Copy size={16} weight="regular" aria-hidden="true" />}
       {copied ? copy.copied : visible}
     </button>
   );

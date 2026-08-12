@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Coroutine, TypeVar
+from collections.abc import Coroutine
+from typing import Any, TypeVar
 
 from backend.ws import WsManager
 
@@ -74,10 +75,7 @@ async def _scenario_shutdown() -> bool:
     manager.shutdown()
     await asyncio.sleep(0.05)
     return (
-        not manager.has_sockets("s1")
-        and not manager.is_running("s1")
-        and manager.get_totals("s1") == {}
-        and "s1" not in manager._tasks  # noqa: SLF001 - lifecycle check
+        not manager.has_sockets("s1") and not manager.is_running("s1") and manager.get_totals("s1") == {} and "s1" not in manager._tasks  # noqa: SLF001 - lifecycle check
     )
 
 

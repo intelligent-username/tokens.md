@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from xml.etree import ElementTree as ET
+
 from .omml_support.converters import _convert_children
 
 

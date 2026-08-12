@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from ..deps import require
-from ..engine.model import Document, Heading, Table
+from ..engine.model import Document, Table
 from .base import Reader
 
 

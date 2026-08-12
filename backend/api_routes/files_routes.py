@@ -13,36 +13,17 @@ from src import __version__
 from src.registry import DEFAULT_REGISTRY
 from src.tokenizer import DEFAULT_ENCODING, count_raw_file_tokens
 
-from ..schemas import (
-    FileMeta,
-    FilesResponse,
-    OutputFile,
-    SampleInfo,
-    SamplesResponse,
-    SessionCloseRequest,
-    SessionCloseResponse,
-    UploadResponse,
-)
+from ..schemas import FileMeta, FilesResponse, OutputFile, SampleInfo, SamplesResponse, SessionCloseRequest, SessionCloseResponse, UploadResponse
 from ..workspace import Workspace, list_samples, read_sample, sanitize_name, sanitize_relpath
 from .common import ApiError, _settings
-from .constants import (
-    BYTES_PER_MB,
-    COPY_BUFFER_SIZE,
-    ERR_TOO_LARGE,
-    HTTP_NOT_FOUND,
-    HTTP_PAYLOAD_TOO_LARGE,
-)
+from .constants import BYTES_PER_MB, COPY_BUFFER_SIZE, ERR_TOO_LARGE, HTTP_NOT_FOUND, HTTP_PAYLOAD_TOO_LARGE
 
 router = APIRouter()
 
 
 @router.get("/health")
 def health() -> dict[str, object]:
-    return {
-        "version": __version__,
-        "encoding": DEFAULT_ENCODING,
-        "extensions": sorted(ext.lstrip(".") for ext in DEFAULT_REGISTRY.extensions()),
-    }
+    return {"version": __version__, "encoding": DEFAULT_ENCODING, "extensions": sorted(ext.lstrip(".") for ext in DEFAULT_REGISTRY.extensions())}
 
 
 @router.get("/config")
@@ -50,11 +31,7 @@ def config(request: Request) -> dict[str, object]:
     settings = _settings(request)
     return {
         "extensions": sorted(ext.lstrip(".") for ext in DEFAULT_REGISTRY.extensions()),
-        "limits": {
-            "max_upload_mb": settings.max_upload_mb,
-            "max_session_mb": settings.max_session_mb,
-            "session_ttl_hours": settings.session_ttl_hours,
-        },
+        "limits": {"max_upload_mb": settings.max_upload_mb, "max_session_mb": settings.max_session_mb, "session_ttl_hours": settings.session_ttl_hours},
         "feature_flags": {"allow_local_paths": settings.allow_local_paths},
     }
 
@@ -90,15 +67,7 @@ def upload_files(
             raise ApiError(HTTP_PAYLOAD_TOO_LARGE, ERR_TOO_LARGE, "Session size limit exceeded")
         stored_rel = dest.name if rel == Path() else (rel / dest.name).as_posix()
         file_id = ws.register_upload(dest, dest.name, stored_rel)
-        metas.append(
-            FileMeta(
-                file_id=file_id,
-                name=dest.name,
-                relpath=stored_rel,
-                size=dest.stat().st_size,
-                source_tokens=count_raw_file_tokens(dest),
-            )
-        )
+        metas.append(FileMeta(file_id=file_id, name=dest.name, relpath=stored_rel, size=dest.stat().st_size, source_tokens=count_raw_file_tokens(dest)))
     return UploadResponse(session_id=ws.sid, files=metas)
 
 
@@ -109,15 +78,7 @@ def list_files(session_id: str) -> FilesResponse:
     for entry in ws.list_outputs():
         path = Path(str(entry["path"]))
         size = path.stat().st_size if path.exists() else 0
-        files.append(
-            OutputFile(
-                file_id=str(entry["file_id"]),
-                name=str(entry["name"]),
-                size=size,
-                target_tokens=int(entry["target_tokens"]),
-                created=float(entry["created"]),
-            )
-        )
+        files.append(OutputFile(file_id=str(entry["file_id"]), name=str(entry["name"]), size=size, target_tokens=int(entry["target_tokens"]), created=float(entry["created"])))
     return FilesResponse(files=files)
 
 
@@ -148,9 +109,7 @@ def session_close(req: SessionCloseRequest, request: Request) -> SessionCloseRes
 
 @router.get("/samples", response_model=SamplesResponse)
 def samples() -> SamplesResponse:
-    return SamplesResponse(
-        samples=[SampleInfo(**sample) for sample in list_samples()]
-    )
+    return SamplesResponse(samples=[SampleInfo(**sample) for sample in list_samples()])
 
 
 @router.get("/samples/{name}")

@@ -6,7 +6,7 @@ budget allocator.
 
 from __future__ import annotations
 
-from functools import lru_cache
+from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -18,8 +18,8 @@ if TYPE_CHECKING:
 DEFAULT_ENCODING = "o200k_base"
 
 
-@lru_cache(maxsize=None)
-def get_encoding(name: str = DEFAULT_ENCODING) -> "tiktoken.Encoding":
+@cache
+def get_encoding(name: str = DEFAULT_ENCODING) -> tiktoken.Encoding:
     """Return a cached tiktoken encoding."""
     tiktoken = require("tiktoken", "token counting")
 

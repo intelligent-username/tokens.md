@@ -6,11 +6,12 @@ import logging
 import signal
 import threading
 import time
+from collections.abc import Callable, Sequence
 from pathlib import Path
 from queue import Empty, Queue
-from typing import Any, Callable, Optional, Sequence
+from typing import Any
 
-from watchdog.events import FileSystemEventHandler, FileSystemEvent
+from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
 from .handlers.pymupdf import pdf_to_markdown
@@ -26,15 +27,7 @@ def _is_matching(path: Path, extensions: Sequence[str]) -> bool:
 class WatcherHandler(FileSystemEventHandler):
     """Enqueues matching files and processes them once stable."""
 
-    def __init__(
-        self,
-        output_dir: Path,
-        extensions: Sequence[str],
-        poll_interval: float,
-        clip: bool = False,
-        on_event: Callable[[dict[str, object]], None] | None = None,
-        **convert_kwargs: Any,
-    ) -> None:
+    def __init__(self, output_dir: Path, extensions: Sequence[str], poll_interval: float, clip: bool = False, on_event: Callable[[dict[str, object]], None] | None = None, **convert_kwargs: Any) -> None:
         super().__init__()
         self.output_dir = output_dir
         self.extensions = extensions
@@ -56,13 +49,7 @@ class WatcherHandler(FileSystemEventHandler):
         self._enqueue(Path(str(event.src_path)))
 
     # -- processing ------------------------------------------------------
-    def _emit(
-        self,
-        event: str,
-        path: Path,
-        output: Path | None = None,
-        error: str | None = None,
-    ) -> None:
+    def _emit(self, event: str, path: Path, output: Path | None = None, error: str | None = None) -> None:
         if self.on_event is None:
             return
         payload: dict[str, object] = {"event": event, "file": str(path)}
@@ -132,7 +119,7 @@ class WatcherHandler(FileSystemEventHandler):
             self._emit("error", path, error=str(exc))
             return False
 
-    def drain(self, stop_event: Optional[threading.Event] = None) -> None:
+    def drain(self, stop_event: threading.Event | None = None) -> None:
         """Process queued files until empty (or ``stop_event`` is set)."""
         while True:
             if stop_event is not None and stop_event.is_set():
@@ -144,18 +131,7 @@ class WatcherHandler(FileSystemEventHandler):
             self.process_one(path)
 
 
-def run_watcher(
-    source: Path,
-    output: Path,
-    *,
-    poll_interval: float,
-    clip: bool = False,
-    once: bool = False,
-    extensions: Sequence[str] = (".pdf",),
-    stop_event: Optional[threading.Event] = None,
-    on_event: Callable[[dict[str, object]], None] | None = None,
-    **convert_kwargs: Any,
-) -> None:
+def run_watcher(source: Path, output: Path, *, poll_interval: float, clip: bool = False, once: bool = False, extensions: Sequence[str] = (".pdf",), stop_event: threading.Event | None = None, on_event: Callable[[dict[str, object]], None] | None = None, **convert_kwargs: Any) -> None:
     """Watch ``source`` and convert matching files into ``output``.
 
     With ``once``, process existing files and return immediately. Otherwise run
@@ -163,9 +139,7 @@ def run_watcher(
     """
     source.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
-    handler = WatcherHandler(
-        output, extensions, poll_interval, clip, on_event=on_event, **convert_kwargs
-    )
+    handler = WatcherHandler(output, extensions, poll_interval, clip, on_event=on_event, **convert_kwargs)
 
     if once:
         for path in sorted(source.iterdir()):
@@ -194,7 +168,10 @@ def run_watcher(
 
 def _install_signal_handlers(stop_event: threading.Event) -> None:
     """Wire SIGINT/SIGTERM to set ``stop_event`` for a graceful shutdown."""
-    handler: Callable[[int, Any], None] = lambda _signum, _frame: stop_event.set()
+
+    def handler(_signum: int, _frame: Any) -> None:
+        stop_event.set()
+
     for signum in (signal.SIGINT, signal.SIGTERM):
         try:
             signal.signal(signum, handler)

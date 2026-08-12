@@ -9,11 +9,7 @@ from fastapi import Request
 
 from ..config import Settings
 from ..workspace import Workspace
-from .constants import (
-    ERR_LOCAL_PATHS_DISABLED,
-    ERR_LOCAL_PATHS_DISALLOWED,
-    HTTP_FORBIDDEN,
-)
+from .constants import ERR_LOCAL_PATHS_DISABLED, ERR_LOCAL_PATHS_DISALLOWED, HTTP_FORBIDDEN
 
 
 class ApiError(Exception):
@@ -32,10 +28,7 @@ def _settings(request: Request) -> Settings:
 
 def _convert_kwargs(opts: Any) -> dict[str, Any]:
     """Build converter kwargs from an options object with optional fields."""
-    kwargs: dict[str, Any] = {
-        "strip_headers_footers": bool(getattr(opts, "strip_headers_footers", False)),
-        "write_images": bool(getattr(opts, "write_images", False)),
-    }
+    kwargs: dict[str, Any] = {"strip_headers_footers": bool(getattr(opts, "strip_headers_footers", False)), "write_images": bool(getattr(opts, "write_images", False))}
     image_path = getattr(opts, "image_path", None)
     if image_path:
         kwargs["image_path"] = image_path
@@ -45,12 +38,7 @@ def _convert_kwargs(opts: Any) -> dict[str, Any]:
     return kwargs
 
 
-def _resolve_upload_paths(
-    ws: Workspace,
-    file_ids: list[str],
-    path: str | None,
-    settings: Settings,
-) -> list[tuple[str | None, Path]]:
+def _resolve_upload_paths(ws: Workspace, file_ids: list[str], path: str | None, settings: Settings) -> list[tuple[str | None, Path]]:
     """Resolve either manifest file_ids or a gated server-side path."""
     if path is not None:
         if not settings.allow_local_paths:

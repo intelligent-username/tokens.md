@@ -2,22 +2,9 @@
  * Watcher streaming hook types.
  */
 
-export type WatchStatus =
-  | 'disconnected'
-  | 'connecting'
-  | 'watching'
-  | 'reconnecting'
-  | 'stopping'
-  | 'stopped';
+export type WatchStatus = "disconnected" | "connecting" | "watching" | "reconnecting" | "stopping" | "stopped";
 
-export type WatchLineKind =
-  | 'started'
-  | 'queued'
-  | 'converting'
-  | 'done'
-  | 'skipped'
-  | 'error'
-  | 'stopped';
+export type WatchLineKind = "started" | "queued" | "converting" | "done" | "skipped" | "error" | "stopped";
 
 export interface WatchLogLine {
   id: string;

@@ -34,20 +34,10 @@ def _node_to_latex(el: ET.Element) -> str:
         return r"\sqrt[%s]{%s}" % (_node_to_latex(index), _node_to_latex(base))
     if name == "mspace":
         return " "
-    if name in (
-        "mstyle",
-        "mover",
-        "munder",
-        "munderover",
-        "semantics",
-        "annotation",
-        "annotation-xml",
-    ):
+    if name in ("mstyle", "mover", "munder", "munderover", "semantics", "annotation", "annotation-xml"):
         return "".join(_node_to_latex(c) for c in el)
     if name == "mtable":
-        rows = [
-            " & ".join(_node_to_latex(mtd) for mtd in mtr) + r" \\" for mtr in el
-        ]
+        rows = [" & ".join(_node_to_latex(mtd) for mtd in mtr) + r" \\" for mtr in el]
         return r"\begin{matrix}" + "\n" + "\n".join(rows) + "\n" + r"\end{matrix}"
     return "".join(_node_to_latex(c) for c in el) + (el.text or "")
 

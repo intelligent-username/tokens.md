@@ -6,7 +6,6 @@ Importing this package registers every built-in handler into
 
 from __future__ import annotations
 
-from ..registry import DEFAULT_REGISTRY
 from ..readers.adapter import ReaderConverter
 from ..readers.docx import DocxReader
 from ..readers.ebook import Azw3Reader, Azw4Reader
@@ -20,6 +19,7 @@ from ..readers.rtf import RtfReader
 from ..readers.subtitle import SubtitleReader
 from ..readers.tex import TexReader
 from ..readers.xlsx import XlsxReader
+from ..registry import DEFAULT_REGISTRY
 from .archive import ArchiveConverter
 from .html import HtmlConverter
 from .office import OfficeConverter
@@ -28,15 +28,7 @@ from .repo import RepoConverter
 from .structured import StructuredConverter
 from .unsupported import UnsupportedConverter
 
-__all__ = [
-    "ArchiveConverter",
-    "HtmlConverter",
-    "OfficeConverter",
-    "PymupdfConverter",
-    "RepoConverter",
-    "StructuredConverter",
-    "UnsupportedConverter",
-]
+__all__ = ["ArchiveConverter", "HtmlConverter", "OfficeConverter", "PymupdfConverter", "RepoConverter", "StructuredConverter", "UnsupportedConverter"]
 
 DEFAULT_REGISTRY.register(ArchiveConverter())
 DEFAULT_REGISTRY.register(PymupdfConverter())

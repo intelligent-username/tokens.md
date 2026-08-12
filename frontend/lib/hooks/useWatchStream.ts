@@ -1,24 +1,12 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchJson, wsUrl } from './apiBase';
-import { markDegraded } from './useHealth';
-import type {
-  WatchLogLine,
-  WatchStartOptions,
-  WatchStatus,
-  WatchStatusResponse,
-  WatchTotals,
-  WatchLineKind,
-} from './watch/types';
-import {
-  MAX_BACKOFF_MS,
-  MAX_LOG_LINES,
-  lineText,
-  nextLineId,
-} from './watch/utils';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { fetchJson, wsUrl } from "./apiBase";
+import { markDegraded } from "./useHealth";
+import type { WatchLogLine, WatchStartOptions, WatchStatus, WatchStatusResponse, WatchTotals, WatchLineKind } from "./watch/types";
+import { MAX_BACKOFF_MS, MAX_LOG_LINES, lineText, nextLineId } from "./watch/utils";
 
-export * from './watch/types';
+export * from "./watch/types";
 
 /**
  * Watch stream: WS /api/ws?session_id + GET /api/watch/{sid} status restore.
@@ -32,7 +20,7 @@ export function useWatchStream(sessionId: string): {
   stop: () => Promise<void>;
   clear: () => void;
 } {
-  const [status, setStatus] = useState<WatchStatus>('disconnected');
+  const [status, setStatus] = useState<WatchStatus>("disconnected");
   const [log, setLog] = useState<WatchLogLine[]>([]);
   const [totals, setTotals] = useState<WatchTotals | null>(null);
 
@@ -41,25 +29,22 @@ export function useWatchStream(sessionId: string): {
   const backoffRef = useRef(1000);
   const timerRef = useRef<number | null>(null);
 
-  const append = useCallback(
-    (kind: WatchLineKind, text: string, data?: Record<string, unknown>) => {
-      setLog((prev) => [
-        ...prev.slice(-(MAX_LOG_LINES - 1)),
-        {
-          id: nextLineId(),
-          kind,
-          text,
-          file: data?.file ? String(data.file) : undefined,
-          sourceTokens: data?.source_tokens as number | undefined,
-          targetTokens: data?.target_tokens as number | undefined,
-          percent: data?.percent as number | undefined,
-          error: data?.error ? String(data.error) : undefined,
-          ts: Date.now(),
-        },
-      ]);
-    },
-    [],
-  );
+  const append = useCallback((kind: WatchLineKind, text: string, data?: Record<string, unknown>) => {
+    setLog((prev) => [
+      ...prev.slice(-(MAX_LOG_LINES - 1)),
+      {
+        id: nextLineId(),
+        kind,
+        text,
+        file: data?.file ? String(data.file) : undefined,
+        sourceTokens: data?.source_tokens as number | undefined,
+        targetTokens: data?.target_tokens as number | undefined,
+        percent: data?.percent as number | undefined,
+        error: data?.error ? String(data.error) : undefined,
+        ts: Date.now(),
+      },
+    ]);
+  }, []);
 
   const applyTotals = useCallback((data: Record<string, unknown>) => {
     setTotals((prev) => {
@@ -70,12 +55,8 @@ export function useWatchStream(sessionId: string): {
       const isAbsolute = !prev || files > prev.files;
       return {
         files: isAbsolute ? files : (prev?.files ?? 0) + files,
-        source_tokens: isAbsolute
-          ? sourceTokens
-          : (prev?.source_tokens ?? 0) + sourceTokens,
-        target_tokens: isAbsolute
-          ? targetTokens
-          : (prev?.target_tokens ?? 0) + targetTokens,
+        source_tokens: isAbsolute ? sourceTokens : (prev?.source_tokens ?? 0) + sourceTokens,
+        target_tokens: isAbsolute ? targetTokens : (prev?.target_tokens ?? 0) + targetTokens,
         percent: Number(data.percent ?? 0),
         files_processed: filesProcessed || (prev?.files_processed ?? 0),
       };
@@ -90,7 +71,7 @@ export function useWatchStream(sessionId: string): {
 
       ws.onopen = () => {
         backoffRef.current = 1000;
-        setStatus((prev) => (prev === 'stopping' ? prev : 'watching'));
+        setStatus((prev) => (prev === "stopping" ? prev : "watching"));
       };
 
       ws.onmessage = (msg) => {
@@ -98,30 +79,21 @@ export function useWatchStream(sessionId: string): {
           const envelope = JSON.parse(msg.data as string);
           const data = (envelope.data ?? {}) as Record<string, unknown>;
           switch (envelope.type) {
-            case 'watch.started':
-              append('started', lineText('started', data), data);
+            case "watch.started":
+              append("started", lineText("started", data), data);
               break;
-            case 'watch.file': {
-              const fileStatus = String(data.status ?? '');
-              const kind: WatchLineKind =
-                fileStatus === 'queued'
-                  ? 'queued'
-                  : fileStatus === 'converting'
-                    ? 'converting'
-                    : fileStatus === 'done'
-                      ? 'done'
-                      : fileStatus === 'skipped'
-                        ? 'skipped'
-                        : 'error';
+            case "watch.file": {
+              const fileStatus = String(data.status ?? "");
+              const kind: WatchLineKind = fileStatus === "queued" ? "queued" : fileStatus === "converting" ? "converting" : fileStatus === "done" ? "done" : fileStatus === "skipped" ? "skipped" : "error";
               append(kind, lineText(kind, data), data);
               break;
             }
-            case 'watch.total':
+            case "watch.total":
               applyTotals(data);
               break;
-            case 'watch.stopped':
-              append('stopped', lineText('stopped', data), data);
-              setStatus('stopped');
+            case "watch.stopped":
+              append("stopped", lineText("stopped", data), data);
+              setStatus("stopped");
               break;
             default:
               break;
@@ -134,7 +106,7 @@ export function useWatchStream(sessionId: string): {
       ws.onclose = () => {
         if (wsRef.current === ws) wsRef.current = null;
         if (intentRef.current.stopping) return;
-        setStatus('reconnecting');
+        setStatus("reconnecting");
         markDegraded();
         if (timerRef.current !== null) return;
         const delay = backoffRef.current;
@@ -145,7 +117,7 @@ export function useWatchStream(sessionId: string): {
         }, delay);
       };
     },
-    [append, applyTotals, sessionId],
+    [append, applyTotals, sessionId]
   );
 
   const restore = useCallback(async () => {
@@ -159,23 +131,23 @@ export function useWatchStream(sessionId: string): {
           percent: prev?.percent ?? 0,
           files_processed: state.files_processed ?? prev?.files_processed ?? 0,
         }));
-        setStatus('watching');
+        setStatus("watching");
         openSocket(sessionId);
       } else {
-        setStatus('disconnected');
+        setStatus("disconnected");
       }
     } catch {
-      setStatus('disconnected');
+      setStatus("disconnected");
     }
   }, [sessionId, openSocket]);
 
   useEffect(() => {
     setLog([]);
     setTotals(null);
-    setStatus('disconnected');
+    setStatus("disconnected");
     intentRef.current.stopping = false;
     if (sessionId) {
-      setStatus('connecting');
+      setStatus("connecting");
       void restore();
     }
     return () => {
@@ -189,39 +161,39 @@ export function useWatchStream(sessionId: string): {
   const start = useCallback(
     async (options?: WatchStartOptions) => {
       intentRef.current.stopping = false;
-      setStatus('connecting');
+      setStatus("connecting");
       setLog([]);
       setTotals(null);
       try {
         await fetchJson(`/api/watch/start`, {
-          method: 'POST',
+          method: "POST",
           body: JSON.stringify({ session_id: sessionId, options: options ?? {} }),
         });
-        setStatus('watching');
+        setStatus("watching");
         openSocket(sessionId);
       } catch {
-        setStatus('disconnected');
-        throw new Error('watch start failed');
+        setStatus("disconnected");
+        throw new Error("watch start failed");
       }
     },
-    [sessionId, openSocket],
+    [sessionId, openSocket]
   );
 
   const stop = useCallback(async () => {
     intentRef.current.stopping = true;
-    setStatus('stopping');
+    setStatus("stopping");
     if (timerRef.current !== null) window.clearTimeout(timerRef.current);
     try {
       await fetchJson(`/api/watch/stop`, {
-        method: 'POST',
+        method: "POST",
         body: JSON.stringify({ session_id: sessionId }),
       });
       wsRef.current?.close();
       wsRef.current = null;
-      setStatus('stopped');
+      setStatus("stopped");
     } catch {
       intentRef.current.stopping = false;
-      setStatus('reconnecting');
+      setStatus("reconnecting");
     }
   }, [sessionId]);
 

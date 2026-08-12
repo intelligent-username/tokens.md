@@ -3,8 +3,8 @@
  * URL comes from wsUrl(sessionId) in lib/hooks/apiBase.ts (B4).
  */
 
-import { wsUrl } from '@/lib/hooks/apiBase';
-import type { WsEnvelope } from './types';
+import { wsUrl } from "@/lib/hooks/apiBase";
+import type { WsEnvelope } from "./types";
 
 export type WsHandler = (envelope: WsEnvelope) => void;
 

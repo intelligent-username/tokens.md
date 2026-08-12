@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { DownloadSimple } from '@phosphor-icons/react';
-import { downloadUrl } from '@/lib/api/endpoints';
-import type { ConvertItem, MergeResponse } from '@/lib/api/types';
-import { ResultClipButton } from './ResultClipButton';
-import { MarkdownPreviewButton } from '@/components/ui/MarkdownPreviewButton';
-import { formatBytes } from '@/components/ui/FileChip';
-import { formatTokens } from '@/lib/utils/format';
+import { DownloadSimple } from "@phosphor-icons/react";
+import { downloadUrl } from "@/lib/api/endpoints";
+import type { ConvertItem, MergeResponse } from "@/lib/api/types";
+import { ResultClipButton } from "./ResultClipButton";
+import { MarkdownPreviewButton } from "@/components/ui/MarkdownPreviewButton";
+import { formatBytes } from "@/components/ui/FileChip";
+import { formatTokens } from "@/lib/utils/format";
 
 export interface MergeResultPillProps {
   files: File[];
@@ -28,12 +28,12 @@ export function MergeResultPill({ files, mergeResult, sessionId }: MergeResultPi
     <div
       className="flex flex-wrap items-center justify-between gap-3 transition-all"
       style={{
-        minHeight: '80px',
-        padding: '16px 24px',
-        borderRadius: 'var(--radius-card)',
-        border: '1px solid var(--color-border)',
-        background: 'var(--color-card)',
-        width: '100%',
+        minHeight: "80px",
+        padding: "16px 24px",
+        borderRadius: "var(--radius-card)",
+        border: "1px solid var(--color-border)",
+        background: "var(--color-card)",
+        width: "100%",
       }}
     >
       <div className="flex flex-wrap items-center gap-3">
@@ -45,11 +45,7 @@ export function MergeResultPill({ files, mergeResult, sessionId }: MergeResultPi
         </div>
         <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 font-mono text-xs font-bold text-emerald-400 border border-emerald-500/30">
           output ≈ {formatTokens(mergeResult.target_tokens)} tokens
-          {mergeResult.source_tokens > mergeResult.target_tokens && (
-            <span className="ml-1.5 text-emerald-300/80 font-normal">
-              (saved ≈ {formatTokens(mergeResult.source_tokens - mergeResult.target_tokens)} tokens)
-            </span>
-          )}
+          {mergeResult.source_tokens > mergeResult.target_tokens && <span className="ml-1.5 text-emerald-300/80 font-normal">(saved ≈ {formatTokens(mergeResult.source_tokens - mergeResult.target_tokens)} tokens)</span>}
         </span>
       </div>
       <div className="flex items-center gap-2">

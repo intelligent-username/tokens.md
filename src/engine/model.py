@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, List, Optional
+from typing import Any
 
 
 @dataclass
@@ -20,7 +20,7 @@ class Paragraph:
 @dataclass
 class CodeBlock:
     text: str
-    language: Optional[str] = None
+    language: str | None = None
 
 
 @dataclass
@@ -30,8 +30,8 @@ class Quote:
 
 @dataclass
 class Table:
-    rows: List[List[str]] = field(default_factory=list)
-    header: Optional[List[str]] = None
+    rows: list[list[str]] = field(default_factory=list)
+    header: list[str] | None = None
 
 
 @dataclass
@@ -59,8 +59,8 @@ class RawMarkdown:
 
 @dataclass
 class Document:
-    title: Optional[str] = None
-    blocks: List[Any] = field(default_factory=list)
+    title: str | None = None
+    blocks: list[Any] = field(default_factory=list)
 
     def add(self, block: Any) -> None:
         """Add any block element to the document."""
@@ -73,13 +73,13 @@ class Document:
         if text.strip():
             self.blocks.append(Paragraph(text))
 
-    def add_code_block(self, text: str, language: Optional[str] = None) -> None:
+    def add_code_block(self, text: str, language: str | None = None) -> None:
         self.blocks.append(CodeBlock(text, language))
 
     def add_quote(self, text: str) -> None:
         self.blocks.append(Quote(text))
 
-    def add_table(self, rows: List[List[str]], header: Optional[List[str]] = None) -> None:
+    def add_table(self, rows: list[list[str]], header: list[str] | None = None) -> None:
         self.blocks.append(Table(rows=rows, header=header))
 
     def add_list_item(self, text: str, level: int = 0, ordered: bool = False) -> None:

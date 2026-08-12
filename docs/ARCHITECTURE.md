@@ -80,7 +80,9 @@ Every file type is owned by a `Converter` subclass that declares a `frozenset` o
 class Converter(ABC):
     extensions: frozenset[str]
     name: str
+
     def convert(self, input_path: Path, output_dir: Path, **kwargs) -> Path: ...
+
 
 class Registry:
     def register(self, converter: Converter) -> None: ...
@@ -155,6 +157,7 @@ Readers produce a `Document`; `MarkdownRenderer` renders it. Neither side knows 
 ```python
 # src/model.py  (abridged)
 Block = Heading | Paragraph | Table | CodeBlock | ListItem | Image | RawMarkdown | ...
+
 
 @dataclass
 class Document:
@@ -284,6 +287,7 @@ from pathlib import Path
 from ..model import Document, Paragraph
 from .base import Reader
 
+
 class MyFormatReader(Reader):
     extensions = frozenset({".foo"})
     name = "myformat"
@@ -299,6 +303,7 @@ Register in `src/handlers/__init__.py`:
 ```python
 from ..readers.adapter import ReaderConverter
 from ..readers.myformat import MyFormatReader
+
 DEFAULT_REGISTRY.register(ReaderConverter(MyFormatReader()))
 ```
 

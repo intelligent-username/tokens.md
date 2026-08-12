@@ -133,8 +133,8 @@ def test_msg_reader_handles_non_ole_files(tmp_path: Path) -> None:
 def test_docx_math_spliced_as_latex(sample_docx_math: Path, tmp_path: Path) -> None:
     out = _convert(sample_docx_math, tmp_path)
     text = out.read_text(encoding="utf-8")
-    assert "$$" in text                      # display math delimiter present
-    assert "x^{2}" in text or "x^2" in text   # superscript converted
+    assert "$$" in text  # display math delimiter present
+    assert "x^{2}" in text or "x^2" in text  # superscript converted
 
 
 def test_tex_math_preserved_verbatim(sample_tex_math: Path, tmp_path: Path) -> None:
@@ -151,11 +151,7 @@ def test_omml_converter_node_types() -> None:
     from src.math_converters.omml import omath_element_to_latex
 
     # fraction: m:f -> \frac{a}{b}
-    frac = ET.fromstring(
-        '<m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">'
-        '<m:f><m:num><m:r><m:t>a</m:t></m:r></m:num>'
-        '<m:den><m:r><m:t>b</m:t></m:r></m:den></m:f></m:oMath>'
-    )
+    frac = ET.fromstring('<m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math"><m:f><m:num><m:r><m:t>a</m:t></m:r></m:num><m:den><m:r><m:t>b</m:t></m:r></m:den></m:f></m:oMath>')
     assert "\\frac{a}{b}" in omath_element_to_latex(frac)
 
 
@@ -163,14 +159,8 @@ def test_mathml_converter_node_types() -> None:
     from src.math_converters.mathml import mathml_to_latex
 
     # mfrac -> \frac{a}{b}
-    assert "\\frac{a}{b}" in mathml_to_latex(
-        '<math xmlns="http://www.w3.org/1998/Math/MathML">'
-        "<mfrac><mi>a</mi><mi>b</mi></mfrac></math>"
-    )
+    assert "\\frac{a}{b}" in mathml_to_latex('<math xmlns="http://www.w3.org/1998/Math/MathML"><mfrac><mi>a</mi><mi>b</mi></mfrac></math>')
     # msup -> {x}^{2}
-    assert "{x}^{2}" in mathml_to_latex(
-        '<math xmlns="http://www.w3.org/1998/Math/MathML">'
-        "<msup><mi>x</mi><mn>2</mn></msup></math>"
-    )
+    assert "{x}^{2}" in mathml_to_latex('<math xmlns="http://www.w3.org/1998/Math/MathML"><msup><mi>x</mi><mn>2</mn></msup></math>')
     # unknown node -> fenced raw fallback, never empty, never raises
     assert mathml_to_latex("<math><bogus/></math>").startswith("```mathml")

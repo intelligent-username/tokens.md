@@ -2,7 +2,7 @@
  * Number formatting helpers. Mirrors the CLI's format_tokens and delta_percent.
  */
 
-const numberFormat = new Intl.NumberFormat('en-US');
+const numberFormat = new Intl.NumberFormat("en-US");
 
 /** Token count with thousands separators (e.g. "142,000"). */
 export function formatTokens(n: number): string {

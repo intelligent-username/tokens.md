@@ -38,7 +38,7 @@ function readFileEntry(entry: FileSystemFileEntry): Promise<EntryItem> {
   return new Promise((resolve, reject) => {
     entry.file(
       (file) => resolve({ file, path: entryPath(entry) }),
-      () => reject(new Error("unreadable entry")),
+      () => reject(new Error("unreadable entry"))
     );
   });
 }
@@ -47,9 +47,7 @@ async function readDirectory(dir: FileSystemDirectoryEntry): Promise<EntryItem[]
   const reader = dir.createReader();
   const all: EntryItem[] = [];
   for (;;) {
-    const batch = await new Promise<FileSystemEntry[]>((resolve, reject) =>
-      reader.readEntries(resolve, reject),
-    );
+    const batch = await new Promise<FileSystemEntry[]>((resolve, reject) => reader.readEntries(resolve, reject));
     if (batch.length === 0) break;
     const nested = await Promise.all(batch.map(collectEntry));
     all.push(...nested.flat());
@@ -70,16 +68,7 @@ async function collectEntry(entry: FileSystemEntry): Promise<EntryItem[]> {
  * client-side extension validation. Unsupported files surface as an inline
  * skipped note rather than being silently dropped.
  */
-export function DropZone({
-  label,
-  sublabel,
-  accept,
-  multiple = true,
-  allowFolders = false,
-  disabled = false,
-  hint,
-  onFiles,
-}: DropZoneProps) {
+export function DropZone({ label, sublabel, accept, multiple = true, allowFolders = false, disabled = false, hint, onFiles }: DropZoneProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -108,7 +97,7 @@ export function DropZone({
     setSkipped(unsupported);
     onFiles(
       supported.map((i) => i.file),
-      { paths: supported.map((i) => i.path), skipped: unsupported },
+      { paths: supported.map((i) => i.path), skipped: unsupported }
     );
     if (supported.length === 0) setAnnounce(copy.noSupportedFiles);
     else if (unsupported.length > 0) setAnnounce(copy.skippedUnsupported(unsupported.length));
@@ -172,10 +161,8 @@ export function DropZone({
       onDrop={handleDrop}
       className={cn(
         "group relative flex min-h-[280px] sm:min-h-[340px] cursor-pointer flex-col items-center justify-center gap-4 rounded-card border-2 border-dashed border-border/80 glass p-10 sm:p-14 text-center transition-all",
-        dragging
-          ? "border-solid border-emerald-500 bg-emerald-500/10 shadow-glow"
-          : "hover:border-emerald-500 hover:shadow-glow-soft",
-        disabled && "cursor-not-allowed opacity-50",
+        dragging ? "border-solid border-emerald-500 bg-emerald-500/10 shadow-glow" : "hover:border-emerald-500 hover:shadow-glow-soft",
+        disabled && "cursor-not-allowed opacity-50"
       )}
     >
       <span aria-live="polite" className="sr-only">
@@ -203,16 +190,7 @@ export function DropZone({
         </span>
       ) : null}
 
-      <input
-        ref={inputRef}
-        type="file"
-        className="sr-only"
-        accept={accept}
-        multiple={multiple}
-        disabled={disabled}
-        onChange={handleInputChange}
-        {...(allowFolders ? ({ webkitdirectory: "", directory: "" } as Record<string, string>) : {})}
-      />
+      <input ref={inputRef} type="file" className="sr-only" accept={accept} multiple={multiple} disabled={disabled} onChange={handleInputChange} {...(allowFolders ? ({ webkitdirectory: "", directory: "" } as Record<string, string>) : {})} />
     </div>
   );
 }

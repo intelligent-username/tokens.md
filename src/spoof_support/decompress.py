@@ -23,6 +23,7 @@ def decompress_body(data: bytes, content_encoding: str = "") -> str:
     elif "br" in enc:
         try:
             import brotli
+
             data = brotli.decompress(data)
         except Exception:
             pass

@@ -12,9 +12,7 @@ from src.registry import UnsupportedFormatError
 
 
 def test_fetch_url_writes_markdown(tmp_path: Path) -> None:
-    with patch("src.fetch.trafilatura.fetch_url", return_value="<html>...</html>"), patch(
-        "src.fetch.trafilatura.extract", return_value="# Article\n\nBody text."
-    ):
+    with patch("src.fetch.trafilatura.fetch_url", return_value="<html>...</html>"), patch("src.fetch.trafilatura.extract", return_value="# Article\n\nBody text."):
         out = fetch_url("https://example.com/article", tmp_path / "out")
 
     assert out.exists()
@@ -24,6 +22,5 @@ def test_fetch_url_writes_markdown(tmp_path: Path) -> None:
 
 
 def test_fetch_url_failure_raises(tmp_path: Path) -> None:
-    with patch("src.fetch.trafilatura.fetch_url", return_value=None):
-        with pytest.raises(UnsupportedFormatError):
-            fetch_url("https://example.com", tmp_path / "out")
+    with patch("src.fetch.trafilatura.fetch_url", return_value=None), pytest.raises(UnsupportedFormatError):
+        fetch_url("https://example.com", tmp_path / "out")

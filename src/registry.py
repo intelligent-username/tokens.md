@@ -10,7 +10,6 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Optional, Sequence
 
 from .detector import FormatDetector
 
@@ -49,7 +48,7 @@ class Registry:
         for ext in converter.extensions:
             self._handlers[ext] = converter
 
-    def get_handler(self, path: Path) -> Optional[Converter]:
+    def get_handler(self, path: Path) -> Converter | None:
         """Return the handler for ``path``'s suffix, or ``None`` if unknown.
 
         The extension is authoritative; the magic-byte detector only fires as a
@@ -76,19 +75,11 @@ class Registry:
         """
         handler = self.get_handler(path)
         if handler is None:
-            raise UnsupportedFormatError(
-                f"Unsupported format '{path.suffix}'. Supported formats: "
-                f"{', '.join(sorted(ext.lstrip('.') for ext in self.extensions()))}."
-            )
+            raise UnsupportedFormatError(f"Unsupported format '{path.suffix}'. Supported formats: {', '.join(sorted(ext.lstrip('.') for ext in self.extensions()))}.")
         return handler.convert(path, output_dir, **kwargs)
 
 
-def convert_file(
-    path: Path,
-    output_dir: Path,
-    registry: Registry | None = None,
-    **kwargs: object,
-) -> Path:
+def convert_file(path: Path, output_dir: Path, registry: Registry | None = None, **kwargs: object) -> Path:
     """Convenience wrapper around ``registry.convert``."""
     if registry is None:
         registry = DEFAULT_REGISTRY

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from xml.etree import ElementTree as ET
+
 from .constants import OMML_NS
 
 

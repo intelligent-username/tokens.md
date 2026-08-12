@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Iterable
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable, Optional
+from typing import TYPE_CHECKING
 
 from ..deps import require
 from ..registry import Converter
@@ -15,11 +16,46 @@ if TYPE_CHECKING:
 #: Extensions treated as binary and skipped to avoid spewing garbage.
 BINARY_EXTENSIONS = frozenset(
     {
-        ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tif", ".tiff", ".ico",
-        ".pdf", ".zip", ".gz", ".tar", ".7z", ".rar", ".exe", ".dll", ".so",
-        ".dylib", ".woff", ".woff2", ".ttf", ".otf", ".eot", ".mp3", ".mp4",
-        ".wav", ".ogg", ".pyc", ".pyo", ".pyd", ".class", ".jar", ".db",
-        ".sqlite", ".sqlite3", ".lock", ".whl", ".egg", ".bin", ".dat",
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".gif",
+        ".bmp",
+        ".tif",
+        ".tiff",
+        ".ico",
+        ".pdf",
+        ".zip",
+        ".gz",
+        ".tar",
+        ".7z",
+        ".rar",
+        ".exe",
+        ".dll",
+        ".so",
+        ".dylib",
+        ".woff",
+        ".woff2",
+        ".ttf",
+        ".otf",
+        ".eot",
+        ".mp3",
+        ".mp4",
+        ".wav",
+        ".ogg",
+        ".pyc",
+        ".pyo",
+        ".pyd",
+        ".class",
+        ".jar",
+        ".db",
+        ".sqlite",
+        ".sqlite3",
+        ".lock",
+        ".whl",
+        ".egg",
+        ".bin",
+        ".dat",
     }
 )
 
@@ -97,13 +133,7 @@ class RepoConverter(Converter):
     extensions = frozenset()
     name = "repo"
 
-    def convert(
-        self,
-        input_path: Path,
-        output_dir: Path,
-        exclude: Optional[Iterable[str]] = None,
-        **kwargs: object,
-    ) -> Path:
+    def convert(self, input_path: Path, output_dir: Path, exclude: Iterable[str] | None = None, **kwargs: object) -> Path:
         output_dir.mkdir(parents=True, exist_ok=True)
         root = input_path.resolve()
 
@@ -137,19 +167,13 @@ class RepoConverter(Converter):
         manifest.write_text("\n".join(sections), encoding="utf-8")
         return manifest
 
-    def _load_gitignore(
-        self, root: Path, exclude: Optional[Iterable[str]]
-    ) -> pathspec.PathSpec:
+    def _load_gitignore(self, root: Path, exclude: Iterable[str] | None) -> pathspec.PathSpec:
         pathspec = require("pathspec", "tmd repo")
 
         patterns: list[str] = []
         gitignore = root / ".gitignore"
         if gitignore.exists():
-            patterns.extend(
-                line.strip()
-                for line in gitignore.read_text(encoding="utf-8", errors="replace").splitlines()
-                if line.strip() and not line.strip().startswith("#")
-            )
+            patterns.extend(line.strip() for line in gitignore.read_text(encoding="utf-8", errors="replace").splitlines() if line.strip() and not line.strip().startswith("#"))
         if exclude:
             patterns.extend(exclude)
         return pathspec.PathSpec.from_lines("gitwildmatch", patterns)
@@ -157,9 +181,7 @@ class RepoConverter(Converter):
     def _collect_files(self, root: Path, spec: pathspec.PathSpec) -> list[Path]:
         files: list[Path] = []
         for dirpath, dirnames, filenames in os.walk(root):
-            dirnames[:] = [
-                d for d in dirnames if not self._ignored(root, Path(dirpath) / d, spec)
-            ]
+            dirnames[:] = [d for d in dirnames if not self._ignored(root, Path(dirpath) / d, spec)]
             for filename in filenames:
                 path = Path(dirpath) / filename
                 if self._ignored(root, path, spec):

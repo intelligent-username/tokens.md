@@ -116,10 +116,7 @@ def _odfpy_has_only_frame(para_node: object) -> bool:
     Used to choose block ($$) vs inline ($) math rendering.
     """
     children = getattr(para_node, "childNodes", [])
-    non_empty = [
-        c for c in children
-        if getattr(c, "data", "").strip() or getattr(c, "qname", None) is not None
-    ]
+    non_empty = [c for c in children if getattr(c, "data", "").strip() or getattr(c, "qname", None) is not None]
     if len(non_empty) != 1:
         return False
     only = non_empty[0]
@@ -136,8 +133,8 @@ class OdfReader(Reader):
 
     def read(self, input_path: Path) -> Document:
         require("odf", "ODF conversion")  # odfpy
-        from odf import teletype, text as odftext
-        from odf.draw import Frame
+        from odf import teletype
+        from odf import text as odftext
         from odf.opendocument import load
 
         formula_map = _extract_formula_map(input_path)

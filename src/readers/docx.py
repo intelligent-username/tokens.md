@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from ..deps import require
-from ..engine.model import CodeBlock, Document, Heading, Paragraph, Quote, Table
+from ..engine.model import Document
 from ..math_converters.omml import omath_element_to_latex
 from .base import Reader
 

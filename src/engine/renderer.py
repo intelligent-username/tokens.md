@@ -2,18 +2,7 @@
 
 from __future__ import annotations
 
-from .model import (
-    CodeBlock,
-    Document,
-    Heading,
-    HorizontalRule,
-    Image,
-    ListItem,
-    Paragraph,
-    Quote,
-    RawMarkdown,
-    Table,
-)
+from .model import CodeBlock, Document, Heading, HorizontalRule, Image, ListItem, Paragraph, Quote, RawMarkdown, Table
 
 
 class MarkdownRenderer:

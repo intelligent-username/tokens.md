@@ -19,12 +19,12 @@ Current docs: python-docx 1.2.0 (python-docx.readthedocs.io).
 ```python
 from docx import Document
 
-document = Document()                      # or Document('existing.docx')
-document.add_heading('Title', 0)            # level 0 = "Title" style
-document.add_heading('Section', level=1)    # level 1-9 -> "Heading {level}"
-p = document.add_paragraph('Some text.')
-p.add_run(' bold bit').bold = True
-document.save('out.docx')
+document = Document()  # or Document('existing.docx')
+document.add_heading("Title", 0)  # level 0 = "Title" style
+document.add_heading("Section", level=1)  # level 1-9 -> "Heading {level}"
+p = document.add_paragraph("Some text.")
+p.add_run(" bold bit").bold = True
+document.save("out.docx")
 ```
 
 `add_heading(text='', level=1)` raises `ValueError` if `level` is outside **0-9** (not 1-6). `level=0` sets the "Title" style; `level=1` (or omitted) sets "Heading 1"; otherwise it sets "Heading {level}".
@@ -35,8 +35,8 @@ document.save('out.docx')
 
 ```python
 for para in document.paragraphs:
-    if para.style.name.startswith('Heading'):
-        level = int(para.style.name.split()[-1])   # "Heading 2" -> 2
+    if para.style.name.startswith("Heading"):
+        level = int(para.style.name.split()[-1])  # "Heading 2" -> 2
 ```
 
 `para.style.name` for an unstyled paragraph returns the document's default paragraph style (usually "Normal"), never `None`.
@@ -52,6 +52,7 @@ from docx.oxml.text.paragraph import CT_P
 from docx.oxml.table import CT_Tbl
 from docx.table import _Cell, Table, _Row
 from docx.text.paragraph import Paragraph
+
 
 def iter_block_items(parent):
     if isinstance(parent, _Document):
@@ -69,7 +70,8 @@ def iter_block_items(parent):
         elif isinstance(child, CT_Tbl):
             yield Table(child, parent)
 
-doc = Document('test.docx')
+
+doc = Document("test.docx")
 for block in iter_block_items(doc):
     if isinstance(block, Paragraph):
         print(block.text)
@@ -84,10 +86,10 @@ for block in iter_block_items(doc):
 ### Table API
 
 ```python
-for table in document.tables:            # or from iter_block_items above
-    for row in table.rows:                # _Rows: len(), iteration, indexing, slicing
-        for cell in row.cells:            # _Cell objects
-            text = cell.text              # whole-cell text, all paragraphs joined
+for table in document.tables:  # or from iter_block_items above
+    for row in table.rows:  # _Rows: len(), iteration, indexing, slicing
+        for cell in row.cells:  # _Cell objects
+            text = cell.text  # whole-cell text, all paragraphs joined
 ```
 
 `table.cell(row_idx, col_idx)` gets a single cell directly; `(0, 0)` is top-left. `cell.text` is settable (replaces all cell content with one paragraph/run) and readable (concatenates all paragraphs in the cell). `_Cell.paragraphs` and `_Cell.tables` (nested tables) are also available, and `_Cell.iter_inner_content()` walks both in order.
@@ -150,7 +152,7 @@ Current docs: python-pptx 1.0.0 (python-pptx.readthedocs.io).
 ```python
 from pptx import Presentation
 
-prs = Presentation()                       # or Presentation('existing.pptx')
+prs = Presentation()  # or Presentation('existing.pptx')
 for slide in prs.slides:
     for shape in slide.shapes:
         if not shape.has_text_frame:
@@ -180,7 +182,7 @@ from pptx import Presentation
 from pptx.util import Inches, Pt
 
 prs = Presentation()
-blank_layout = prs.slide_layouts[6]     # index 6 is the blank layout in the default template
+blank_layout = prs.slide_layouts[6]  # index 6 is the blank layout in the default template
 slide = prs.slides.add_slide(blank_layout)
 
 txBox = slide.shapes.add_textbox(Inches(1), Inches(1), Inches(4), Inches(1))
@@ -190,7 +192,7 @@ p = tf.add_paragraph()
 p.text = "Second paragraph"
 p.font.bold = True
 
-prs.save('test.pptx')
+prs.save("test.pptx")
 ```
 
 **Gotcha**: `slide_layouts[6]` (blank) has **no title placeholder**. If a fixture combines `slide_layouts[6]` with `slide.shapes.title.text = "..."`, `shapes.title` is `None` and that line raises `AttributeError`. Use `slide_layouts[5]` (title only) or `[1]` (title + content) if the fixture needs both a title and a blank canvas for other shapes, or add a textbox instead of relying on the title placeholder on a blank layout.
@@ -214,10 +216,10 @@ Current docs: openpyxl 3.1.4 (openpyxl.readthedocs.io).
 ```python
 from openpyxl import load_workbook
 
-wb = load_workbook('file.xlsx', read_only=True, data_only=True)
+wb = load_workbook("file.xlsx", read_only=True, data_only=True)
 for ws in wb.worksheets:
     for row in ws.iter_rows(values_only=True):
-        print(row)          # tuple of cell values, not Cell objects
+        print(row)  # tuple of cell values, not Cell objects
 ```
 
 `load_workbook` flags, full signature and defaults:
@@ -242,11 +244,11 @@ for ws in wb.worksheets:
 from openpyxl import Workbook
 
 wb = Workbook()
-ws = wb.active                       # workbook always starts with one sheet
-ws.append(["Fruit", "2011", "2012"]) # header row
-for row in data:                     # data: list of lists/tuples
+ws = wb.active  # workbook always starts with one sheet
+ws.append(["Fruit", "2011", "2012"])  # header row
+for row in data:  # data: list of lists/tuples
     ws.append(row)
-wb.save('fixture.xlsx')
+wb.save("fixture.xlsx")
 ```
 
 `ws.append()` takes a list/tuple/range/generator (appended left to right starting at column A) or a dict keyed by column letter/number. `Workbook.create_sheet(title, index)` adds additional sheets if the fixture needs more than one.
@@ -290,7 +292,7 @@ textdoc = OpenDocumentText()
 textdoc.text.addElement(H(outlinelevel=1, text="Heading 1"))
 textdoc.text.addElement(P(text="Hello World!"))
 textdoc.text.addElement(H(outlinelevel=2, text="Heading 2"))
-textdoc.save("TEST.odt")   # .odt extension appended automatically if omitted
+textdoc.save("TEST.odt")  # .odt extension appended automatically if omitted
 ```
 
 Note the import shape is `from odf.text import H, P`, then bare `H(...)` / `P(...)`, not a `Text.H(...)` namespace object as one might guess from the module name. Content is added via `textdoc.text.addElement(...)` (the `.text` attribute, specific to `OpenDocumentText`), which is a sibling concept to `.body` used on the read side; both point into the same document, `.text` is just the more specific handle a text document exposes for its content root.
@@ -329,7 +331,7 @@ subject = msg.subject
 sender = msg.sender
 to = msg.to
 date = msg.date
-body = msg.body       # plain-text body
+body = msg.body  # plain-text body
 msg.close()
 ```
 
@@ -363,6 +365,7 @@ The docs also explicitly warn: **the library does not clean up `tempdir`**, that
 
 ```python
 import pytest
+
 
 @pytest.fixture
 def sample_docx(tmp_path):
@@ -471,9 +474,11 @@ DRAW_NS = "urn:oasis:names:tc:opendocument:xmlns:drawing:1.0"
 XLINK_NS = "http://www.w3.org/1999/xlink"
 MATHML_NS = "http://www.w3.org/1998/Math/MathML"
 
+
 def extract_odf_formulas(odt_path: str) -> dict[str, str]:
     """Return {object_folder: latex_string} for every embedded formula."""
     from mathml_to_latex.converter import MathMLToLaTeX
+
     formulas = {}
     converter = MathMLToLaTeX()
     with zipfile.ZipFile(odt_path) as z:

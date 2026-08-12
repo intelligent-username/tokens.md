@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from "react";
 
 interface EmptyStateProps {
   icon?: ReactNode;
@@ -7,35 +7,35 @@ interface EmptyStateProps {
 }
 
 const containerStyle: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: '10px',
-  padding: '32px 20px',
-  borderRadius: 'var(--radius-card)',
-  border: '1px solid var(--color-border)',
-  background: 'var(--color-card)',
-  textAlign: 'center',
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "10px",
+  padding: "32px 20px",
+  borderRadius: "var(--radius-card)",
+  border: "1px solid var(--color-border)",
+  background: "var(--color-card)",
+  textAlign: "center",
 };
 
 const iconStyle: CSSProperties = {
-  display: 'inline-flex',
-  color: 'var(--color-muted-foreground)',
+  display: "inline-flex",
+  color: "var(--color-muted-foreground)",
   opacity: 0.8,
 };
 
 const titleStyle: CSSProperties = {
-  fontFamily: 'var(--font-display)',
-  fontSize: '16px',
+  fontFamily: "var(--font-display)",
+  fontSize: "16px",
   fontWeight: 700,
-  color: 'var(--color-foreground)',
+  color: "var(--color-foreground)",
 };
 
 const bodyStyle: CSSProperties = {
-  fontSize: '13px',
-  lineHeight: '1.5',
-  color: 'var(--color-muted-foreground)',
+  fontSize: "13px",
+  lineHeight: "1.5",
+  color: "var(--color-muted-foreground)",
 };
 
 /**

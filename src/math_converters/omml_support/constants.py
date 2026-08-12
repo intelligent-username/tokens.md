@@ -20,18 +20,6 @@ NARY_OPERATORS: dict[str, str] = {
     "\u2a02": "\\bigotimes",
 }
 
-ACCENTS: dict[str, str] = {
-    "\u0300": "\\grave",
-    "\u0301": "\\acute",
-    "\u0302": "\\hat",
-    "\u0303": "\\tilde",
-    "\u0304": "\\bar",
-    "\u0305": "\\bar",
-    "\u0306": "\\breve",
-    "\u0307": "\\dot",
-    "\u0308": "\\ddot",
-    "\u030c": "\\check",
-    "\u20d7": "\\vec",
-}
+ACCENTS: dict[str, str] = {"\u0300": "\\grave", "\u0301": "\\acute", "\u0302": "\\hat", "\u0303": "\\tilde", "\u0304": "\\bar", "\u0305": "\\bar", "\u0306": "\\breve", "\u0307": "\\dot", "\u0308": "\\ddot", "\u030c": "\\check", "\u20d7": "\\vec"}
 
 DELIM_ESCAPES: dict[str, str] = {"{": "\\{", "}": "\\}"}

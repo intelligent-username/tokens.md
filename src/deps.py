@@ -26,7 +26,4 @@ def require(module_name: str, feature: str) -> Any:
     try:
         return importlib.import_module(module_name)
     except ImportError as exc:
-        raise MissingDependencyError(
-            f"'{feature}' requires the '{module_name}' package, which is not installed.\n"
-            f"Install it with:  pip install -e .   (or: pip install {module_name})"
-        ) from exc
+        raise MissingDependencyError(f"'{feature}' requires the '{module_name}' package, which is not installed.\nInstall it with:  pip install -e .   (or: pip install {module_name})") from exc

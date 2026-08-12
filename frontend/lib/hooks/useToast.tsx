@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 
-export type ToastKind = 'info' | 'success' | 'error';
+export type ToastKind = "info" | "success" | "error";
 
 export interface Toast {
   id: number;

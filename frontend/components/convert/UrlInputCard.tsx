@@ -1,12 +1,8 @@
-'use client';
+"use client";
 
-import { useState, useEffect, type ChangeEvent } from 'react';
+import { useState, useEffect, type ChangeEvent } from "react";
 
-const URL_EXAMPLES = [
-  'https://example.com/article',
-  'https://github.com/intelligent-username/tokens.md',
-  'https://docs.python.org/3/',
-];
+const URL_EXAMPLES = ["https://example.com/article", "https://github.com/intelligent-username/tokens.md", "https://docs.python.org/3/"];
 
 export interface UrlInputCardProps {
   value: string;

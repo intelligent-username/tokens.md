@@ -7,7 +7,7 @@ import shutil
 from pathlib import Path
 
 from ..deps import require
-from ..engine.model import CodeBlock, Document, Heading, Image, Paragraph, Quote, Table
+from ..engine.model import Document, Heading, Paragraph
 from .base import Reader
 
 

@@ -1,13 +1,13 @@
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from pathlib import Path
-from typing import List, Union, Sequence
 
 
 class FileSelector(ABC):
     """Abstract base class for file selection strategies."""
 
     @abstractmethod
-    def select_files(self) -> List[Path]:
+    def select_files(self) -> list[Path]:
         """Return a list of Path objects pointing to files to process."""
         pass
 
@@ -15,56 +15,43 @@ class FileSelector(ABC):
 class DirectoryFileSelector(FileSelector):
     """Selects files from a specified directory based on file extensions."""
 
-    def __init__(
-        self,
-        directory: Union[str, Path],
-        extensions: Sequence[str] = (".pdf",),
-        recursive: bool = False,
-    ):
+    def __init__(self, directory: str | Path, extensions: Sequence[str] = (".pdf",), recursive: bool = False):
         self.directory = Path(directory)
         self.extensions = tuple(ext.lower() if ext.startswith(".") else f".{ext.lower()}" for ext in extensions)
         self.recursive = recursive
 
-    def select_files(self) -> List[Path]:
+    def select_files(self) -> list[Path]:
         if not self.directory.exists():
             return []
 
         pattern = "**/*" if self.recursive else "*"
-        return [
-            path
-            for path in self.directory.glob(pattern)
-            if path.is_file() and path.suffix.lower() in self.extensions
-        ]
+        return [path for path in self.directory.glob(pattern) if path.is_file() and path.suffix.lower() in self.extensions]
 
 
 class DiscreteFileSelector(FileSelector):
     """Selects a explicit, specific list of file paths."""
 
-    def __init__(self, file_paths: Sequence[Union[str, Path]]):
+    def __init__(self, file_paths: Sequence[str | Path]):
         self.file_paths = [Path(p) for p in file_paths]
 
-    def select_files(self) -> List[Path]:
+    def select_files(self) -> list[Path]:
         return [path for path in self.file_paths if path.is_file()]
 
 
 class GlobPatternFileSelector(FileSelector):
     """Selects files matching a glob pattern."""
 
-    def __init__(self, pattern: str, base_dir: Union[str, Path] = "."):
+    def __init__(self, pattern: str, base_dir: str | Path = "."):
         self.pattern = pattern
         self.base_dir = Path(base_dir)
 
-    def select_files(self) -> List[Path]:
+    def select_files(self) -> list[Path]:
         if not self.base_dir.exists():
             return []
         return [path for path in self.base_dir.glob(self.pattern) if path.is_file()]
 
 
-def select_files(
-    source: Union[str, Path, Sequence[Union[str, Path]], FileSelector] = "in",
-    extensions: Sequence[str] = (".pdf",),
-    recursive: bool = False,
-) -> List[Path]:
+def select_files(source: str | Path | Sequence[str | Path] | FileSelector = "in", extensions: Sequence[str] = (".pdf",), recursive: bool = False) -> list[Path]:
     """
     Convenience function to select files to convert.
 

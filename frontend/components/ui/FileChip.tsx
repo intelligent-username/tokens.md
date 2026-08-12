@@ -13,14 +13,7 @@ export function formatBytes(bytes: number): string {
 }
 
 /** Statuses accepted from the workspace queue (superset of the four core ones). */
-export type FileChipStatus =
-  | "queued"
-  | "uploading"
-  | "converting"
-  | "done"
-  | "failed"
-  | "cancelled"
-  | "error";
+export type FileChipStatus = "queued" | "uploading" | "converting" | "done" | "failed" | "cancelled" | "error";
 
 /** Optional per-file token delta slot (before → after). */
 export interface TokenDelta {
@@ -54,27 +47,13 @@ const STATUS_LABEL: Record<FileChipStatus, string> = {
  * Compact glass pill: mono filename + size + status indicator + optional
  * token delta. Shows a remove button on hover and a retry button on failure.
  */
-export function FileChip({
-  name,
-  size,
-  status = "queued",
-  delta,
-  progress,
-  onRemove,
-  onRetry,
-  children,
-}: FileChipProps) {
+export function FileChip({ name, size, status = "queued", delta, progress, onRemove, onRetry, children }: FileChipProps) {
   const failed = status === "failed" || status === "error" || status === "cancelled";
 
   return (
     <div className="group flex items-center gap-2 rounded-chip border border-border bg-secondary/40 px-3 py-2 transition-colors hover:bg-secondary">
       {onRemove ? (
-        <button
-          type="button"
-          onClick={onRemove}
-          aria-label={`Remove ${name}`}
-          className="-ml-1 rounded-chip p-1 text-destructive hover:bg-destructive/15 hover:text-destructive transition-colors"
-        >
+        <button type="button" onClick={onRemove} aria-label={`Remove ${name}`} className="-ml-1 rounded-chip p-1 text-destructive hover:bg-destructive/15 hover:text-destructive transition-colors">
           <X size={14} weight="bold" aria-hidden="true" />
         </button>
       ) : null}
@@ -82,21 +61,13 @@ export function FileChip({
       <span
         role="img"
         aria-label={STATUS_LABEL[status]}
-        className={cn(
-          "h-2 w-2 shrink-0 rounded-full",
-          status === "done" && "bg-emerald-500",
-          (status === "uploading" || status === "converting") && "animate-pulse bg-amber-400",
-          status === "queued" && "bg-muted-foreground/60",
-          failed && "bg-destructive",
-        )}
+        className={cn("h-2 w-2 shrink-0 rounded-full", status === "done" && "bg-emerald-500", (status === "uploading" || status === "converting") && "animate-pulse bg-amber-400", status === "queued" && "bg-muted-foreground/60", failed && "bg-destructive")}
       />
 
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-2">
           <span className="truncate font-mono text-[13px] text-foreground">{name}</span>
-          <span className="shrink-0 font-mono text-xs text-muted-foreground">
-            {formatBytes(size)}
-          </span>
+          <span className="shrink-0 font-mono text-xs text-muted-foreground">{formatBytes(size)}</span>
           {delta && typeof delta.before === "number" && typeof delta.after === "number" ? (
             <span className="shrink-0 font-mono text-xs text-emerald-500">
               {formatTokens(delta.before)} → {formatTokens(delta.after)}
@@ -113,12 +84,7 @@ export function FileChip({
       ) : null}
 
       {failed && onRetry ? (
-        <button
-          type="button"
-          onClick={onRetry}
-          aria-label="Retry"
-          className="rounded-chip p-1 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-        >
+        <button type="button" onClick={onRetry} aria-label="Retry" className="rounded-chip p-1 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
           <ArrowCounterClockwise size={14} weight="regular" aria-hidden="true" />
         </button>
       ) : null}

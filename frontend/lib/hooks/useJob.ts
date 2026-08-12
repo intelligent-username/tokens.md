@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { wsUrl } from './apiBase';
-import { markDegraded } from './useHealth';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { wsUrl } from "./apiBase";
+import { markDegraded } from "./useHealth";
 
 export interface ProgressEvent {
-  type: 'progress';
+  type: "progress";
   job_id: string;
   operation: string;
   current: number;
@@ -15,7 +15,7 @@ export interface ProgressEvent {
 }
 
 export interface JobDoneEvent {
-  type: 'job.done';
+  type: "job.done";
   job_id: string;
   operation: string;
   summary: unknown;
@@ -32,9 +32,7 @@ const MAX_BACKOFF_MS = 30_000;
  * subscribe frame, and returns an unsubscribe. Events for subscribed jobs are
  * appended to `events` and forwarded to onEvent. Reconnects with backoff.
  */
-export function useJob(
-  onEvent?: (event: JobEvent) => void,
-): {
+export function useJob(onEvent?: (event: JobEvent) => void): {
   subscribe: (jobId: string, sessionId?: string) => () => void;
   events: JobEvent[];
 } {
@@ -55,14 +53,14 @@ export function useJob(
     ws.onopen = () => {
       backoffRef.current = 1000;
       jobsRef.current.forEach((jobId) => {
-        ws.send(JSON.stringify({ type: 'subscribe', job_id: jobId }));
+        ws.send(JSON.stringify({ type: "subscribe", job_id: jobId }));
       });
     };
 
     ws.onmessage = (msg) => {
       try {
         const envelope = JSON.parse(msg.data as string);
-        if (envelope.type !== 'progress' && envelope.type !== 'job.done') return;
+        if (envelope.type !== "progress" && envelope.type !== "job.done") return;
         const event = { ...envelope.data, type: envelope.type } as JobEvent;
         if (!jobsRef.current.has(event.job_id)) return;
         setEvents((prev) => [...prev.slice(-(MAX_EVENTS - 1)), event]);
@@ -92,13 +90,13 @@ export function useJob(
       if (!wsRef.current || wsRef.current.readyState > WebSocket.OPEN) {
         if (sessionRef.current) connect(sessionRef.current);
       } else {
-        wsRef.current.send(JSON.stringify({ type: 'subscribe', job_id: jobId }));
+        wsRef.current.send(JSON.stringify({ type: "subscribe", job_id: jobId }));
       }
       return () => {
         jobsRef.current.delete(jobId);
       };
     },
-    [connect],
+    [connect]
   );
 
   useEffect(
@@ -107,7 +105,7 @@ export function useJob(
       wsRef.current?.close();
       wsRef.current = null;
     },
-    [],
+    []
   );
 
   return { subscribe, events };

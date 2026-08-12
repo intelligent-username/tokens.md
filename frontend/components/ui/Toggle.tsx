@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Info } from '@phosphor-icons/react';
-import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '@/lib/utils/cn';
+import { useState } from "react";
+import { Info } from "@phosphor-icons/react";
+import { motion, AnimatePresence } from "motion/react";
+import { cn } from "@/lib/utils/cn";
 
 interface ToggleProps {
   checked: boolean;
@@ -19,7 +19,7 @@ interface ToggleProps {
  */
 export function Toggle({ checked, onChange, label, description, tooltip, disabled }: ToggleProps) {
   const [showHover, setShowHover] = useState(false);
-  const tooltipId = `toggle-tooltip-${label.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+  const tooltipId = `toggle-tooltip-${label.toLowerCase().replace(/[^a-z0-9]/g, "-")}`;
 
   return (
     <div
@@ -33,9 +33,9 @@ export function Toggle({ checked, onChange, label, description, tooltip, disable
       onFocus={() => setShowHover(true)}
       onBlur={() => setShowHover(false)}
       onKeyDown={(e) => {
-        if (e.key === 'Escape') {
+        if (e.key === "Escape") {
           setShowHover(false);
-        } else if ((e.key === ' ' || e.key === 'Enter') && !disabled) {
+        } else if ((e.key === " " || e.key === "Enter") && !disabled) {
           e.preventDefault();
           onChange(!checked);
         }
@@ -46,30 +46,13 @@ export function Toggle({ checked, onChange, label, description, tooltip, disable
       <div className="flex flex-col min-w-0 flex-1">
         <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
           <span className="truncate">{label}</span>
-          {tooltip ? (
-            <Info size={13} className="text-muted-foreground/60 group-hover:text-emerald-400 group-focus-visible:text-emerald-400 transition-colors shrink-0" />
-          ) : null}
+          {tooltip ? <Info size={13} className="text-muted-foreground/60 group-hover:text-emerald-400 group-focus-visible:text-emerald-400 transition-colors shrink-0" /> : null}
         </span>
         {description ? <span className="text-[11px] text-muted-foreground leading-tight mt-0.5">{description}</span> : null}
       </div>
 
-      <div
-        className={cn(
-          'relative flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-all border',
-          checked
-            ? 'bg-emerald-500 border-emerald-400/60 shadow-[0_0_10px_rgba(22,222,129,0.35)]'
-            : 'bg-muted border-border/80',
-          disabled && 'opacity-50 cursor-not-allowed',
-        )}
-      >
-        <span
-          className={cn(
-            'h-3.5 w-3.5 rounded-full transition-transform transform shadow-sm',
-            checked
-              ? 'translate-x-[16px] bg-zinc-950 font-bold'
-              : 'translate-x-0 bg-muted-foreground/80',
-          )}
-        />
+      <div className={cn("relative flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-all border", checked ? "bg-emerald-500 border-emerald-400/60 shadow-[0_0_10px_rgba(22,222,129,0.35)]" : "bg-muted border-border/80", disabled && "opacity-50 cursor-not-allowed")}>
+        <span className={cn("h-3.5 w-3.5 rounded-full transition-transform transform shadow-sm", checked ? "translate-x-[16px] bg-zinc-950 font-bold" : "translate-x-0 bg-muted-foreground/80")} />
       </div>
 
       <AnimatePresence>

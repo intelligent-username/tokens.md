@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useCallback, useState } from 'react';
-import { downloadUrl } from '@/lib/api/endpoints';
-import copy from '@/lib/copy';
+import { useCallback, useState } from "react";
+import { downloadUrl } from "@/lib/api/endpoints";
+import copy from "@/lib/copy";
 
 /** A produced Markdown output that can be fetched from the backend. */
 export interface PreviewableOutput {
@@ -28,7 +28,7 @@ export const fetchMarkdownText: MarkdownFetcher = async ({ sessionId, fileId }) 
  */
 export function useMarkdownPreview(
   output: PreviewableOutput,
-  fetcher: MarkdownFetcher = fetchMarkdownText,
+  fetcher: MarkdownFetcher = fetchMarkdownText
 ): {
   open: boolean;
   loading: boolean;

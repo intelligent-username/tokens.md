@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { API_BASE } from './apiBase';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { API_BASE } from "./apiBase";
 
-export type HealthStatus = 'booting' | 'online' | 'degraded' | 'offline';
+export type HealthStatus = "booting" | "online" | "degraded" | "offline";
 
 export const HEALTH_POLL_MS = 60_000;
 /** Response time above this marks the backend degraded. */
@@ -30,7 +30,7 @@ let lastCheckTime = 0;
  * offline = request failed; degraded = ok but slow.
  */
 export function useHealth(): { status: HealthStatus; retry: () => void } {
-  const [status, setStatus] = useState<HealthStatus>('booting');
+  const [status, setStatus] = useState<HealthStatus>("booting");
 
   const check = useCallback(async (force = false) => {
     const now = Date.now();
@@ -38,16 +38,16 @@ export function useHealth(): { status: HealthStatus; retry: () => void } {
     lastCheckTime = now;
     const started = Date.now();
     try {
-      const res = await fetch(`${API_BASE}/api/health`, { cache: 'no-store' });
+      const res = await fetch(`${API_BASE}/api/health`, { cache: "no-store" });
       const elapsed = Date.now() - started;
-      setStatus(res.ok ? (elapsed > HEALTH_SLOW_MS ? 'degraded' : 'online') : 'offline');
+      setStatus(res.ok ? (elapsed > HEALTH_SLOW_MS ? "degraded" : "online") : "offline");
     } catch {
-      setStatus('offline');
+      setStatus("offline");
     }
   }, []);
 
   const setDegraded = useCallback(() => {
-    setStatus((prev) => (prev === 'online' ? 'degraded' : prev));
+    setStatus((prev) => (prev === "online" ? "degraded" : prev));
   }, []);
 
   useEffect(() => {

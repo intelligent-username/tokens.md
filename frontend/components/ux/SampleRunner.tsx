@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import copy from '../../lib/copy';
-import { fetchSample, getSamples } from '@/lib/api/client';
-import { useToast } from '../../lib/hooks/useToast';
+import { useState } from "react";
+import copy from "../../lib/copy";
+import { fetchSample, getSamples } from "@/lib/api/client";
+import { useToast } from "../../lib/hooks/useToast";
 
 interface SampleRunnerProps {
   /** Runs the sample File[] through the current workspace's primary flow. */
@@ -24,17 +24,17 @@ export function SampleRunner({ onSample, label }: SampleRunnerProps) {
     try {
       const { samples } = await getSamples();
       if (samples.length === 0) {
-        toast(copy.noSamples, 'error');
+        toast(copy.noSamples, "error");
         return;
       }
-      const sample = samples.find((s) => s.kind === 'pdf') ?? samples[0];
+      const sample = samples.find((s) => s.kind === "pdf") ?? samples[0];
       const blob = await fetchSample(sample.name);
       const file = new File([blob], sample.name, {
-        type: blob.type || 'application/octet-stream',
+        type: blob.type || "application/octet-stream",
       });
       onSample([file]);
     } catch {
-      toast(copy.sampleFailed, 'error');
+      toast(copy.sampleFailed, "error");
     } finally {
       setBusy(false);
     }
@@ -46,17 +46,17 @@ export function SampleRunner({ onSample, label }: SampleRunnerProps) {
       onClick={() => void run()}
       disabled={busy}
       style={{
-        padding: '8px 14px',
-        borderRadius: '8px',
-        border: '1px solid var(--color-border, rgba(255,255,255,0.12))',
-        background: 'transparent',
-        color: 'var(--color-foreground, #E9F6EE)',
-        cursor: 'pointer',
-        fontSize: '13px',
+        padding: "8px 14px",
+        borderRadius: "8px",
+        border: "1px solid var(--color-border, rgba(255,255,255,0.12))",
+        background: "transparent",
+        color: "var(--color-foreground, #E9F6EE)",
+        cursor: "pointer",
+        fontSize: "13px",
         fontWeight: 600,
       }}
     >
-      {busy ? copy.sampleLoading : label ?? copy.trySample}
+      {busy ? copy.sampleLoading : (label ?? copy.trySample)}
     </button>
   );
 }

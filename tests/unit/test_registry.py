@@ -6,12 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from src.registry import (
-    Converter,
-    Registry,
-    UnsupportedFormatError,
-    convert_file,
-)
+from src.registry import Converter, Registry, UnsupportedFormatError, convert_file
 
 
 class _FakeConverter(Converter):
@@ -69,6 +64,5 @@ def test_default_registry_has_new_formats() -> None:
     from src.registry import DEFAULT_REGISTRY
 
     exts = DEFAULT_REGISTRY.extensions()
-    for ext in (".docx", ".pptx", ".xlsx", ".odt", ".ods", ".odp",
-                ".rtf", ".msg", ".eml", ".azw3", ".azw4", ".srt", ".vtt", ".tex"):
+    for ext in (".docx", ".pptx", ".xlsx", ".odt", ".ods", ".odp", ".rtf", ".msg", ".eml", ".azw3", ".azw4", ".srt", ".vtt", ".tex"):
         assert ext in exts

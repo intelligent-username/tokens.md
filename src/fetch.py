@@ -76,16 +76,7 @@ class _Fetcher:
         if trafilatura is None:
             return ""
         try:
-            extracted = trafilatura.extract(
-                html,
-                output_format="markdown",
-                include_links=True,
-                include_images=True,
-                include_tables=True,
-                include_formatting=True,
-                favor_recall=True,
-                **kwargs,
-            )
+            extracted = trafilatura.extract(html, output_format="markdown", include_links=True, include_images=True, include_tables=True, include_formatting=True, favor_recall=True, **kwargs)
             return extracted or ""
         except Exception:
             return ""
@@ -126,8 +117,7 @@ def _slugify(text: str) -> str:
 def _extract_meta_markdown(html: str) -> str:
     """Extract title and meta description for minimal SPA HTML shells."""
     title_match = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
-    desc_match = re.search(r'<meta[^>]*name=["\']description["\'][^>]*content=["\'](.*?)["\']', html, re.IGNORECASE) or \
-                 re.search(r'<meta[^>]*property=["\']og:description["\'][^>]*content=["\'](.*?)["\']', html, re.IGNORECASE)
+    desc_match = re.search(r'<meta[^>]*name=["\']description["\'][^>]*content=["\'](.*?)["\']', html, re.IGNORECASE) or re.search(r'<meta[^>]*property=["\']og:description["\'][^>]*content=["\'](.*?)["\']', html, re.IGNORECASE)
 
     parts: list[str] = []
     if title_match:
@@ -154,8 +144,6 @@ def fetch_url(url: str, output_dir: Path, **kwargs: object) -> Path:
         raise UnsupportedFormatError("Non-existent or unreachable link")
 
     output_dir.mkdir(parents=True, exist_ok=True)
-
-    user_agent = str(kwargs.get("user_agent")) if kwargs.get("user_agent") else None
 
     # Use require() to get a patchable fetcher (allows test_api.py to mock require)
     fetcher = require("trafilatura")

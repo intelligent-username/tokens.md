@@ -15,8 +15,7 @@ from typing import Any
 
 from fastapi import WebSocket
 
-_EVENT_TYPES = ("watch.started", "watch.file", "watch.total", "watch.stopped",
-                "progress", "job.done", "log")
+_EVENT_TYPES = ("watch.started", "watch.file", "watch.total", "watch.stopped", "progress", "job.done", "log")
 
 
 class WsManager:
@@ -42,9 +41,7 @@ class WsManager:
         with self._lock:
             self._sockets.setdefault(sid, set()).add(ws)
             self._queues.setdefault(sid, asyncio.Queue())
-            self._totals.setdefault(
-                sid, {"files": 0, "source_tokens": 0, "target_tokens": 0}
-            )
+            self._totals.setdefault(sid, {"files": 0, "source_tokens": 0, "target_tokens": 0})
             self._stop_events.setdefault(sid, threading.Event())
         try:
             loop = asyncio.get_running_loop()
@@ -132,12 +129,7 @@ class WsManager:
             sockets = list(self._sockets.get(sid, ()))
             if not sockets:
                 continue
-            envelope = {
-                "type": event.get("type"),
-                "session_id": sid,
-                "data": event.get("data", {}),
-                "ts": time.time(),
-            }
+            envelope = {"type": event.get("type"), "session_id": sid, "data": event.get("data", {}), "ts": time.time()}
             for ws in sockets:
                 try:
                     await ws.send_json(envelope)

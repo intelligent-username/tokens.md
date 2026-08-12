@@ -1,5 +1,5 @@
-import type { CSSProperties } from 'react';
-import { SpinnerGap } from '@phosphor-icons/react';
+import type { CSSProperties } from "react";
+import { SpinnerGap } from "@phosphor-icons/react";
 
 interface LoadingStateProps {
   label?: string;
@@ -7,21 +7,21 @@ interface LoadingStateProps {
 }
 
 const containerStyle: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: '10px',
-  minHeight: '80px',
-  padding: '16px 24px',
-  borderRadius: 'var(--radius-card)',
-  border: '1px solid var(--color-border)',
-  background: 'var(--color-card)',
-  width: '100%',
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "10px",
+  minHeight: "80px",
+  padding: "16px 24px",
+  borderRadius: "var(--radius-card)",
+  border: "1px solid var(--color-border)",
+  background: "var(--color-card)",
+  width: "100%",
 };
 
 const labelStyle: CSSProperties = {
-  fontSize: '14px',
-  color: 'var(--color-muted-foreground)',
+  fontSize: "14px",
+  color: "var(--color-muted-foreground)",
 };
 
 /**
@@ -31,10 +31,8 @@ const labelStyle: CSSProperties = {
 export function LoadingState({ label, spinner = true }: LoadingStateProps) {
   return (
     <div style={containerStyle} role="status" aria-live="polite">
-      <style>{'@keyframes tmd-spin{to{transform:rotate(360deg)}}.tmd-spin{animation:tmd-spin .9s linear infinite}'}</style>
-      {spinner ? (
-        <SpinnerGap size={20} weight="regular" className="tmd-spin" style={{ color: 'var(--color-primary)' }} />
-      ) : null}
+      <style>{"@keyframes tmd-spin{to{transform:rotate(360deg)}}.tmd-spin{animation:tmd-spin .9s linear infinite}"}</style>
+      {spinner ? <SpinnerGap size={20} weight="regular" className="tmd-spin" style={{ color: "var(--color-primary)" }} /> : null}
       {label ? <span style={labelStyle}>{label}</span> : null}
     </div>
   );

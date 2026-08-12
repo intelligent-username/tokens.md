@@ -15,9 +15,7 @@ class EmlReader(Reader):
     name = "eml"
 
     def read(self, input_path: Path) -> Document:
-        msg = email.message_from_bytes(
-            input_path.read_bytes(), policy=policy.default
-        )
+        msg = email.message_from_bytes(input_path.read_bytes(), policy=policy.default)
         doc = Document()
         subject = str(msg.get("Subject", "") or "")
         doc.add(Heading(text=subject or "(no subject)", level=1))

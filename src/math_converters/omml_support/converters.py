@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from xml.etree import ElementTree as ET
+
 from .constants import ACCENTS, DELIM_ESCAPES, NARY_OPERATORS, OMML_NS
 from .xml_utils import _bool_val, _child, _m, _text_of
 
@@ -186,10 +187,7 @@ def _delimiter(node: ET.Element) -> str:
         if end_el is not None:
             end = end_el.get(f"{{{OMML_NS}}}val") or ")"
     inner = _convert_children(node)
-    return (
-        f"\\left{DELIM_ESCAPES.get(beg, beg)}"
-        f"{inner}\\right{DELIM_ESCAPES.get(end, end)}"
-    )
+    return f"\\left{DELIM_ESCAPES.get(beg, beg)}{inner}\\right{DELIM_ESCAPES.get(end, end)}"
 
 
 def _func(node: ET.Element) -> str:

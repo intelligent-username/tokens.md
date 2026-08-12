@@ -49,7 +49,7 @@ export interface WatchStartedData {
 
 export interface WatchFileData {
   file: string;
-  status: 'queued' | 'converting' | 'done' | 'skipped' | 'error';
+  status: "queued" | "converting" | "done" | "skipped" | "error";
   source_tokens?: number;
   target_tokens?: number;
   percent?: number;
@@ -88,10 +88,10 @@ export interface LogData {
 }
 
 export type WatchEvent =
-  | { type: 'watch.started'; data: WatchStartedData }
-  | { type: 'watch.file'; data: WatchFileData }
-  | { type: 'watch.total'; data: WatchTotalData }
-  | { type: 'watch.stopped'; data: WatchStoppedData }
-  | { type: 'progress'; data: ProgressData }
-  | { type: 'job.done'; data: JobDoneData }
-  | { type: 'log'; data: LogData };
+  | { type: "watch.started"; data: WatchStartedData }
+  | { type: "watch.file"; data: WatchFileData }
+  | { type: "watch.total"; data: WatchTotalData }
+  | { type: "watch.stopped"; data: WatchStoppedData }
+  | { type: "progress"; data: ProgressData }
+  | { type: "job.done"; data: JobDoneData }
+  | { type: "log"; data: LogData };
