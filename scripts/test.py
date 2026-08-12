@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Parallel test runner for tokens.md backend (pytest) and frontend (vitest).
 
-Runs both test suites in parallel and prints a unified coverage summary table.
+Runs both test suites in parallel with live progress bars and prints a unified coverage summary table.
 Exit code is non-zero if any suite fails.
 """
 
@@ -14,12 +14,18 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 from pathlib import Path
+
+from rich.console import Console
+from rich.progress import BarColumn, Progress, SpinnerColumn, TaskProgressColumn, TextColumn
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = ROOT_DIR / "frontend"
 TEMP_ROOT = ROOT_DIR / "temp"
 TEMP_DIR = TEMP_ROOT / "tests"
+
+console = Console(soft_wrap=False)
 
 
 def _strip_ansi(text: str) -> str:
@@ -110,64 +116,85 @@ def _cleanup_coverage_files() -> None:
 
 
 def run_tests(verbose: bool = False) -> int:
-    """Run backend + frontend test suites in parallel and print a coverage summary table."""
-    cyan = "\033[36m"
-    green = "\033[32m"
-    red = "\033[31m"
-    yellow = "\033[33m"
-    bold = "\033[1m"
-    reset = "\033[0m"
-    dim = "\033[2m"
+    """Run backend + frontend test suites in parallel with live progress bars and print coverage summary."""
+    console.print("\n[bold]Running test suites in parallel…[/bold]\n")
 
-    print(f"\n{bold}Running test suites…{reset}")
+    be_res: list[tuple[int, str, str] | None] = [None]
+    fe_res: list[tuple[int, str, str] | None] = [None]
 
     try:
-        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-            f_be = executor.submit(_run_backend_tests)
-            f_fe = executor.submit(_run_frontend_tests)
-            be_code, be_out, be_err = f_be.result()
-            fe_code, fe_out, fe_err = f_fe.result()
+        with Progress(
+            SpinnerColumn(spinner_name="dots"),
+            TextColumn("{task.description}"),
+            BarColumn(bar_width=22, style="dim", complete_style="bold green"),
+            TaskProgressColumn(),
+            console=console,
+            transient=False,
+        ) as progress:
+            t_be = progress.add_task("[bold cyan]⟳[/bold cyan] [bright_white]Backend (pytest)[/bright_white]", total=100)
+            t_fe = progress.add_task("[bold cyan]⟳[/bold cyan] [bright_white]Frontend (vitest)[/bright_white]", total=100)
 
-        be_combined = be_out + "\n" + be_err
-        fe_combined = fe_out + "\n" + fe_err
+            def _ticker_be():
+                step = 10
+                while be_res[0] is None and step < 90:
+                    time.sleep(0.1)
+                    if be_res[0] is not None:
+                        break
+                    step += 5
+                    progress.update(t_be, completed=step)
 
-        be_pct = _parse_coverage_pct(be_combined)
-        fe_pct = _parse_coverage_pct(fe_combined)
+            def _ticker_fe():
+                step = 10
+                while fe_res[0] is None and step < 90:
+                    time.sleep(0.1)
+                    if fe_res[0] is not None:
+                        break
+                    step += 5
+                    progress.update(t_fe, completed=step)
 
-        def _suite_icon(code: int) -> str:
-            return f"{green}✓{reset}" if code == 0 else f"{red}✗{reset}"
+            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+                executor.submit(_ticker_be)
+                executor.submit(_ticker_fe)
+                f_be = executor.submit(_run_backend_tests)
+                f_fe = executor.submit(_run_frontend_tests)
+                be_res[0] = f_be.result()
+                fe_res[0] = f_fe.result()
 
-        def _pct_display(pct: str | None) -> str:
-            if pct is None:
-                return f"{dim}n/a{reset}"
-            num = int(pct.rstrip("%"))
-            colour = green if num >= 80 else yellow if num >= 60 else red
-            return f"{colour}{bold}{pct}{reset}"
+            be_code, be_out, be_err = be_res[0]  # type: ignore[misc]
+            fe_code, fe_out, fe_err = fe_res[0]  # type: ignore[misc]
 
-        print()
-        print(f"  {bold}{'Suite':<14}{'Status':<10}Coverage{reset}")
-        print(f"  {'─' * 36}")
-        print(f"  {'Backend (pytest)':<14}{_suite_icon(be_code):<17}{_pct_display(be_pct)}")
-        print(f"  {'Frontend (vitest)':<14}{_suite_icon(fe_code):<17}{_pct_display(fe_pct)}")
-        print(f"  {'─' * 36}")
-        print(f"  {dim}Backend:  src/ + backend/   |   Frontend: lib/api/ + lib/errors.ts{reset}")
-        print()
+            be_combined = be_out + "\n" + be_err
+            fe_combined = fe_out + "\n" + fe_err
+
+            be_pct = _parse_coverage_pct(be_combined)
+            fe_pct = _parse_coverage_pct(fe_combined)
+
+            be_icon = "[bold green]✓[/bold green]" if be_code == 0 else "[bold red]✗[/bold red]"
+            fe_icon = "[bold green]✓[/bold green]" if fe_code == 0 else "[bold red]✗[/bold red]"
+
+            be_desc = f"{be_icon} [bright_white]Backend (pytest)[/bright_white] [dim cyan]({be_pct or 'n/a'})[/dim cyan]"
+            fe_desc = f"{fe_icon} [bright_white]Frontend (vitest)[/bright_white] [dim cyan]({fe_pct or 'n/a'})[/dim cyan]"
+
+            progress.update(t_be, completed=100, description=be_desc)
+            progress.update(t_fe, completed=100, description=fe_desc)
+
+        console.print()
 
         if verbose:
-            if be_out.strip():
-                print(f"{bold}=== Backend test output ==={reset}")
-                print(be_out.strip())
-            if fe_out.strip():
-                print(f"\n{bold}=== Frontend test output ==={reset}")
-                print(fe_out.strip())
+            if be_combined.strip():
+                console.print("[bold]=== Backend test output ===[/bold]")
+                console.print(be_combined.strip())
+            if fe_combined.strip():
+                console.print("\n[bold]=== Frontend test output ===[/bold]")
+                console.print(fe_combined.strip())
 
         overall = max(be_code, fe_code)
         if overall != 0:
-            print(f"{red}One or more test suites failed.{reset}")
+            console.print("[bold red]One or more test suites failed.[/bold red]")
             if not verbose:
-                print(f"▫ Run {cyan}tmd test -v{reset} for full output.")
+                console.print("▫ Run [bold cyan]tmd test -v[/bold cyan] for full output.")
         else:
-            print(f"{green}✓ All tests passed.{reset}")
+            console.print("[bold green]✓ All tests passed.[/bold green]")
 
         return overall
     finally:
@@ -175,7 +202,7 @@ def run_tests(verbose: bool = False) -> int:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Parallel test runner with coverage summary.")
+    parser = argparse.ArgumentParser(description="Parallel test runner with live progress bars.")
     parser.add_argument("-v", "--v", "--verbose", dest="verbose", action="store_true", help="Show full test output.")
     args = parser.parse_args()
     sys.exit(run_tests(verbose=args.verbose))

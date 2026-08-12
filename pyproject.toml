@@ -115,6 +115,7 @@ testpaths = ["tests"]
 addopts = "-q --cov=src --cov=backend --cov-report=term-missing:skip-covered --cov-report=term"
 filterwarnings = [
     "ignore::DeprecationWarning",
+    "ignore::DeprecationWarning:starlette.*",
 ]
 
 [tool.coverage.run]
