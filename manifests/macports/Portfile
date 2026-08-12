@@ -18,7 +18,7 @@ homepage            https://github.com/intelligent-username/tokens.md
 distfiles           tmd-macos-arm64
 master_sites        https://github.com/intelligent-username/tokens.md/releases/download/v${version}/
 checksums           rmd160  REPLACE_WITH_RIPEMD160_ARM64 \
-                    sha256  REPLACE_WITH_SHA256_MACOS_ARM64 \
+                    sha256  ffc63412fb97296205f330a9d429b723b47af3be2950274fce66d9eb17358ba3 \
                     size    REPLACE_WITH_SIZE_ARM64
 
 use_configure       no

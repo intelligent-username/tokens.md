@@ -6,7 +6,7 @@
   "architecture": {
     "64bit": {
       "url": "https://github.com/intelligent-username/tokens.md/releases/download/v0.0.5/tmd-windows-x64.exe",
-      "hash": "REPLACE_WITH_SHA256_WINDOWS_X64"
+      "hash": "ae2b88cae213c22b47aafccf045b62b79290e14ecac501156a46cbc72162e8f2"
     }
   },
   "bin": "tmd.exe",

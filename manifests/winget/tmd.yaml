@@ -24,7 +24,7 @@ Tags:
 Installers:
   - Architecture: x64
     InstallerUrl: https://github.com/intelligent-username/tokens.md/releases/download/v0.0.5/tmd-windows-x64.exe
-    InstallerSha256: REPLACE_WITH_SHA256_WINDOWS_X64
+    InstallerSha256: ae2b88cae213c22b47aafccf045b62b79290e14ecac501156a46cbc72162e8f2
     InstallerType: portable
     Commands:
       - tmd

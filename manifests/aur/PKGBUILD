@@ -8,8 +8,8 @@ url="https://github.com/intelligent-username/tokens.md"
 license=('AGPL-3.0-only')
 source_x86_64=("tmd-linux-x64::https://github.com/intelligent-username/tokens.md/releases/download/v${pkgver}/tmd-linux-x64")
 source_aarch64=("tmd-linux-arm64::https://github.com/intelligent-username/tokens.md/releases/download/v${pkgver}/tmd-linux-arm64")
-sha256sums_x86_64=('7cd76fff93757051ad6def8a639d6c234c8634bf613c57cb8d08028eef5eb5bc')
-sha256sums_aarch64=('34c1e4170e753875c2c196d466aa442ee098a79af2602b9a5b1c5935a25a1b00')
+sha256sums_x86_64=('35c44ef53dcfa9ee1d077e6c1ee14892d2ab400e55712c4f7b7beb09cc0494fe')
+sha256sums_aarch64=('6f7345a3eb20ad269b2abbb2f9297da295c76c50e101a5ce7654fe1355f01042')
 noextract=("tmd-linux-x64" "tmd-linux-arm64")
 
 package() {
