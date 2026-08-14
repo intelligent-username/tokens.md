@@ -12,7 +12,7 @@ class Tmd < Formula
 
   on_macos do
     url "https://github.com/intelligent-username/tokens.md/releases/download/v#{version}/tmd-macos-arm64"
-    sha256 "35c44ef53dcfa9ee1d077e6c1ee14892d2ab400e55712c4f7b7beb09cc0494fe"
+    sha256 "11b4ad968671c76e7aa4fb5cc5bc6b740e77fea86c98417a0a11a57e855718e1"
   end
 
   on_linux do
