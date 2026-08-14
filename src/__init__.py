@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-__version__ = "0.0.11"
+__version__ = "0.0.12"
 
 from .budget import PruneResult, prune_to_budget
 from .clipboard import copy_to_clipboard
