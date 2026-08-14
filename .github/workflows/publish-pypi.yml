@@ -18,6 +18,15 @@ jobs:
           python-version: "3.12"
           cache: pip
 
+      - name: Sync pyproject.toml with Release Tag
+        run: |
+          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          if [ -n "$TAG_VERSION" ] && [ "$TAG_VERSION" != "$GITHUB_REF" ]; then
+            echo "Syncing pyproject.toml and source files to release tag version: $TAG_VERSION"
+            python -c "import pathlib, re; p = pathlib.Path('pyproject.toml'); p.write_text(re.sub(r'version\s*=\s*[\"\'][^\"\']+[\"\']', f'version = \"$TAG_VERSION\"', p.read_text(encoding='utf-8')), encoding='utf-8')"
+            python scripts/sync_version.py
+          fi
+
       - name: Build sdist and wheel
         run: |
           pip install build
@@ -28,4 +37,6 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN || secrets.PYPI_TOKEN }}
+          skip-existing: true
+
 

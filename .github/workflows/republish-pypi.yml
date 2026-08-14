@@ -93,6 +93,16 @@ jobs:
           echo "Attempting to download pre-existing .whl or .tar.gz assets from release $TAG..."
           gh release download "$TAG" --repo "$REPO" --dir dist/ --pattern "*.whl" --pattern "*.tar.gz" 2>/dev/null || true
 
+      - name: Sync pyproject.toml with Release Tag
+        run: |
+          TAG="${{ steps.get_tag.outputs.tag }}"
+          TAG_VERSION="${TAG#v}"
+          if [ -n "$TAG_VERSION" ]; then
+            echo "Syncing pyproject.toml and source files to release tag version: $TAG_VERSION"
+            python -c "import pathlib, re; p = pathlib.Path('pyproject.toml'); p.write_text(re.sub(r'version\s*=\s*[\"\'][^\"\']+[\"\']', f'version = \"$TAG_VERSION\"', p.read_text(encoding='utf-8')), encoding='utf-8')"
+            python scripts/sync_version.py
+          fi
+
       - name: Build Source Distribution & Wheel
         run: |
           pip install --upgrade build

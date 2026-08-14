@@ -25,13 +25,22 @@ def main() -> None:
         init_file.write_text(init_text, encoding="utf-8")
         print(f"Updated {init_file.relative_to(ROOT)}")
 
-    # 2. Manifest replacements
+    # 2. Update frontend/package.json
+    frontend_pkg = ROOT / "frontend" / "package.json"
+    if frontend_pkg.exists():
+        pkg_text = frontend_pkg.read_text(encoding="utf-8")
+        pkg_text_updated = re.sub(r'("version"\s*:\s*)"[^"]+"', rf'\g<1>"{version}"', pkg_text)
+        if pkg_text != pkg_text_updated:
+            frontend_pkg.write_text(pkg_text_updated, encoding="utf-8")
+            print(f"Updated {frontend_pkg.relative_to(ROOT)}")
+
+    # 3. Manifest replacements
     manifest_dir = ROOT / "manifests"
     if not manifest_dir.exists():
         return
 
-    # Patterns to match old version strings (e.g. 0.2.0 or 0.0.2) in URL paths and version fields
-    version_regex = r"(0\.\d+\.\d+)"
+    # Pattern to match semver version strings (e.g. 0.2.0, 1.0.0, 0.0.14)
+    version_regex = r"(\d+\.\d+\.\d+(?:[-.][a-zA-Z0-9]+)?)"
 
     for path in manifest_dir.rglob("*"):
         if path.is_file():
@@ -62,3 +71,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
