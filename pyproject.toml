@@ -23,7 +23,7 @@ classifiers = [
 ]
 dependencies = [
     "pymupdf>=1.28.2",
-    "pymupdf4llm>=1.28.2",
+    "pymupdf4llm>=1.28.2; platform_system != 'Windows' or platform_machine != 'ARM64'",
     "typer>=0.12",
     "rich",
     "pyperclip",
