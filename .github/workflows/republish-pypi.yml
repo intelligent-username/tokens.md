@@ -15,7 +15,7 @@
 # HOW TO RUN:
 #   1. Go to "Actions" -> "Manual Re-Publish to PyPI (Fallback / Recovery)"
 #   2. Click "Run workflow".
-#   3. Optionally specify a release tag (e.g., "v0.0.14"). If left blank, it
+#   3. Optionally specify a release tag (e.g., "v1.0.0"). If left blank, it
 #      automatically fetches the latest GitHub release.
 # ==============================================================================
 
@@ -25,7 +25,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Git release tag to re-publish (leave empty for latest release, e.g. v0.0.14)"
+        description: "Git release tag (leave empty for latest release)"
         required: false
         default: ""
         type: string
@@ -45,22 +45,27 @@ jobs:
     runs-on: ubuntu-latest
     environment: pypi
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Determine Target Release Tag
         id: get_tag
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           INPUT_TAG: ${{ inputs.tag }}
+          REPO: ${{ github.repository }}
         run: |
           if [ -n "$INPUT_TAG" ]; then
             TAG="$INPUT_TAG"
             echo "Using specified tag: $TAG"
           else
             echo "Fetching latest release tag from GitHub..."
-            TAG=$(gh release view --json tagName -q .tagName || true)
+            TAG=$(gh release view --repo "$REPO" --json tagName -q .tagName 2>/dev/null || true)
             if [ -z "$TAG" ]; then
-              echo "No GitHub release found, falling back to latest git tag..."
-              git fetch --tags
-              TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
+              echo "No GitHub release found via CLI, falling back to git tags..."
+              TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
             fi
             echo "Determined latest tag: $TAG"
           fi
@@ -69,11 +74,8 @@ jobs:
             exit 1
           fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-
-      - name: Checkout Code at Target Tag
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ steps.get_tag.outputs.tag }}
+          echo "Checking out code at tag: $TAG"
+          git checkout "$TAG"
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -83,17 +85,17 @@ jobs:
 
       - name: Download Release Assets (if any Python packages exist)
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.get_tag.outputs.tag }}
+          REPO: ${{ github.repository }}
         run: |
           mkdir -p dist/
           echo "Attempting to download pre-existing .whl or .tar.gz assets from release $TAG..."
-          gh release download "$TAG" --dir dist/ --pattern "*.whl" --pattern "*.tar.gz" || true
+          gh release download "$TAG" --repo "$REPO" --dir dist/ --pattern "*.whl" --pattern "*.tar.gz" 2>/dev/null || true
 
-      - name: Build Source Distribution & Wheel (if missing)
+      - name: Build Source Distribution & Wheel
         run: |
           pip install --upgrade build
-          # Always build or ensure clean distribution packages for PyPI
           python -m build --outdir dist/
 
       - name: Inspect Packages Before Upload
@@ -106,3 +108,4 @@ jobs:
         with:
           packages-dir: dist/
           skip-existing: ${{ inputs.skip_existing }}
+
