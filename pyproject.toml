@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "tokens-md"
-version = "0.0.12"
+version = "0.0.13"
 description = "Convert files to token-efficient Markdown for LLM prompts."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -132,7 +132,7 @@ precision = 0
 onefile = true
 output-filename = "tmd"
 include-package = ["src", "backend"]
-nofollow-imports = true
+follow-imports = true
 assume-yes-for-downloads = true
 windows-icon-from-ico = "assets/tmd.ico"
 macos-app-name = "tmd"

@@ -22,8 +22,6 @@ jobs:
         shell: bash
         run: |
           echo "PYTHONUNBUFFERED=1" >> $GITHUB_ENV
-          echo "CC=sccache clang" >> $GITHUB_ENV
-          echo "CXX=sccache clang++" >> $GITHUB_ENV
 
       - name: Cache Nuitka
         uses: actions/cache@v4
@@ -48,7 +46,7 @@ jobs:
             --output-filename=tmd-macos-arm64 \
             --include-package=src \
             --include-package=backend \
-            --nofollow-imports \
+            --follow-imports \
             --assume-yes-for-downloads \
             --jobs=4 \
             --linux-onefile-icon=assets/tmd.png \

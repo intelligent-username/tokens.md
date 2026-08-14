@@ -23,8 +23,6 @@ jobs:
         shell: bash
         run: |
           echo "PYTHONUNBUFFERED=1" >> $GITHUB_ENV
-          echo "CC=sccache cl" >> $GITHUB_ENV
-          echo "CXX=sccache cl" >> $GITHUB_ENV
 
       - name: Cache Nuitka
         uses: actions/cache@v4
@@ -49,7 +47,7 @@ jobs:
             --output-filename=tmd-windows-arm64.exe `
             --include-package=src `
             --include-package=backend `
-            --nofollow-imports `
+            --follow-imports `
             --assume-yes-for-downloads `
             --jobs=4 `
             --windows-icon-from-ico=assets/tmd.ico `
