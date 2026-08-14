@@ -1,0 +1,108 @@
+# ==============================================================================
+# WORKFLOW: Manual PyPI Re-Publish / Fallback Sync
+# ==============================================================================
+# PURPOSE:
+#   This workflow is an emergency / manual recovery tool to publish packages
+#   to PyPI without re-running the entire multi-platform build matrix or
+#   re-creating a GitHub Release.
+#
+# WHEN TO USE:
+#   - PyPI publishing failed during an automated release run (e.g. OIDC exchange,
+#     network timeout, or permission glitches).
+#   - You need to manually sync or re-sync release distributions to PyPI for a
+#     specific tag or the latest release.
+#
+# HOW TO RUN:
+#   1. Go to "Actions" -> "Manual Re-Publish to PyPI (Fallback / Recovery)"
+#   2. Click "Run workflow".
+#   3. Optionally specify a release tag (e.g., "v0.0.14"). If left blank, it
+#      automatically fetches the latest GitHub release.
+# ==============================================================================
+
+name: "Manual Re-Publish to PyPI (Fallback / Recovery)"
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Git release tag to re-publish (leave empty for latest release, e.g. v0.0.14)"
+        required: false
+        default: ""
+        type: string
+      skip_existing:
+        description: "Skip packages that already exist on PyPI instead of erroring"
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  republish-pypi:
+    name: "Manual Re-Publish to PyPI"
+    runs-on: ubuntu-latest
+    environment: pypi
+    steps:
+      - name: Determine Target Release Tag
+        id: get_tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          if [ -n "$INPUT_TAG" ]; then
+            TAG="$INPUT_TAG"
+            echo "Using specified tag: $TAG"
+          else
+            echo "Fetching latest release tag from GitHub..."
+            TAG=$(gh release view --json tagName -q .tagName || true)
+            if [ -z "$TAG" ]; then
+              echo "No GitHub release found, falling back to latest git tag..."
+              git fetch --tags
+              TAG=$(git describe --tags $(git rev-list --tags --max-count=1))
+            fi
+            echo "Determined latest tag: $TAG"
+          fi
+          if [ -z "$TAG" ]; then
+            echo "::error::Could not determine release tag to publish."
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout Code at Target Tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.get_tag.outputs.tag }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Download Release Assets (if any Python packages exist)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.get_tag.outputs.tag }}
+        run: |
+          mkdir -p dist/
+          echo "Attempting to download pre-existing .whl or .tar.gz assets from release $TAG..."
+          gh release download "$TAG" --dir dist/ --pattern "*.whl" --pattern "*.tar.gz" || true
+
+      - name: Build Source Distribution & Wheel (if missing)
+        run: |
+          pip install --upgrade build
+          # Always build or ensure clean distribution packages for PyPI
+          python -m build --outdir dist/
+
+      - name: Inspect Packages Before Upload
+        run: |
+          echo "Packages prepared in dist/ for PyPI upload:"
+          ls -la dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+          skip-existing: ${{ inputs.skip_existing }}

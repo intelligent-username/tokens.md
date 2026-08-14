@@ -38,6 +38,20 @@ Execution pipeline:
 - `build-binary.yml`: Orchestrates compilation across platform-specific worker files (`build-linux-x64.yml`, `build-windows-arm64.yml`, etc.).
 - `publish-pypi.yml`: Builds package distributions using `python -m build` and uploads them to PyPI.
 
+## Manual & Recovery Workflows
+
+### Manual PyPI Re-Publish (`.github/workflows/republish-pypi.yml`)
+
+**Trigger**: Manual only (`workflow_dispatch`).
+
+**Purpose**: An emergency recovery workflow executed when automated PyPI publishing fails during a release run (e.g., due to OIDC token exchange glitches, network drops, or permission issues).
+
+**Features**:
+- Avoids re-triggering the lengthy full multi-platform binary compilation matrix.
+- Accepts an optional `tag` input (defaults to the latest release if blank).
+- Fetches the tagged release, prepares distribution archives (`.whl` and `.tar.gz`), and syncs them to PyPI using Trusted Publishing (`environment: pypi`).
+- Skips packages that already exist on PyPI (`skip_existing: true`) by default.
+
 ## Triggering a release
 
 To issue a release:
@@ -49,3 +63,4 @@ To issue a release:
    git push origin v1.0.0
    ```
 3. GitHub Actions builds all binaries, updates manifests, and publishes to PyPI automatically.
+
