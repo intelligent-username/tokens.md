@@ -19,17 +19,18 @@ It runs two parallel jobs:
 
 ### Release pipeline (`.github/workflows/release.yml`)
 
-Triggers only when a new version tag matching `v*` (for example `v1.0.0`) is pushed to GitHub. Not triggered by modifying pyproject.toml or anythign else.
+Triggers only when a new version tag matching `v*` (for example `v1.0.0`) is pushed to GitHub.
 
 Execution pipeline:
 
-1. **Test gate**: Runs `test.yml`. If tests fail, execution stops.
+1. **Test gate**: Runs `test.yml`. If any test fails, execution stops and no release is created.
 2. **Version check**: Runs `verify.yml` to check tag and `pyproject.toml` version alignment (issues a warning on mismatch, but does not block release).
 3. **Binary builds**: Runs `build-binary.yml` across six target platforms after tests pass:
    - Linux (`x64`, `arm64`)
    - macOS (`x64`, `arm64`)
    - Windows (`x64`, `arm64`)
-4. **GitHub release and manifests**: Downloads build outputs, computes `SHA256SUMS.txt`, puts them in the manifests via `update_manifest_hashes.py`, creates the GitHub release.
+   If any binary build fails, execution stops and the release is not created.
+4. **GitHub release and manifests**: Downloads build outputs, computes `SHA256SUMS.txt`, puts them in the manifests via `update_manifest_hashes.py`, and creates the GitHub release.
 5. **PyPI publishing**: Runs `publish-pypi.yml` to build wheels and source distributions and publish them to `PyPI`.
 
 ## Reusable workflows

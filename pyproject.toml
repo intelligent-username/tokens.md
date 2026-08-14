@@ -22,7 +22,8 @@ classifiers = [
     "Topic :: Utilities",
 ]
 dependencies = [
-    "pymupdf4llm",
+    "pymupdf>=1.28.2",
+    "pymupdf4llm>=1.28.2",
     "typer>=0.12",
     "rich",
     "pyperclip",
@@ -131,7 +132,7 @@ precision = 0
 onefile = true
 output-filename = "tmd"
 include-package = ["src", "backend"]
-follow-imports = true
+nofollow-imports = true
 assume-yes-for-downloads = true
 windows-icon-from-ico = "assets/tmd.ico"
 macos-app-name = "tmd"

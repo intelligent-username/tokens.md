@@ -2686,7 +2686,7 @@ wheels = [
 
 [[package]]
 name = "tokens-md"
-version = "0.0.5"
+version = "0.0.10"
 source = { editable = "." }
 dependencies = [
     { name = "extract-msg" },
@@ -2697,6 +2697,7 @@ dependencies = [
     { name = "odfpy" },
     { name = "openpyxl" },
     { name = "pathspec" },
+    { name = "pymupdf" },
     { name = "pymupdf4llm" },
     { name = "pyperclip" },
     { name = "python-docx" },
@@ -2742,7 +2743,8 @@ requires-dist = [
     { name = "odfpy", specifier = ">=1.4" },
     { name = "openpyxl", specifier = ">=3.1" },
     { name = "pathspec" },
-    { name = "pymupdf4llm" },
+    { name = "pymupdf", specifier = ">=1.28.2" },
+    { name = "pymupdf4llm", specifier = ">=1.28.2" },
     { name = "pyperclip" },
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "pytest-cov", marker = "extra == 'dev'" },
