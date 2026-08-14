@@ -77,48 +77,11 @@ jobs:
           echo "Checking out code at tag: $TAG"
           git checkout "$TAG"
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: pip
-
-      - name: Download Release Assets (if any Python packages exist)
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.get_tag.outputs.tag }}
-          REPO: ${{ github.repository }}
-        run: |
-          mkdir -p dist/
-          echo "Attempting to download pre-existing .whl or .tar.gz assets from release $TAG..."
-          gh release download "$TAG" --repo "$REPO" --dir dist/ --pattern "*.whl" --pattern "*.tar.gz" 2>/dev/null || true
-
-      - name: Sync pyproject.toml with Release Tag
-        run: |
-          TAG="${{ steps.get_tag.outputs.tag }}"
-          TAG_VERSION="${TAG#v}"
-          if [ -n "$TAG_VERSION" ]; then
-            echo "Syncing pyproject.toml and source files to release tag version: $TAG_VERSION"
-            python -c "import pathlib, re; p = pathlib.Path('pyproject.toml'); p.write_text(re.sub(r'version\s*=\s*[\"\'][^\"\']+[\"\']', f'version = \"$TAG_VERSION\"', p.read_text(encoding='utf-8')), encoding='utf-8')"
-            python scripts/sync_version.py
-          fi
-
-      - name: Build Source Distribution & Wheel
-        run: |
-          pip install --upgrade build
-          python -m build --outdir dist/
-
-      - name: Inspect Packages Before Upload
-        run: |
-          echo "Packages prepared in dist/ for PyPI upload:"
-          ls -la dist/
-
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        uses: ./.github/actions/publish-pypi
         with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN || secrets.PYPI_TOKEN }}
-          packages-dir: dist/
-          skip-existing: ${{ inputs.skip_existing }}
+          pypi_token: ${{ secrets.PYPI_API_TOKEN || secrets.PYPI_TOKEN }}
+          skip_existing: ${{ inputs.skip_existing && 'true' || 'false' }}
+
 
 

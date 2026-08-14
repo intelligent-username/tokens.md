@@ -9,20 +9,16 @@ permissions:
   id-token: write
 
 jobs:
-  # 1. Mandatory test suite gate (blocks release if tests fail)
-  test:
-    uses: ./.github/workflows/test.yml
+  # 1. Mandatory check & verification gate (blocks release if checks/tests fail)
+  check:
+    uses: ./.github/workflows/check.yml
 
-  # 2. Non-blocking version check
-  verify:
-    uses: ./.github/workflows/verify.yml
-
-  # 3. Parallel binary builds (runs only after test passes)
+  # 2. Parallel binary builds (runs only after check passes)
   build-binaries:
-    needs: test
+    needs: check
     uses: ./.github/workflows/build-binary.yml
 
-  # 4. Create GitHub Release once binaries are ready & auto-sync manifest SHA256 hashes
+  # 3. Create GitHub Release once binaries are ready & auto-sync manifest SHA256 hashes
   github-release:
     name: Create GitHub Release & Update Manifests
     needs: build-binaries
@@ -31,78 +27,17 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
+      - uses: ./.github/actions/github-release
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: dist/
-          merge-multiple: true
-
-      - name: Generate checksums
-        run: |
-          cd dist
-          sha256sum * > SHA256SUMS.txt
-          cat SHA256SUMS.txt
-
-      - name: Create release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: dist/*
-          generate_release_notes: true
-          draft: false
-          prerelease: false
-
-      - name: Inject SHA-256 hashes into manifests
-        run: |
-          python scripts/update_manifest_hashes.py
-
-      - name: Commit updated manifests back to repo
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add manifests/
-          if git diff --staged --quiet; then
-            echo "No manifest changes to commit."
-          else
-            git commit -m "chore(release): auto-sync manifest SHA-256 hashes for release"
-            git push origin HEAD:main
-          fi
-
-  # 5. Publish to PyPI
+  # 4. Publish Python distribution to PyPI
   pypi:
     name: Publish to PyPI
     needs: build-binaries
     runs-on: ubuntu-latest
     environment: pypi
-    permissions:
-      id-token: write
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
+      - uses: ./.github/actions/publish-pypi
         with:
-          python-version: "3.12"
-      - name: Sync pyproject.toml with Release Tag
-        run: |
-          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
-          if [ -n "$TAG_VERSION" ] && [ "$TAG_VERSION" != "$GITHUB_REF" ]; then
-            echo "Syncing pyproject.toml and source files to release tag version: $TAG_VERSION"
-            python -c "import pathlib, re; p = pathlib.Path('pyproject.toml'); p.write_text(re.sub(r'version\s*=\s*[\"\'][^\"\']+[\"\']', f'version = \"$TAG_VERSION\"', p.read_text(encoding='utf-8')), encoding='utf-8')"
-            python scripts/sync_version.py
-          fi
-
-      - name: Build sdist and wheel
-        run: |
-          pip install build
-          python -m build
-
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN || secrets.PYPI_TOKEN }}
-          skip-existing: true
+          pypi_token: ${{ secrets.PYPI_API_TOKEN || secrets.PYPI_TOKEN }}
+          skip_existing: "true"

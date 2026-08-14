@@ -1,0 +1,14 @@
+name: "Verify & Align Version"
+description: "Runs scripts/verify.py to check Git tag vs pyproject.toml"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Run version verification script
+      shell: bash
+      run: |
+        python scripts/verify.py

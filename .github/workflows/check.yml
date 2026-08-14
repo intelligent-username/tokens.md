@@ -1,0 +1,29 @@
+name: Check
+
+on:
+  workflow_call:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  verify:
+    name: Verify & Align Version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Verify Version
+        uses: ./.github/actions/verify
+
+  test:
+    name: Test Suite (Backend & Frontend)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Run Tests
+        uses: ./.github/actions/test
+

@@ -1,0 +1,48 @@
+name: "Create GitHub Release & Update Manifests"
+description: "Downloads binary artifacts, computes SHA-256 checksums, publishes GitHub Release, updates manifests, and commits to main."
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: dist/
+        merge-multiple: true
+
+    - name: Generate checksums
+      shell: bash
+      run: |
+        cd dist
+        sha256sum * > SHA256SUMS.txt
+        cat SHA256SUMS.txt
+
+    - name: Create release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: dist/*
+        generate_release_notes: true
+        draft: false
+        prerelease: false
+
+    - name: Inject SHA-256 hashes & versions into manifests
+      shell: bash
+      run: |
+        python scripts/update_manifest_hashes.py
+
+    - name: Commit updated manifests back to repo
+      shell: bash
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add manifests/
+        if git diff --staged --quiet; then
+          echo "No manifest changes to commit."
+        else
+          git commit -m "chore(release): auto-sync manifest SHA-256 hashes for release"
+          git push origin HEAD:main
+        fi
