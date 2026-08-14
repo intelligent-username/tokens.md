@@ -1,8 +1,10 @@
 
 **__pycache__/**
 **.*_cache**
-
 *.pyc
+
+.env
+
 .venv/
 v/
 
