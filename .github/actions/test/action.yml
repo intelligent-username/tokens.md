@@ -26,4 +26,4 @@ runs:
     - name: Run test runner script
       shell: bash
       run: |
-        python scripts/test.py -v
+        uv run python scripts/test.py -v
