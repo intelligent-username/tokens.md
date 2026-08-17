@@ -1,0 +1,23 @@
+name: "Publish to Chocolatey"
+description: "Packs and pushes the Chocolatey package to community.chocolatey.org"
+
+inputs:
+  api_key:
+    description: "Chocolatey API Key"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Pack and Push to Chocolatey
+      shell: pwsh
+      run: |
+        choco apikey --key "${{ inputs.api_key }}" --source https://push.chocolatey.org/
+        cd manifests/chocolatey
+        choco pack
+        $nupkg = Get-ChildItem -Filter *.nupkg | Select-Object -First 1
+        if (-not $nupkg) {
+          Write-Error "No .nupkg package found in manifests/chocolatey."
+          exit 1
+        }
+        choco push $nupkg.FullName --source https://push.chocolatey.org/

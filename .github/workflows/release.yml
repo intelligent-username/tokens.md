@@ -41,3 +41,20 @@ jobs:
         with:
           pypi_token: ${{ secrets.PYPI_API_TOKEN || secrets.PYPI_TOKEN }}
           skip_existing: "true"
+    
+  # 5. Publish to Chocolatey
+  chocolatey:
+    name: Publish to Chocolatey
+    needs: github-release
+    runs-on: windows-latest
+    if: env.CHOCOLATEY_API_KEY != ''
+    env:
+      CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: ./.github/actions/publish-chocolatey
+        with:
+          api_key: ${{ secrets.CHOCOLATEY_API_KEY }}
+
