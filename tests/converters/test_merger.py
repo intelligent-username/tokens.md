@@ -62,8 +62,9 @@ def test_resolve_to_markdown_converts_pdf(sample_pdf: Path) -> None:
 def test_build_toc() -> None:
     toc = build_toc([("a.md", "# Title\n\n## Section\nbody")])
     assert "- a.md" in toc
-    assert "# Title" in toc
-    assert "## Section" in toc
+    assert "[Title](#title)" in toc
+    assert "[Section](#section)" in toc
+
 
 
 def test_dedup_lines() -> None:
