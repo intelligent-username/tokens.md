@@ -25,12 +25,14 @@ Execution pipeline:
    - Windows (`x64`, `arm64`)
 3. **GitHub Release & Manifests**: Downloads build outputs, computes `SHA256SUMS.txt`, validates all 6 binaries are present, updates manifest versions and SHA-256 hashes via `update_manifest_hashes.py`, and creates the GitHub release.
 4. **PyPI Publishing**: Builds wheels and source distributions and publishes them to PyPI.
+5. **Chocolatey Publishing**: Packs and pushes `tmd.nupkg` directly to `community.chocolatey.org` (runs after GitHub Release is published and manifests are updated).
 
 ## Reusable Workflows & Actions
 
 - `build-binary.yml`: Orchestrates compilation across the 6 platform composite actions in `.github/actions/` (`build-linux-x64`, `build-windows-arm64`, etc.).
 - `.github/actions/github-release`: Bundles artifacts, creates GitHub Release, and updates manifest hashes.
 - `.github/actions/publish-pypi`: Builds wheels/sdist and publishes to PyPI with token authentication.
+- `.github/actions/publish-chocolatey`: Packages and pushes `.nupkg` to Chocolatey using `CHOCOLATEY_API_KEY`.
 
 ### Manual PyPI Re-Publish (`.github/workflows/republish-pypi.yml`)
 

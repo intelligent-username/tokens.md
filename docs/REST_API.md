@@ -1,5 +1,7 @@
 # REST API reference
 
+References for the backend's API for local development.
+
 Base URL: `http://127.0.0.1:8642`  
 All routes are prefixed with `/api`.  
 All request bodies use `Content-Type: application/json` unless noted otherwise (file uploads use `multipart/form-data`).  

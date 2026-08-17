@@ -43,7 +43,7 @@ for para in document.paragraphs:
 
 ### Low-level body iteration (paragraphs + tables, in document order)
 
-python-docx's `document.paragraphs` and `document.tables` are separate flat lists and lose interleaving order. To walk the body in actual document order, iterate the raw XML children of the document body and construct proxy objects from them. This exact pattern is posted by the python-docx maintainer on the project's own issue tracker:
+python-docx's `document.paragraphs` and `document.tables` are separate flat lists and lose interleaving order. To walk the body in actual document order, iterate the raw XML children of the document body and construct proxy objects from them. The python-docx maintainer posted this exact pattern on the project's own issue tracker:
 
 ```python
 from docx import Document
@@ -133,11 +133,11 @@ That content type comes from `[Content_Types].xml`, which maps each part path to
 </Types>
 ```
 
-If a hand-built fixture is missing this file, or the Override for `/word/document.xml`, `Document()` raises before your reader code even runs. python-docx's own test fixtures include a full example at `tests/test_files/expanded_docx/[Content_Types].xml` in the project repo, worth using as a template rather than writing one from scratch.
+If a hand-built fixture is missing this file, or the Override for `/word/document.xml`, `Document()` raises before your reader code even runs. python-docx's own test fixtures include a full example at `tests/test_files/expanded_docx/[Content_Types].xml` in the project repo. Use it as a template rather than writing one from scratch.
 
 ### Math (for the LaTeX plan)
 
-See the combined **Math and LaTeX** section at the end. Short version: `Font.math` is a write-side boolean flag only, python-docx does not parse or expose `m:oMath` content through any high-level property, and the project's own issue tracker (#320, #1011) confirms this is not supported. `Paragraph.text` and `Run.text` silently skip math zones entirely, they aren't `<w:t>` elements.
+See the combined **Math and LaTeX** section at the end. Short version: `Font.math` is a write-side boolean flag only, python-docx does not parse or expose `m:oMath` content through any high-level property, and the project's own issue tracker (#320, #1011) confirms this is not supported. `Paragraph.text` and `Run.text` silently skip math zones entirely; they aren't `<w:t>` elements.
 
 **Source:** python-docx.readthedocs.io (quickstart, user/documents, user/styles-understanding, api/document, api/text, api/table); github.com/python-openxml/python-docx (issue #650, #320, #1011).
 
@@ -173,7 +173,7 @@ if slide.has_notes_slide:
     text = slide.notes_slide.notes_text_frame.text
 ```
 
-**Gotcha**: accessing `slide.notes_slide` directly *creates* a notes slide if one doesn't exist yet, this is documented, intentional behavior (matches Word's lazy-creation-of-parts pattern). Always check `has_notes_slide` first if you're reading and don't want to mutate the file. `notes_text_frame` itself can also be `None` on a notes slide whose body placeholder was deleted, so check for that too.
+**Gotcha**: accessing `slide.notes_slide` directly *creates* a notes slide if one doesn't exist yet. This is documented, intentional behavior (matches Word's lazy-creation-of-parts pattern). Always check `has_notes_slide` first if you're reading and don't want to mutate the file. `notes_text_frame` itself can also be `None` on a notes slide whose body placeholder was deleted, so check for that too.
 
 ### Fixture building
 
@@ -276,11 +276,11 @@ for heading in doc.body.getElementsByType(text.H):
     print(level, teletype.extractText(heading))
 ```
 
-`doc.body` is confirmed to exist and to be an `office:body` element (`d.body.isInstanceOf(office.Body)`, from odfpy's own test suite). `getElementsByType(class)` is recursive from wherever you call it, so `doc.getElementsByType(...)` (called on the document root) and `doc.body.getElementsByType(...)` will return the same paragraphs/headings in a normal file; scoping to `.body` just avoids also matching anything odd living outside the body (there generally isn't anything, so either works, `.body` is the more precise habit).
+`doc.body` is confirmed to exist and to be an `office:body` element (`d.body.isInstanceOf(office.Body)`, from odfpy's own test suite). `getElementsByType(class)` is recursive from wherever you call it, so `doc.getElementsByType(...)` (called on the document root) and `doc.body.getElementsByType(...)` return the same paragraphs and headings in a normal file. Scoping to `.body` just avoids matching anything odd living outside the body. There generally isn't anything there, so either works; `.body` is the more precise habit.
 
 `teletype.extractText(node)` is the correct way to pull text out of a paragraph or heading element: it walks child text nodes and correctly expands whitespace-significant elements (`text:s` repeated-space, `text:tab`, `text:line-break`) into real `" "`, `\t`, `\n` characters. Calling `str(node)` or reading `.firstChild` directly will silently drop or mangle that whitespace.
 
-`getAttribute("outlinelevel")` reads back the heading level. It returns a **string** (`"1"`, `"2"`, ...), not an int, cast it if you need to compare numerically. This mirrors the constructor kwarg name (`outlinelevel=1`), which is itself stored in the XML as `text:outline-level`.
+`getAttribute("outlinelevel")` reads back the heading level. It returns a **string** (`"1"`, `"2"`, ...), not an int. Cast it if you need to compare numerically. This mirrors the constructor kwarg name (`outlinelevel=1`), which is itself stored in the XML as `text:outline-level`.
 
 ### Fixture building
 
@@ -295,7 +295,7 @@ textdoc.text.addElement(H(outlinelevel=2, text="Heading 2"))
 textdoc.save("TEST.odt")  # .odt extension appended automatically if omitted
 ```
 
-Note the import shape is `from odf.text import H, P`, then bare `H(...)` / `P(...)`, not a `Text.H(...)` namespace object as one might guess from the module name. Content is added via `textdoc.text.addElement(...)` (the `.text` attribute, specific to `OpenDocumentText`), which is a sibling concept to `.body` used on the read side; both point into the same document, `.text` is just the more specific handle a text document exposes for its content root.
+Note the import shape is `from odf.text import H, P`, then bare `H(...)` / `P(...)`, not a `Text.H(...)` namespace object as one might guess from the module name. Content is added via `textdoc.text.addElement(...)` (the `.text` attribute, specific to `OpenDocumentText`), which is a sibling concept to `.body` used on the read side. Both point into the same document; `.text` is just the more specific handle a text document exposes for its content root.
 
 **Source:** github.com/eea/odfpy (tests/testload.py, tests/testtypes.py, tests/testwhitespace.py, wiki/Introduction, manual/buildmanual.py).
 
@@ -335,7 +335,7 @@ body = msg.body  # plain-text body
 msg.close()
 ```
 
-All confirmed attributes: `.subject`, `.sender`, `.to`, `.cc`, `.bcc`, `.date`, `.body` (plain text), `.htmlBody` / `.rtfBody` (also available if you want the richer body instead of plain text). `.close()` releases the underlying OLE compound-file handle; the library's own internal routing code (`open_msg.py`) calls it explicitly when re-dispatching to a more specific message subclass, so it's a real resource-release step, not a no-op, worth doing in a `finally` block or using the object as a context manager if a version you pin supports it.
+All confirmed attributes: `.subject`, `.sender`, `.to`, `.cc`, `.bcc`, `.date`, `.body` (plain text), `.htmlBody` / `.rtfBody` (also available if you want the richer body instead of plain text). `.close()` releases the underlying OLE compound-file handle. The library's own internal routing code (`open_msg.py`) calls it explicitly when re-dispatching to a more specific message subclass, so it's a real resource-release step, not a no-op. Call it in a `finally` block, or use the object as a context manager if the version you pin supports it.
 
 **Source:** msg-extractor.readthedocs.io (extract_msg package reference, message_base module source).
 
@@ -353,7 +353,7 @@ tempdir, filepath = mobi.extract("book.azw3")
 # filepath: path to a single file, either .epub, .html, or .pdf depending on the source
 ```
 
-**This is a 2-tuple, not 3.** There is no third `html` return value. `filepath`'s extension depends on what kind of mobi/azw3 was unpacked, an older-format book typically unpacks to HTML directly and a newer KF8-only book can unpack to something else, so Azw3Reader needs to branch on `filepath`'s suffix (or sniff content) rather than assume HTML unconditionally. If it is HTML, read it with your existing HTML-handling code; if it's already EPUB or PDF, that's a different code path (EPUB is itself a zip of HTML/XHTML files; PDF would go through the existing `pymupdf4llm` wrapper).
+**This is a 2-tuple, not 3.** There is no third `html` return value. `filepath`'s extension depends on what kind of mobi/azw3 was unpacked. An older-format book typically unpacks to HTML directly, while a newer KF8-only book can unpack to something else. Azw3Reader needs to branch on `filepath`'s suffix (or sniff content) rather than assume HTML unconditionally. If it is HTML, read it with your existing HTML-handling code; if it's already EPUB or PDF, that's a different code path (EPUB is itself a zip of HTML/XHTML files; PDF would go through the existing `pymupdf4llm` wrapper).
 
 The docs also explicitly warn: **the library does not clean up `tempdir`**, that's the caller's responsibility (`shutil.rmtree(tempdir)` once you're done reading `filepath` and any sibling image files it references).
 
@@ -374,7 +374,7 @@ def sample_docx(tmp_path):
     return path
 ```
 
-`tmp_path` is a built-in function-scoped fixture, returns a `pathlib.Path` pointing at a fresh temporary directory unique to that test, auto-cleaned by pytest after some retained runs (it doesn't vanish the instant the test ends, pytest keeps the last few for debugging). No setup needed, just add `tmp_path` as a parameter.
+`tmp_path` is a built-in function-scoped fixture. It returns a `pathlib.Path` pointing at a fresh temporary directory unique to that test. Pytest auto-cleans these after retaining a few runs, so the directory doesn't vanish the instant the test ends. No setup needed, just add `tmp_path` as a parameter.
 
 For stubbing something like a clipboard call in a test:
 
@@ -401,13 +401,13 @@ Where to find the element in each format:
 - **docx**: `<m:oMath>` sits directly inside a run's content, alongside regular `<w:r>` runs, as a paragraph child. Walk the paragraph's children with lxml, and where you'd normally read `<w:t>` text, check for `m:oMath` / `m:oMathPara` first.
 - **pptx**: same `<m:oMath>` element, wrapped one layer deeper inside `<a14:m>` (namespace `http://schemas.microsoft.com/office/drawing/2010/main`), which is itself commonly nested in an `<mc:AlternateContent>` compatibility branch. Walking the shape tree, when you hit an `mc:AlternateContent`, take the first `mc:Choice` (the newest-version branch, where the real content lives) instead of skipping it.
 
-Neither python-docx's `Run.text` nor python-pptx's `text_frame` surfaces `oMath` content on its own, since it isn't a `<w:t>`-style plain-text run. That's not a blocker, it just means the math extraction step lives in your own XML walk (which you're already writing, for the paragraph/table ordering) rather than being handed to you by `.text`. Drop in a check for the math namespace at the same point you're already iterating runs, and pull the LaTeX from there instead of skipping it.
+Neither python-docx's `Run.text` nor python-pptx's `text_frame` surfaces `oMath` content on its own, since it isn't a `<w:t>`-style plain-text run. That's not a blocker. It just means the math extraction step lives in your own XML walk (which you're already writing, for the paragraph/table ordering) rather than being handed to you by `.text`. Drop in a check for the math namespace at the same point you're already iterating runs, and pull the LaTeX from there instead of skipping it.
 
 **Fastest path to shipping this**: don't hand-write the OMML→LaTeX node mapping from scratch.
 
-- `docxlatex` (`pip install docxlatex`) already does exactly this for docx: point it at the file, get `.equations` back as a list of ready LaTeX strings, delimiters configurable (`doc.inline_delimiter = "$"`, `doc.block_delimiter = "$$"`, which is exactly the format you want). One real caveat: it's most reliable on equations saved in Word's "linear" format rather than "professional" (2D) format, worth a quick pass in Word/LibreOffice's Equation tab to batch-convert a test corpus if source documents were authored the normal way, or worth testing directly against real source files before assuming it needs that step.
+- `docxlatex` (`pip install docxlatex`) already does exactly this for docx: point it at the file, get `.equations` back as a list of ready LaTeX strings, delimiters configurable (`doc.inline_delimiter = "$"`, `doc.block_delimiter = "$$"`, which is exactly the format you want). One real caveat: it's most reliable on equations saved in Word's "linear" format rather than "professional" (2D) format. If source documents were authored the normal way, run a quick pass in Word/LibreOffice's Equation tab to batch-convert a test corpus, or test directly against real source files before assuming it needs that step.
 - `docx-equation` (github.com/zlqm/docx-equation) is a smaller, directly-readable reference implementation of the `m:oMath` → LaTeX node mapping (`m:sSup`, `m:sSub`, `m:f`, `m:rad`, `m:nary`, `m:d`, etc.), useful to crib from or vendor a trimmed copy of even if `docxlatex` isn't used wholesale.
-- For pptx, there's no equivalent maintained package to just install, but the mapping logic is identical once the `m:oMath` element is located (same tags, same namespace), so the docx-side converter reaches pptx for free once the `a14:m` / `AlternateContent` unwrapping is in place. `pypptx-with-oxml` (a python-pptx fork) already did this unwrapping and is worth reading as a reference for the exact traversal, even if the reader ends up using its own lighter version instead of taking on the fork as a dependency.
+- For pptx, there's no equivalent maintained package to just install. The mapping logic is identical once the `m:oMath` element is located (same tags, same namespace), so the docx-side converter reaches pptx for free once the `a14:m` / `AlternateContent` unwrapping is in place. `pypptx-with-oxml` (a python-pptx fork) already did this unwrapping and is worth reading as a reference for the exact traversal, even if the reader ends up using its own lighter version instead of taking on the fork as a dependency.
 
 Net: one shared `oMath_element_to_latex(element) -> str` function, called from both readers at the point each hits the math namespace, output spliced into the markdown as `$$...$$`. Straightforward, not a wall.
 

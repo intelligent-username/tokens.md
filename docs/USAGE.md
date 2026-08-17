@@ -2,7 +2,7 @@
 
 `tmd` converts documents to token-efficient Markdown for LLM context windows. It runs from the command line, or you can launch the web UI locally with `tmd ui`.
 
-This documentation is for breaking down all of the possible usage of the CLI.
+This page covers the full CLI surface.
 
 ```bash
 tmd --help            # list all subcommands
@@ -19,11 +19,11 @@ Converted report.pdf -> report.md (142,000 -> 12,400 tokens)
 TOTAL (142,000 tokens) -> (12,400 tokens) [-91.3%]
 ```
 
-The "before" count comes from the raw file size, not from parsing the file — it reflects the entire PDF/DOCX/etc. This is intentional: the number tells you how much context the original would have consumed.
+The "before" count comes from the raw file size, not from parsing the file. It reflects the entire PDF/DOCX/etc. This is intentional: the number tells you how much context the original would have consumed.
 
 ---
 
-## `tmd convert` — batch file conversion
+## `tmd convert`: batch file conversion
 
 Convert a file, a folder, or a glob pattern.
 
@@ -55,7 +55,7 @@ Unsupported formats exit with code `1` and print a clear message. If a required 
 
 ---
 
-## `tmd watch` — hot-folder daemon
+## `tmd watch`: hot-folder daemon
 
 Watches a directory and converts new files as they appear.
 
@@ -79,7 +79,7 @@ tmd watch --poll-interval 3.0
 
 ---
 
-## `tmd fetch` — web page to Markdown
+## `tmd fetch`: web page to Markdown
 
 Fetches a URL, strips navigation, ads, and boilerplate, and saves the article text as Markdown.
 
@@ -97,7 +97,7 @@ The output filename is derived from the page title or hostname.
 
 ---
 
-## `tmd repo` — directory to a single manifest
+## `tmd repo`: directory to a single manifest
 
 Collapses a repository or project directory into one Markdown file with a directory tree and per-file contents, respecting `.gitignore` rules.
 
@@ -136,7 +136,7 @@ Binary files are skipped automatically.
 
 ---
 
-## `tmd merge` — combine files into one document
+## `tmd merge`: combine files into one document
 
 Merges multiple files into a single Markdown document with a Table of Contents and `=== FILE: <name> ===` section separators. Non-Markdown inputs are converted first.
 
@@ -169,7 +169,7 @@ Files are merged in sorted path order.
 
 ---
 
-## `tmd ui` — local web UI
+## `tmd ui`: local web UI
 
 Launches the FastAPI backend and serves the web interface at `http://127.0.0.1:8642`. The browser opens automatically.
 

@@ -63,9 +63,9 @@
 ┌─────────────────────────────────────────────────────────────┐
 │  Model + Renderer                                           │
 │                                                             │
-│  src/model.py      Document IR (Heading, Paragraph, Table,  │
-│                    CodeBlock, ListItem, RawMarkdown, ...)   │
-│  src/renderer.py   MarkdownRenderer: Document -> string     │
+│  src/engine/model.py    Document IR (Heading, Paragraph,     │
+│                         Table, CodeBlock, ListItem, ...)     │
+│  src/engine/renderer.py MarkdownRenderer: Document -> str    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -89,7 +89,7 @@ class Registry:
     def convert_file(self, path: Path, output_dir: Path, **kwargs) -> Path: ...
 ```
 
-`DEFAULT_REGISTRY` is populated in `src/handlers/__init__.py`. The CLI and API both call `convert_file()` — the single dispatch entry point.
+`DEFAULT_REGISTRY` is populated in `src/handlers/__init__.py`. The CLI and API both call `convert_file()`, the single dispatch entry point.
 
 Handlers that use the reader layer wrap a `Reader` subclass in `ReaderConverter`:
 
@@ -174,7 +174,7 @@ class Document:
 
 | Source | Mechanism | Output |
 |---|---|---|
-| DOCX | `m:oMath` / `m:oMathPara` XML via `src/omml.py` | `$…$` / `$$…$$` |
+| DOCX | `m:oMath` / `m:oMathPara` XML via `src/math_converters/omml.py` | `$…$` / `$$…$$` |
 | PPTX | Same OMML, unwrapped from `mc:AlternateContent` | `$…$` / `$$…$$` |
 | ODT/ODS/ODP | MathML sub-documents extracted from zip, converted via `mathml-to-latex` | `$$…$$` |
 | TEX | LaTeX source preserved verbatim | as-is |
@@ -207,11 +207,11 @@ Sessions are temporary directories on disk, keyed by UUID. A background janitor 
 frontend/
 ├── app/               Next.js App Router pages
 ├── components/
-│   ├── layout/        Shell, TopBar, nav
+│   ├── layout/        Shell, TopBar, Navigation
 │   ├── ui/            Reusable primitives (DropZone, Toggle, etc.)
 │   └── workspaces/    ConvertWorkspace — main conversion flow
 ├── lib/
-│   ├── api/           Typed wrappers over fetch (endpoints.ts, upload.ts)
+│   ├── api/           Typed wrappers over fetch (endpoints.ts, upload.ts, ws.ts)
 │   ├── hooks/         useHealth, useJob, useWorkspaceState, useUpload, ...
 │   └── utils/         cn, format, extensions
 └── public/
@@ -225,37 +225,31 @@ The frontend calls the FastAPI backend at `http://127.0.0.1:8642/api`. In develo
 
 ```
 src/
-├── cli.py            Typer CLI: convert, clip, watch, fetch, repo, merge, delta, ui
-├── registry.py       Converter ABC, Registry, DEFAULT_REGISTRY, convert_file()
-├── model.py          Document IR (Heading, Paragraph, Table, CodeBlock, ...)
-├── renderer.py       MarkdownRenderer: Document → Markdown string
-├── detector.py       Magic-byte fallback for unknown extensions
-├── omml.py           OMML → LaTeX (DOCX/PPTX equations)
-├── readers/          Reader ABC + one Reader per format family
-│   ├── base.py         Reader ABC: read(Path) → Document
-│   ├── adapter.py      ReaderConverter: Reader + Renderer → Converter
-│   ├── docx.py         DOCX
-│   ├── pptx.py         PPTX
-│   ├── xlsx.py         XLSX
-│   ├── odf.py          ODT/ODS/ODP (+ MathML extraction)
-│   ├── rtf.py          RTF
-│   ├── eml.py          EML
-│   ├── msg.py          Outlook MSG
-│   ├── ebook.py        AZW3/AZW4
-│   ├── subtitle.py     SRT/VTT
-│   ├── tex.py          LaTeX
-│   ├── ipynb.py        Jupyter notebooks
-│   └── markdown.py     MD/MDX pass-through
-├── handlers/         Converters registered in DEFAULT_REGISTRY
-│   ├── __init__.py     Registers all converters
-│   ├── pymupdf.py      PDF, EPUB, MOBI, XPS, OXPS, FB2, CBZ, SVG, TXT
-│   ├── office.py       DOCX, PPTX, XLSX (thin facade over readers)
-│   ├── structured.py   JSON, XML, CSV, YAML, TOML, INI, LOG
-│   ├── html.py         HTML/HTM
-│   ├── repo.py         Directory → manifest
-│   ├── archive.py      ZIP, TAR, GZ, TGZ, BZ2
+├── cli.py            Typer CLI application entry point
+├── cli_support/      Modular CLI command implementations
+│   ├── commands.py   Typer command definitions (convert, watch, fetch, repo, merge, ui)
+│   ├── convert_runner.py  Multithreaded conversion engine with Rich progress bars
+│   ├── theme.py      Rich terminal color palettes, themes, and help formatters
+│   └── utils.py      CLI path resolution, extension parsers, and port finders
+├── registry.py       Converter abstract class, Registry, DEFAULT_REGISTRY
+├── engine/           Document IR, renderer, and pipeline engine
+│   ├── model.py      Document IR (Document, Block, Paragraph, Heading, Table, ListItem, etc.)
+│   ├── renderer.py   MarkdownRenderer: Document -> string
+│   └── converter.py  Backward-compatible wrappers (convert_pdf_to_markdown etc.)
+├── handlers/         Registered file format handlers
+│   ├── __init__.py   Registers all converters
+│   ├── pymupdf.py    PDF, EPUB, MOBI, XPS, OXPS, FB2, CBZ, SVG, TXT
+│   ├── office.py     DOCX, PPTX, XLSX (thin facade over readers)
+│   ├── structured.py JSON, XML, CSV, YAML, TOML, INI, LOG
+│   ├── html.py       HTML/HTM
+│   ├── repo.py       Directory → manifest
+│   ├── archive.py    ZIP, TAR, GZ, TGZ, BZ2
 │   └── unsupported.py  Catch-all
-├── fetch.py          tmd fetch (trafilatura)
+├── math_converters/  Math conversion engines
+│   ├── mathml.py     MathML -> LaTeX converter for ODF formulas
+│   └── omml.py       OMML -> LaTeX converter for Word/PowerPoint equations
+├── readers/          Format-specific file readers
+├── fetch.py          tmd fetch (trafilatura + browser spoofing)
 ├── tokenizer.py      tiktoken wrapper (o200k_base default)
 ├── merger.py         merge_files(), resolve_to_markdown()
 ├── budget.py         prune_to_budget()
@@ -263,15 +257,18 @@ src/
 ├── watcher.py        run_watcher() hot-folder daemon (watchdog)
 ├── file_selector.py  select_files() with gitignore-style filtering
 ├── clipboard.py      pyperclip wrapper
-├── converter.py      Backward-compatible wrappers (convert_pdf_to_markdown etc.)
 └── deps.py           require() — lazy import with friendly error messages
 
 backend/
 ├── app.py            FastAPI factory, CORS, error handlers, static mount
-├── routes.py         All /api/* endpoints + WebSocket
+├── api_routes/       Modular REST & WebSocket API route handlers
+│   ├── convert_routes.py  /api/convert, /api/merge, /api/fetch, /api/repo
+│   ├── files_routes.py    /api/upload, /api/files/* download & inspect
+│   └── watch_routes.py    /api/watch/* hot-folder monitoring controls
 ├── schemas.py        Pydantic v2 request/response models
 ├── config.py         Settings from TMD_* env vars
 ├── workspace.py      Workspace: per-session temp dir management
+├── workspace_support/ Janitor cleanup, sample file generators, and path sanitizers
 └── ws.py             WsManager: WebSocket event bus
 ```
 
@@ -315,4 +312,4 @@ Implement `Converter` directly in `src/handlers/myformat.py`. Write the `.md` fi
 
 ## Backward compatibility
 
-`src/converter.py` exposes the original `convert_pdf_to_markdown` and `run_pipeline` functions as thin wrappers over the registry. `src/main.py` is a shim that calls the Typer CLI. Both exist so callers from before the registry refactor keep working unchanged.
+`src/engine/converter.py` exposes the original `convert_pdf_to_markdown` and `run_pipeline` functions as thin wrappers over the registry. `src/main.py` is a shim that calls the Typer CLI. Both exist so callers from before the registry refactor keep working unchanged.
