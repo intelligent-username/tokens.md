@@ -58,7 +58,7 @@ def help_cmd(ctx: typer.Context) -> None:
 
 @app.command()
 def convert(
-    source: str = typer.Argument(DEFAULT_SOURCE_DIR, help="Directory, file, or glob pattern."),
+    source: list[str] = typer.Argument(..., help="Directory, file, or glob pattern(s)."),
     output: str = typer.Option(DEFAULT_OUTPUT_DIR, "-o", "--output", help="Output directory."),
     loc: str | None = typer.Option(None, "--loc", help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs)."),
     recursive: bool = typer.Option(False, "-r", "--recursive", help="Recurse into subdirectories."),
@@ -136,7 +136,7 @@ def repo(
 
 @app.command()
 def merge(
-    source: str = typer.Argument(..., help="Directory, file, or glob pattern."),
+    source: list[str] = typer.Argument(..., help="Directory, file, or glob pattern(s)."),
     output: str = typer.Option(DEFAULT_MERGED_FILENAME, "-o", "--output", help="Output Markdown filename."),
     loc: str | None = typer.Option(None, "--loc", help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs)."),
     recursive: bool = typer.Option(False, "-r", "--recursive", help="Recurse into subdirectories."),
@@ -155,7 +155,7 @@ def merge(
 
     if loc is not None:
         out_dir = _resolve_output_dir(output, loc)
-        filename = Path(output).name if (output and output != DEFAULT_MERGED_FILENAME) else DEFAULT_MERGED_FILENAME
+        filename = Path(output).name if output else DEFAULT_MERGED_FILENAME
         output_path = out_dir / filename
     else:
         output_path = Path(output)
@@ -180,7 +180,7 @@ def merge(
 
 @app.command(hidden=True)
 def delta(
-    source: str = typer.Argument(..., help="Directory, file, or glob pattern."),
+    source: list[str] = typer.Argument(..., help="Directory, file, or glob pattern(s)."),
     output: str = typer.Option(DEFAULT_OUTPUT_DIR, "-o", "--output", help="Directory containing converted .md files."),
     loc: str | None = typer.Option(None, "--loc", help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs)."),
     encoding: str = typer.Option(DEFAULT_ENCODING, "--encoding", help="tiktoken encoding for token counting."),

@@ -5,6 +5,7 @@ Classes for keeping track of soon-to-convert files
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from pathlib import Path
+from typing import cast
 
 
 class FileSelector(ABC):
@@ -68,9 +69,16 @@ def select_files(source: str | Path | Sequence[str | Path] | FileSelector = "in"
         return source.select_files()
 
     if isinstance(source, (list, tuple)):
-        return DiscreteFileSelector(source).select_files()
+        selected: list[Path] = []
+        for item in source:
+            item_path = Path(cast(str | Path, item))
+            if item_path.is_file():
+                selected.append(item_path)
+            else:
+                selected.extend(DirectoryFileSelector(item_path, extensions=extensions, recursive=recursive).select_files())
+        return selected
 
-    source_path = Path(source)
+    source_path = Path(cast(str | Path, source))
     if source_path.is_file():
         return DiscreteFileSelector([source_path]).select_files()
     else:

@@ -4,6 +4,7 @@ Combines multiple ifles into one.
 
 from __future__ import annotations
 
+import re
 import tempfile
 from collections.abc import Sequence
 from pathlib import Path
@@ -29,15 +30,37 @@ def resolve_to_markdown(path: Path, *, no_convert: bool = False, **convert_kwarg
         return out.read_text(encoding="utf-8", errors="replace")
 
 
-def build_toc(entries: Sequence[tuple[str, str]]) -> str:
-    """Build a Table of Contents from the headings of each entry."""
-    lines = ["## Table of Contents"]
+def _slugify(text: str) -> str:
+    """GitHub-style anchor slug for Markdown headings."""
+    slug = text.lower()
+    slug = re.sub(r"[^\w\- ]", "", slug)
+    return slug.replace(" ", "-")
+
+
+def build_toc(entries: Sequence[tuple[str, str]], doc_title: str = "", toc_title: str = "Table of Contents") -> str:
+    """Build a Table of Contents with clickable anchor links.
+
+    File names are plain list items; each heading becomes a link that jumps
+    to the corresponding heading in the merged document. Anchors follow the
+    GitHub slug algorithm, with duplicate headings disambiguated by -1, -2...
+    """
+    seen: dict[str, int] = {}
+    if doc_title:
+        seen[_slugify(doc_title)] = 1
+    seen[_slugify(toc_title)] = 1
+
+    lines = [f"### {toc_title}"]
     for name, content in entries:
         lines.append(f"- {name}")
         for line in content.splitlines():
             stripped = line.strip()
-            if stripped.startswith("## ") or stripped.startswith("# "):
-                lines.append(f"  - {stripped}")
+            if stripped.startswith("#"):
+                heading_text = stripped.lstrip("#").strip()
+                base = _slugify(heading_text)
+                count = seen.get(base, 0)
+                seen[base] = count + 1
+                anchor = base if count == 0 else f"{base}-{count}"
+                lines.append(f"  - [{heading_text}](#{anchor})")
     return "\n".join(lines)
 
 
@@ -70,7 +93,7 @@ def merge_files(paths: Sequence[Path], output_path: Path, *, no_convert: bool = 
         sections.append(f"> Sources: {len(entries)} files · Total tokens: {format_tokens(total)}")
         sections.append("")
     if toc:
-        sections.append(build_toc(entries))
+        sections.append(build_toc(entries, doc_title=f"{output_path.stem} — Merged Document"))
         sections.append("")
 
     for name, content in entries:

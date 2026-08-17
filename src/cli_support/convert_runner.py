@@ -20,7 +20,7 @@ from .utils import _convert_kwargs, _default_extensions, _parse_extensions, _res
 
 
 def convert_impl(
-    source: str = "input",
+    source: str | list[str] = "input",
     output: str = "output",
     loc: str | None = None,
     recursive: bool = False,
@@ -41,6 +41,12 @@ def convert_impl(
         raise typer.Exit(code=EXIT_CODE_ERROR)
 
     kwargs = _convert_kwargs(strip_headers_footers, write_images, image_path, pages)
+
+    # When merging, convert into a temporary directory so intermediate .md
+    # files are not left behind in the output folder.
+    import tempfile
+
+    convert_dir = tempfile.TemporaryDirectory(prefix="tmd_convert_") if merge else None
 
     with Progress(SpinnerColumn(spinner_name="dots"), TextColumn("{task.description}"), BarColumn(bar_width=22, style=PROGRESS_BAR_STYLE, complete_style=PROGRESS_BAR_COMPLETE_STYLE), TaskProgressColumn(), console=console, transient=False) as progress:
         task_map = {}
@@ -65,7 +71,8 @@ def convert_impl(
             ticker.start()
 
             try:
-                out = convert_file(path, output_dir, **kwargs)
+                target_dir = Path(convert_dir.name) if convert_dir is not None else output_dir
+                out = convert_file(path, target_dir, **kwargs)
                 markdown = out.read_text(encoding="utf-8", errors="replace")
 
                 if budget is not None and not merge:
@@ -107,6 +114,7 @@ def convert_impl(
     total_source = 0
     total_target = 0
     successful_paths: list[Path] = []
+    converted_outputs: list[Path] = []
     for path, out, markdown, source_tokens, target_tokens, exc in results:
         if exc is not None:
             failures += 1
@@ -116,6 +124,7 @@ def convert_impl(
             total_source += source_tokens
             total_target += target_tokens
             successful_paths.append(path)
+            converted_outputs.append(out)
 
     if merge and successful_paths:
         if output.endswith((".md", ".markdown")):
@@ -125,7 +134,9 @@ def convert_impl(
         else:
             merged_path = output_dir / "merged.md"
 
-        merge_files(successful_paths, merged_path, encoding=DEFAULT_ENCODING, include_tokens=budget is not None, **kwargs)
+        # Merge the already-converted .md files (no re-conversion) so the
+        # intermediate files stay in the temp dir and are cleaned up below.
+        merge_files(converted_outputs, merged_path, no_convert=True, encoding=DEFAULT_ENCODING, include_tokens=budget is not None, **kwargs)
 
         if budget is not None:
             result = prune_to_budget(merged_path.read_text(encoding="utf-8"), budget, DEFAULT_ENCODING)
@@ -150,6 +161,9 @@ def convert_impl(
     if converted_count and not merge:
         pct = delta_percent(total_source, total_target)
         console.print(f"[bold]TOTAL[/bold] ({format_tokens(total_source)} tokens) -> ({format_tokens(total_target)} tokens) [{pct:+.1f}%]")
+
+    if convert_dir is not None:
+        convert_dir.cleanup()
 
     if failures:
         raise typer.Exit(code=EXIT_CODE_ERROR)

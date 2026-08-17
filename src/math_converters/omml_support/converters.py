@@ -78,8 +78,13 @@ def _convert_children(node: ET.Element) -> str:
             parts.append(_group_chr(child))
         elif tag == _m("eqArr"):
             parts.append(_eq_arr(child))
+        elif tag == _m("m"):
+            parts.append(_matrix(child))
         else:
-            parts.append((child.text or "") + _convert_children(child))
+            text = child.text or ""
+            if text.strip():
+                parts.append(text)
+            parts.append(_convert_children(child))
     return "".join(parts)
 
 
@@ -172,6 +177,15 @@ def _eq_arr(node: ET.Element) -> str:
     """m:eqArr -> rows joined with ``\\\\``."""
     rows = [_convert(e) for e in node.findall(_m("e"))]
     return " \\\\ ".join(rows)
+
+
+def _matrix(node: ET.Element) -> str:
+    """m:m -> ``\\begin{matrix}`` with rows joined by ``&`` and ``\\\\``."""
+    rows: list[str] = []
+    for mr in node.findall(_m("mr")):
+        cells = [_convert(e) for e in mr.findall(_m("e"))]
+        rows.append(" & ".join(cells))
+    return "\\begin{matrix}" + " \\\\ ".join(rows) + "\\end{matrix}"
 
 
 def _delimiter(node: ET.Element) -> str:

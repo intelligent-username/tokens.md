@@ -12,4 +12,14 @@ def omath_element_to_latex(element: ET.Element) -> str:
     return _convert_children(element)
 
 
-__all__ = ["omath_element_to_latex"]
+def omml_to_latex(omml: str | ET.Element) -> str:
+    """Convert an OMML XML string or Element to a LaTeX string."""
+    if isinstance(omml, str):
+        element = ET.fromstring(omml)
+    else:
+        element = omml
+    return omath_element_to_latex(element)
+
+
+__all__ = ["omath_element_to_latex", "omml_to_latex"]
+
