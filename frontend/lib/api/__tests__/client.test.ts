@@ -5,7 +5,7 @@
  * getConfig(), getSamples(), fetchSample()
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ApiError, fetchJson, fetchSample, getConfig, getHealth, getSamples, parseError } from "../client";
+import { API_BASE, ApiError, fetchJson, fetchSample, getConfig, getHealth, getSamples, parseError } from "../client";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -190,7 +190,7 @@ describe("fetchJson", () => {
     mockFetch(200, {});
     await fetchJson("/api/test");
     const url = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string;
-    expect(url).toMatch(/^http:\/\/127\.0\.0\.1:8642\/api\/test$/);
+    expect(url).toBe(`${API_BASE}/api/test`);
   });
 });
 

@@ -196,7 +196,12 @@ def delta(
 
 
 @app.command()
-def ui(host: str = typer.Option(DEFAULT_UI_HOST, "--host", help="Bind address (0.0.0.0 for LAN)."), port: int = typer.Option(DEFAULT_UI_PORT, "--port", help="Port; auto-increments if busy."), no_browser: bool = typer.Option(False, "--no-browser", help="Do not auto-open the browser.")) -> None:
+def ui(
+    host: str = typer.Option(DEFAULT_UI_HOST, "--host", help="Bind address (0.0.0.0 for LAN)."),
+    port: int = typer.Option(DEFAULT_UI_PORT, "--port", help="Port; auto-increments if busy."),
+    no_browser: bool = typer.Option(False, "--no-browser", help="Do not auto-open the browser."),
+    reload: bool = typer.Option(False, "--reload", help="Enable auto-reload for local development."),
+) -> None:
     """Launch the local web UI (API + built frontend)."""
     require("fastapi", "tmd ui")
     require("uvicorn", "tmd ui")
@@ -215,7 +220,7 @@ def ui(host: str = typer.Option(DEFAULT_UI_HOST, "--host", help="Bind address (0
     if not no_browser:
         threading.Timer(1.0, lambda: webbrowser.open(target_url)).start()
     console.print(f"[green]tokens.md UI[/green] -> {target_url} (API: http://{host}:{chosen}/api, docs: http://{host}:{chosen}/docs)")
-    uvicorn.run("backend.app:create_app", factory=True, host=host, port=chosen, log_level="info", reload=True)
+    uvicorn.run("backend.app:create_app", factory=True, host=host, port=chosen, log_level="info", reload=reload)
 
 
 @app.command(hidden=True)

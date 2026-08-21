@@ -32,14 +32,12 @@ __all__ = ["ArchiveConverter", "HtmlConverter", "OfficeConverter", "PymupdfConve
 
 DEFAULT_REGISTRY.register(ArchiveConverter())
 DEFAULT_REGISTRY.register(PymupdfConverter())
-DEFAULT_REGISTRY.register(OfficeConverter())
 DEFAULT_REGISTRY.register(HtmlConverter())
 DEFAULT_REGISTRY.register(StructuredConverter())
 DEFAULT_REGISTRY.register(RepoConverter())
 DEFAULT_REGISTRY.register(UnsupportedConverter())
 
-# Reader-backed converters registered AFTER the legacy OfficeConverter so they
-# override .docx/.pptx/.xlsx (Registry.register is last-write-wins per extension).
+# Reader-backed converters registered for structured office, ebook, document, and text formats
 DEFAULT_REGISTRY.register(ReaderConverter(DocxReader()))
 DEFAULT_REGISTRY.register(ReaderConverter(PptxReader()))
 DEFAULT_REGISTRY.register(ReaderConverter(XlsxReader()))

@@ -151,7 +151,10 @@ def _fetch_github_repo(url: str, output_dir: Path) -> Path:
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         tmp_path = Path(tmp_dir) / repo_name
-        res = subprocess.run(["git", "clone", "--depth", "1", url, str(tmp_path)], capture_output=True, text=True)
+        try:
+            res = subprocess.run(["git", "clone", "--depth", "1", url, str(tmp_path)], capture_output=True, text=True, timeout=60)
+        except subprocess.TimeoutExpired:
+            raise UnsupportedFormatError(f"Timed out cloning git repository {url}")
         if res.returncode != 0:
             raise UnsupportedFormatError(f"Failed to clone git repository {url}: {res.stderr.strip()}")
 

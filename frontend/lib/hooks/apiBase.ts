@@ -8,7 +8,10 @@
 
 const envBase = typeof globalThis !== "undefined" && (globalThis as unknown as { process?: { env?: Record<string, string | undefined> } }).process?.env?.NEXT_PUBLIC_API_BASE_URL;
 
-export const API_BASE: string = envBase || "http://127.0.0.1:8642";
+const isBrowser = typeof window !== "undefined" && typeof window.location !== "undefined";
+const defaultBase = isBrowser && window.location.origin && window.location.origin !== "null" ? window.location.origin : "http://127.0.0.1:8642";
+
+export const API_BASE: string = envBase || defaultBase;
 
 /** Derive the WebSocket URL for a session. */
 export function wsUrl(sessionId: string): string {

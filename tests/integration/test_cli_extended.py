@@ -65,3 +65,25 @@ def test_cli_lint_and_test_missing_scripts_exit_gracefully(tmp_path: Path, monke
     res_test = runner.invoke(app, ["test"])
     assert res_test.exit_code == 1
     assert "Developer scripts" in res_test.output
+
+
+def test_cli_ui_options_invoked_correctly(monkeypatch: pytest.MonkeyPatch) -> None:
+    called_args: dict[str, object] = {}
+
+    def fake_uvicorn_run(*args: object, **kwargs: object) -> None:
+        called_args.update(kwargs)
+
+    monkeypatch.setattr("uvicorn.run", fake_uvicorn_run)
+    monkeypatch.setattr("webbrowser.open", lambda *a, **kw: None)
+
+    # Test default ui run -> reload should be False
+    res_default = runner.invoke(app, ["ui", "--no-browser", "--port", "9999"])
+    assert res_default.exit_code == 0
+    assert called_args.get("reload") is False
+    assert called_args.get("port") == 9999
+
+    # Test opt-in reload -> reload should be True
+    res_reload = runner.invoke(app, ["ui", "--no-browser", "--reload", "--port", "9998"])
+    assert res_reload.exit_code == 0
+    assert called_args.get("reload") is True
+    assert called_args.get("port") == 9998

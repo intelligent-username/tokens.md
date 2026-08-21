@@ -19,17 +19,14 @@ import pytest
 
 
 def pytest_configure(config: pytest.Config) -> None:
-    """Control coverage table verbosity: compact percentage by default, detailed breakdown with -v."""
-    if config.option.verbose == 0:
-        config.option.cov_report = {}
-    else:
-        if not getattr(config.option, "cov_report", None):
-            config.option.cov_report = {"term-missing:skip-covered": None}
+    """Enable detailed coverage table when -v is passed; otherwise let --cov-report= suppress the table."""
+    if config.option.verbose > 0:
+        config.option.cov_report = {"term-missing:skip-covered": None}
 
 
 def pytest_terminal_summary(terminalreporter: pytest.TerminalReporter, exitstatus: int, config: pytest.Config) -> None:
     """Print a clean single-line coverage percentage when running without -v."""
-    if config.option.verbose == 0 and getattr(config.option, "cov_source", None):
+    if config.option.verbose <= 0 and getattr(config.option, "cov_source", None):
         try:
             cov_plugin = config.pluginmanager.get_plugin("_cov")
             if cov_plugin and hasattr(cov_plugin, "cov_controller") and cov_plugin.cov_controller:

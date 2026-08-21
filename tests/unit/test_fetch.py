@@ -24,3 +24,14 @@ def test_fetch_url_writes_markdown(tmp_path: Path) -> None:
 def test_fetch_url_failure_raises(tmp_path: Path) -> None:
     with patch("src.fetch.trafilatura.fetch_url", return_value=None), pytest.raises(UnsupportedFormatError):
         fetch_url("https://example.com", tmp_path / "out")
+
+
+def test_fetch_github_repo_timeout(tmp_path: Path) -> None:
+    import subprocess
+
+    from src.fetch import _fetch_github_repo
+
+    with patch("subprocess.run", side_effect=subprocess.TimeoutExpired(cmd="git clone", timeout=60)):
+        with pytest.raises(UnsupportedFormatError) as excinfo:
+            _fetch_github_repo("https://github.com/intelligent-username/tokens.md", tmp_path / "out")
+        assert "Timed out cloning git repository" in str(excinfo.value)

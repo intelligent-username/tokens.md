@@ -113,7 +113,7 @@ strict = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q --cov=src --cov=backend"
+addopts = "--cov=src --cov=backend --cov-report="
 filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::DeprecationWarning:starlette.*",

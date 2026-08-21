@@ -26,6 +26,17 @@ def test_office_converts_docx(sample_docx: Path, tmp_path: Path) -> None:
     assert "This is a letter." in text
 
 
+def test_office_converter_facade_direct(sample_docx: Path, tmp_path: Path) -> None:
+    from src.handlers.office import OfficeConverter
+
+    conv = OfficeConverter()
+    out = conv.convert(sample_docx, tmp_path / "office_out")
+    assert out.exists()
+    text = out.read_text(encoding="utf-8")
+    assert "Dear friend" in text
+    assert "This is a letter." in text
+
+
 def test_structured_converts_csv(sample_csv: Path, tmp_path: Path) -> None:
     out = _convert(sample_csv, tmp_path)
     text = out.read_text(encoding="utf-8")

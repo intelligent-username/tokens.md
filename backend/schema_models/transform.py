@@ -50,6 +50,7 @@ class MergeResponse(BaseModel):
     percent: float
     prune: PruneResult | None = None
     delta_entries: list[DeltaEntry] | None = None
+    warning: str | None = None
 
 
 class BudgetRequest(BaseModel):

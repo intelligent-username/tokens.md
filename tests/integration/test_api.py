@@ -89,6 +89,19 @@ def test_merge_with_budget_and_delta(client: TestClient) -> None:
     assert result["target_tokens"] > 0
 
 
+def test_merge_prune_failure_returns_warning(client: TestClient) -> None:
+    body = _upload(client, "a.json", b'{"a": 1}')
+    sid = body["session_id"]
+    fid_a = body["files"][0]["file_id"]
+    with patch("backend.api_routes.convert_routes.prune_to_budget", side_effect=ValueError("synthetic budget error")):
+        resp = client.post("/api/merge", json={"session_id": sid, "file_ids": [fid_a], "options": {"budget": 50}})
+    assert resp.status_code == 200, resp.text
+    result = resp.json()
+    assert result["output_file_id"]
+    assert result["prune"] is None
+    assert "Pruning failed: synthetic budget error" in (result.get("warning") or "")
+
+
 def test_budget_standalone(client: TestClient) -> None:
     resp = client.post("/api/budget", json={"session_id": "x", "text": "hello world " * 100, "budget": 10})
     assert resp.status_code == 200

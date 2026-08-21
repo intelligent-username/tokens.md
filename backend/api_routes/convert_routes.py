@@ -77,6 +77,7 @@ def merge(req: MergeRequest, request: Request) -> MergeResponse:
     target_tokens = count_tokens_in_file(output_path, encoding)
 
     prune: PruneResult | None = None
+    warning: str | None = None
     if opts.budget is not None:
         try:
             result = prune_to_budget(output_path.read_text(encoding="utf-8"), opts.budget, encoding)
@@ -84,14 +85,15 @@ def merge(req: MergeRequest, request: Request) -> MergeResponse:
             target_tokens = count_tokens(result.content, encoding)
             prune = PruneResult(fits=result.fits, removed_tokens=result.removed_tokens, removed_blocks=result.removed_blocks, budget=opts.budget, final_tokens=target_tokens)
         except Exception as exc:
-            logger.warning("Pruning error ignored during merge: %s", exc)
+            warning = f"Pruning failed: {exc}"
+            logger.warning("Pruning error during merge: %s", exc)
 
     delta_entries: list[DeltaEntry] | None = None
     if opts.delta:
         delta_entries = [DeltaEntry(**entry) for entry in compute_delta_summary(paths, [output_path], encoding)]
 
     out_id = ws.register_output(output_path, target_tokens)
-    return MergeResponse(output_file_id=out_id, output_name=output_path.name, source_tokens=source_tokens, target_tokens=target_tokens, percent=delta_percent(source_tokens, target_tokens), prune=prune, delta_entries=delta_entries)
+    return MergeResponse(output_file_id=out_id, output_name=output_path.name, source_tokens=source_tokens, target_tokens=target_tokens, percent=delta_percent(source_tokens, target_tokens), prune=prune, delta_entries=delta_entries, warning=warning)
 
 
 @router.post("/budget", response_model=BudgetResponse)
