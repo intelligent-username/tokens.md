@@ -1,5 +1,5 @@
 name: tmd
-version: "0.0.16"
+version: "0.0.17"
 summary: Convert files to token-efficient Markdown for LLM prompts
 description: |
   tmd converts PDF, DOCX, PPTX, XLSX, ODT, EPUB, MOBI, HTML, JSON, CSV,
@@ -28,7 +28,7 @@ apps:
 parts:
   tmd-amd64:
     plugin: dump
-    source: https://github.com/intelligent-username/tokens.md/releases/download/v0.0.16/tmd-linux-x64
+    source: https://github.com/intelligent-username/tokens.md/releases/download/v0.0.17/tmd-linux-x64
     source-type: file
     stage-packages:
       - on amd64:
@@ -40,7 +40,7 @@ parts:
 
   tmd-arm64:
     plugin: dump
-    source: https://github.com/intelligent-username/tokens.md/releases/download/v0.0.16/tmd-linux-arm64
+    source: https://github.com/intelligent-username/tokens.md/releases/download/v0.0.17/tmd-linux-arm64
     source-type: file
     stage-packages:
       - on arm64:

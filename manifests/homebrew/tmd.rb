@@ -2,7 +2,7 @@ class Tmd < Formula
   desc "Convert files to token-efficient Markdown for LLM prompts"
   homepage "https://github.com/intelligent-username/tokens.md"
   license "AGPL-3.0-only"
-  version "0.0.16"
+  version "0.0.17"
 
   livecheck do
     url :stable

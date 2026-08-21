@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
   <metadata>
     <id>tmd</id>
-    <version>0.0.16</version>
+    <version>0.0.17</version>
     <title>tmd</title>
     <authors>intelligent-username</authors>
     <owners>intelligent-username</owners>
@@ -11,7 +11,7 @@
     <licenseUrl>https://github.com/intelligent-username/tokens.md/blob/main/LICENSE</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <tags>markdown llm tokens cli pdf docx converter</tags>
-    <releaseNotes>https://github.com/intelligent-username/tokens.md/releases/tag/v0.0.16</releaseNotes>
+    <releaseNotes>https://github.com/intelligent-username/tokens.md/releases/tag/v0.0.17</releaseNotes>
     <packageTypes>
       <packageType name="Portable" />
     </packageTypes>
