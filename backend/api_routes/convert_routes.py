@@ -65,6 +65,8 @@ def merge(req: MergeRequest, request: Request) -> MergeResponse:
     settings = _settings(request)
     targets = _resolve_upload_paths(ws, req.file_ids, req.path, settings)
     paths = [path for _, path in targets]
+    if not paths:
+        raise ApiError(HTTP_BAD_REQUEST, ERR_BAD_REQUEST, "No files found to merge")
     opts = req.options
     encoding = opts.encoding or DEFAULT_ENCODING
     output_path = ws.output_dir / sanitize_name(req.output_name)

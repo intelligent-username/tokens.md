@@ -24,7 +24,7 @@ class OfficeConverter(Converter):
             raise UnsupportedFormatError(f"Unsupported office format {input_path.suffix}")
         output_dir.mkdir(parents=True, exist_ok=True)
         document = reader.read(input_path)
-        from ..renderer import MarkdownRenderer
+        from ..engine.renderer import MarkdownRenderer
 
         markdown = MarkdownRenderer().render(document)
         out = output_dir / f"{input_path.stem}.md"

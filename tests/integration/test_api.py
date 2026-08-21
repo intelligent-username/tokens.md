@@ -241,6 +241,17 @@ def test_local_path_allowed(tmd_workspace: Path, tmp_path: Path) -> None:
     assert resp.json()["converted_count"] == 1
 
 
+def test_local_directory_path_conversion(tmd_workspace: Path, tmp_path: Path) -> None:
+    dir_target = tmp_path / "docs"
+    dir_target.mkdir()
+    (dir_target / "a.json").write_text('{"a": 1}', encoding="utf-8")
+    (dir_target / "b.json").write_text('{"b": 2}', encoding="utf-8")
+    client = _client_with(allow_local_paths=True, local_paths_root=tmp_path)
+    resp = client.post("/api/convert", json={"session_id": "s", "path": str(dir_target)})
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["converted_count"] == 2
+
+
 def test_local_path_outside_root(tmd_workspace: Path, tmp_path: Path) -> None:
     outside = tmp_path.parent / "outside.json"
     outside.write_text('{"x": 1}', encoding="utf-8")

@@ -47,5 +47,11 @@ def _resolve_upload_paths(ws: Workspace, file_ids: list[str], path: str | None, 
         root = settings.local_paths_root.resolve()
         if not resolved.is_relative_to(root):
             raise ApiError(HTTP_FORBIDDEN, ERR_LOCAL_PATHS_DISALLOWED, "Path outside allowed root")
+        if resolved.is_dir():
+            from src.file_selector import select_files
+            from src.registry import DEFAULT_REGISTRY
+
+            files = select_files(resolved, extensions=list(DEFAULT_REGISTRY.extensions()), recursive=True)
+            return [(None, f) for f in files]
         return [(None, resolved)]
     return [(fid, ws.resolve_upload(fid)) for fid in file_ids]

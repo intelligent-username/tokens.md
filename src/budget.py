@@ -23,9 +23,6 @@ def prune_to_budget(content: str, budget: int, encoding: str = DEFAULT_ENCODING)
     if count_tokens(current, encoding) <= budget:
         return _finalize(result, current, original_tokens, removed, budget, encoding)
 
-    if original_tokens <= budget:
-        return result
-
     sections = _split_sections(current)
     for s in sections:
         s.density = _density(s, encoding)

@@ -113,10 +113,15 @@ strict = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q --cov=src --cov=backend --cov-report=term-missing:skip-covered --cov-report=term"
+addopts = "-q --cov=src --cov=backend"
 filterwarnings = [
     "ignore::DeprecationWarning",
     "ignore::DeprecationWarning:starlette.*",
+    "ignore::DeprecationWarning:fastapi.*",
+    "ignore:.*starlette.testclient.*:Warning",
+    "ignore:.*httpx.*:Warning",
+    "ignore::Warning:fastapi.testclient",
+    "ignore::Warning:starlette.*",
 ]
 
 [tool.coverage.run]

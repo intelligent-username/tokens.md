@@ -203,11 +203,15 @@ The REST API is available at `http://127.0.0.1:8642/api` with interactive Swagge
 
 ## Token budgeting
 
-`--budget N` forces the output to fit within `N` tokens. Pruning happens in order:
+`--budget N` forces the output to fit within `N` tokens. Pruning executes via an escalating 5-pass cascade that halts as soon as the token target is reached:
 
-1. License/boilerplate lines
-2. Markdown image references
-3. Truncation from the end (earliest/most important content preserved)
+1. **Pass 1 (Boilerplate & Images)**: Removes copyright disclaimers, legal notices, and embedded markdown image links.
+2. **Pass 2 (Gentle TextRank)**: Uses TextRank graph summarization to reduce sentences in low-density sections.
+3. **Pass 3 (Medium TextRank)**: Applies heavier sentence-level extraction across all non-heading paragraphs.
+4. **Pass 4 (Density-Ranked Section Drops)**: Computes information density (`unique_words / total_words`) per section and removes lowest-scoring sections while retaining structure.
+5. **Pass 5 (Hard Truncation)**: Truncates remaining content from the end and appends a truncation marker with token metadata.
+
+If the raw input already fits within `N` tokens, no pruning or stripping occurs.
 
 Example output:
 

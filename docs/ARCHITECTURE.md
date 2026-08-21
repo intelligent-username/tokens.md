@@ -155,7 +155,7 @@ tmd merge docs/ --budget 4000
 Readers produce a `Document`; `MarkdownRenderer` renders it. Neither side knows about the other's concerns.
 
 ```python
-# src/model.py  (abridged)
+# src/engine/model.py  (abridged)
 Block = Heading | Paragraph | Table | CodeBlock | ListItem | Image | RawMarkdown | ...
 
 
@@ -281,7 +281,7 @@ backend/
 ```python
 # src/readers/myformat.py
 from pathlib import Path
-from ..model import Document, Paragraph
+from ..engine.model import Document, Paragraph
 from .base import Reader
 
 
