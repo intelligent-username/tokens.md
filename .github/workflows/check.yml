@@ -9,6 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
+  # 1. Verify version alignment across pyproject.toml, package.json, and packaging manifests
   verify:
     name: Verify & Align Version
     runs-on: ubuntu-latest
@@ -26,4 +27,40 @@ jobs:
         uses: actions/checkout@v4
       - name: Run Tests
         uses: ./.github/actions/test
+
+  security:
+    name: Security & Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Audit Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install . pip-audit
+          python -m pip_audit
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Audit Frontend Dependencies
+        working-directory: frontend
+        run: npm audit --audit-level=high
+
+      - name: Secret Leak Detection (Gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
