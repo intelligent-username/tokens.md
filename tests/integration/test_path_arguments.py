@@ -273,3 +273,39 @@ def test_cli_convert_nonexistent_path_fails(complex_workspace: Path) -> None:
     nonexistent = complex_workspace / "does_not_exist"
     result = runner.invoke(app, ["convert", str(nonexistent), "-o", str(complex_workspace / "out")])
     assert result.exit_code == 1
+
+
+def test_cli_convert_spaces_and_long_filenames(tmp_path: Path) -> None:
+    """Test converting files with spaces and very long filenames."""
+    space_file = tmp_path / "my document with spaces.txt"
+    space_file.write_text("content with spaces", encoding="utf-8")
+
+    long_name = "a" * 80 + "_long_document.txt"
+    long_file = tmp_path / long_name
+    long_file.write_text("long name content", encoding="utf-8")
+
+    out_dir = tmp_path / "out_edge"
+    res = runner.invoke(app, ["convert", str(space_file), str(long_file), "-o", str(out_dir)])
+    assert res.exit_code == 0
+    assert (out_dir / "my document with spaces.md").exists()
+    assert (out_dir / f"{'a' * 80}_long_document.md").exists()
+
+
+def test_cli_convert_nested_subdirectories(tmp_path: Path) -> None:
+    """Test converting files located in different nested subdirectories."""
+    sub1 = tmp_path / "deep" / "nested" / "sub1"
+    sub1.mkdir(parents=True)
+    f1 = sub1 / "file1.txt"
+    f1.write_text("Sub 1 content", encoding="utf-8")
+
+    sub2 = tmp_path / "other" / "branch" / "sub2"
+    sub2.mkdir(parents=True)
+    f2 = sub2 / "file2.txt"
+    f2.write_text("Sub 2 content", encoding="utf-8")
+
+    out_dir = tmp_path / "out_subdirs"
+    res = runner.invoke(app, ["convert", str(f1), str(f2), "-o", str(out_dir)])
+    assert res.exit_code == 0
+    assert (out_dir / "file1.md").exists()
+    assert (out_dir / "file2.md").exists()
+
