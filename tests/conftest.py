@@ -25,8 +25,8 @@ def pytest_configure(config: pytest.Config) -> None:
 
 
 def pytest_terminal_summary(terminalreporter: pytest.TerminalReporter, exitstatus: int, config: pytest.Config) -> None:
-    """Print a clean single-line coverage percentage when running without -v."""
-    if config.option.verbose <= 0 and getattr(config.option, "cov_source", None):
+    """Print a clean single-line coverage percentage whenever coverage is enabled."""
+    if getattr(config.option, "cov_source", None):
         try:
             cov_plugin = config.pluginmanager.get_plugin("_cov")
             if cov_plugin and hasattr(cov_plugin, "cov_controller") and cov_plugin.cov_controller:
@@ -93,10 +93,10 @@ def sample_docx(tmp_path: Path) -> Path:
     from docx import Document
 
     doc = Document()
-    doc.add_paragraph("Dear friend")
+    doc.add_paragraph("Dear friend,")
     doc.add_paragraph("This is a letter.")
     path = tmp_path / "letter.docx"
-    doc.save(path)
+    doc.save(str(path))
     return path
 
 
@@ -109,7 +109,7 @@ def sample_docx_headed(tmp_path: Path) -> Path:
     doc.add_heading("Chapter One", level=1)
     doc.add_paragraph("Hello from python-docx.")
     path = tmp_path / "headed.docx"
-    doc.save(path)
+    doc.save(str(path))
     return path
 
 
@@ -123,7 +123,7 @@ def sample_pptx(tmp_path: Path) -> Path:
     slide.shapes.title.text = "Hello slides"
     slide.placeholders[1].text = "Body text here."
     path = tmp_path / "deck.pptx"
-    prs.save(path)
+    prs.save(str(path))
     return path
 
 
@@ -134,10 +134,11 @@ def sample_xlsx(tmp_path: Path) -> Path:
 
     wb = Workbook()
     ws = wb.active
+    assert ws is not None
     ws.append(["name", "age"])
     ws.append(["alice", 30])
     path = tmp_path / "data.xlsx"
-    wb.save(path)
+    wb.save(str(path))
     return path
 
 
@@ -153,7 +154,7 @@ def sample_odt(tmp_path: Path) -> Path:
     addTextToElement(p, "Hello from ODF")
     doc.text.addElement(p)
     path = tmp_path / "sample.odt"
-    doc.save(path)
+    doc.save(str(path))
     return path
 
 
@@ -235,7 +236,7 @@ def _inject_docx_math(tmp_path: Path, omml: str) -> Path:
     doc = Document()
     doc.add_paragraph("Solve for x:")
     path = tmp_path / "math.docx"
-    doc.save(path)
+    doc.save(str(path))
 
     tmp = path.with_suffix(".tmp.docx")
     with zipfile.ZipFile(path) as zin, zipfile.ZipFile(tmp, "w") as zout:
