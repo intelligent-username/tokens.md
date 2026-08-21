@@ -15,13 +15,13 @@ modules:
       - install -Dm644 com.intelligent_username.tmd.metainfo.xml /app/share/metainfo/com.intelligent_username.tmd.metainfo.xml
     sources:
       - type: file
-        url: https://github.com/intelligent-username/tokens.md/releases/download/v0.0.14/tmd-linux-x64
+        url: https://github.com/intelligent-username/tokens.md/releases/download/v0.0.15/tmd-linux-x64
         sha256: 11b4ad968671c76e7aa4fb5cc5bc6b740e77fea86c98417a0a11a57e855718e1
         dest-filename: tmd-linux-x64
         only-arches:
           - x86_64
       - type: file
-        url: https://github.com/intelligent-username/tokens.md/releases/download/v0.0.14/tmd-linux-arm64
+        url: https://github.com/intelligent-username/tokens.md/releases/download/v0.0.15/tmd-linux-arm64
         sha256: d135d720840cff69a652c544c26d2dd45acfbe9f09577da6005433be6d1f6b70
         dest-filename: tmd-linux-arm64
         only-arches:

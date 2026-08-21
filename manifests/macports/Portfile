@@ -3,7 +3,7 @@
 PortSystem          1.0
 
 name                tmd
-version             0.0.14
+version             0.0.15
 categories          textproc devel
 platforms           darwin
 supported_archs     arm64 x86_64
@@ -40,4 +40,4 @@ destroot {
 
 test.run            yes
 test.cmd            ${prefix}/bin/tmd
-test.args           --version             0.0.14
+test.args           --version             0.0.15
