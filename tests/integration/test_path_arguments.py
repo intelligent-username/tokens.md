@@ -303,9 +303,29 @@ def test_cli_convert_nested_subdirectories(tmp_path: Path) -> None:
     f2 = sub2 / "file2.txt"
     f2.write_text("Sub 2 content", encoding="utf-8")
 
-    out_dir = tmp_path / "out_subdirs"
-    res = runner.invoke(app, ["convert", str(f1), str(f2), "-o", str(out_dir)])
+def test_cli_convert_default_source_fallback(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test `tmd convert` with no source argument uses default input directory."""
+    monkeypatch.chdir(tmp_path)
+    in_dir = tmp_path / "input"
+    in_dir.mkdir()
+    (in_dir / "file.txt").write_text("Hello default input", encoding="utf-8")
+
+    out_dir = tmp_path / "output"
+    res = runner.invoke(app, ["convert"])
     assert res.exit_code == 0
-    assert (out_dir / "file1.md").exists()
-    assert (out_dir / "file2.md").exists()
+    assert (out_dir / "file.md").exists()
+
+
+def test_cli_convert_glob_patterns(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test `tmd convert '*.json' -o out` using glob pattern in args."""
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / "sample.json").write_text('{"a": 1}', encoding="utf-8")
+    (tmp_path / "ignored.txt").write_text("ignore me", encoding="utf-8")
+
+    out_dir = tmp_path / "out_glob"
+    res = runner.invoke(app, ["convert", "*.json", "-o", str(out_dir)])
+    assert res.exit_code == 0
+    assert (out_dir / "sample.md").exists()
+    assert not (out_dir / "ignored.md").exists()
+
 

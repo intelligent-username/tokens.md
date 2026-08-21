@@ -71,12 +71,20 @@ def select_files(source: str | Path | Sequence[str | Path] | FileSelector = "in"
     if isinstance(source, (list, tuple)):
         selected: list[Path] = []
         for item in source:
+            item_str = str(item)
+            if any(char in item_str for char in ("*", "?", "[")):
+                selected.extend(GlobPatternFileSelector(item_str).select_files())
+                continue
             item_path = Path(cast(str | Path, item))
             if item_path.is_file():
                 selected.append(item_path)
             else:
                 selected.extend(DirectoryFileSelector(item_path, extensions=extensions, recursive=recursive).select_files())
         return selected
+
+    source_str = str(source)
+    if any(char in source_str for char in ("*", "?", "[")):
+        return GlobPatternFileSelector(source_str).select_files()
 
     source_path = Path(cast(str | Path, source))
     if source_path.is_file():

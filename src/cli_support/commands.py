@@ -58,7 +58,7 @@ def help_cmd(ctx: typer.Context) -> None:
 
 @app.command()
 def convert(
-    source: list[str] = typer.Argument(..., help="Directory, file, or glob pattern(s)."),
+    source: list[str] | None = typer.Argument(None, help="Directory, file, or glob pattern(s)."),
     output: str = typer.Option(DEFAULT_OUTPUT_DIR, "-o", "--output", help="Output directory."),
     loc: str | None = typer.Option(None, "--loc", help="Output location directory (e.g. --loc=outputs or --loc=.)."),
     recursive: bool = typer.Option(False, "-r", "--recursive", help="Recurse into subdirectories."),
@@ -72,7 +72,8 @@ def convert(
     budget: int | None = typer.Option(None, "-b", "--budget", help="Prune output to fit a hard token budget limit."),
 ) -> None:
     """Convert files to Markdown."""
-    convert_impl(source=source, output=output, loc=loc, recursive=recursive, extensions=extensions, strip_headers_footers=strip_headers_footers, write_images=write_images, image_path=image_path, pages=pages, clip=clip, merge=merge, budget=budget)
+    target_source = source if (source is not None and len(source) > 0) else [DEFAULT_SOURCE_DIR]
+    convert_impl(source=target_source, output=output, loc=loc, recursive=recursive, extensions=extensions, strip_headers_footers=strip_headers_footers, write_images=write_images, image_path=image_path, pages=pages, clip=clip, merge=merge, budget=budget)
 
 
 @app.command()

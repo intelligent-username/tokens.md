@@ -20,14 +20,14 @@ def test_merge_files_toc(sample_md: Path, tmp_path: Path) -> None:
     out = tmp_path / "merged.md"
     merge_files([sample_md], out)
     text = out.read_text(encoding="utf-8")
-    assert "## Table of Contents" in text
+    assert "### Table of Contents" in text
     assert "- notes.md" in text
 
 
 def test_merge_files_no_toc(sample_md: Path, tmp_path: Path) -> None:
     out = tmp_path / "merged.md"
     merge_files([sample_md], out, toc=False)
-    assert "## Table of Contents" not in out.read_text(encoding="utf-8")
+    assert "### Table of Contents" not in out.read_text(encoding="utf-8")
 
 
 def test_merge_files_ordering(tmp_path: Path) -> None:
@@ -60,10 +60,14 @@ def test_resolve_to_markdown_converts_pdf(sample_pdf: Path) -> None:
 
 
 def test_build_toc() -> None:
-    toc = build_toc([("a.md", "# Title\n\n## Section\nbody")])
+    toc = build_toc([("a.md", "# Title\n\n## Section\nbody"), ("b.md", "# Title\n\n## Section\nother")])
+    assert "### Table of Contents" in toc
     assert "- a.md" in toc
+    assert "- b.md" in toc
     assert "[Title](#title)" in toc
+    assert "[Title](#title-1)" in toc
     assert "[Section](#section)" in toc
+    assert "[Section](#section-1)" in toc
 
 
 
