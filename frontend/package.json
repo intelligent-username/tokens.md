@@ -29,7 +29,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitest/coverage-v8": "^4.1.11",
-    "jsdom": "^30.0.0",
+    "jsdom": "^26.0.0",
     "postcss": "^8.5.26",
     "prettier": "^3.5.0",
     "tailwindcss": "^4.3.0",

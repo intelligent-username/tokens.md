@@ -25,33 +25,35 @@ interface WsMockInstance {
 
 const instances: WsMockInstance[] = [];
 
-const MockWebSocket = vi.fn((url: string): WsMockInstance => {
+const MockWebSocket = vi.fn(function (url: string): WsMockInstance {
   const instance: WsMockInstance = {
     url,
-    readyState: WebSocket.CONNECTING, // 0
+    readyState: 0, // WebSocket.CONNECTING
     onopen: null,
     onmessage: null,
     onerror: null,
     onclose: null,
     close: vi.fn(() => {
-      instance.readyState = WebSocket.CLOSED;
+      instance.readyState = 3; // WebSocket.CLOSED
       instance.onclose?.();
     }),
     send: vi.fn(),
   };
   instances.push(instance);
   return instance;
-}) as unknown as typeof WebSocket;
+});
 
 // Attach static constants
-(MockWebSocket as unknown as Record<string, number>).CONNECTING = 0;
-(MockWebSocket as unknown as Record<string, number>).OPEN = 1;
-(MockWebSocket as unknown as Record<string, number>).CLOSING = 2;
-(MockWebSocket as unknown as Record<string, number>).CLOSED = 3;
+Object.assign(MockWebSocket, {
+  CONNECTING: 0,
+  OPEN: 1,
+  CLOSING: 2,
+  CLOSED: 3,
+});
 
 beforeEach(() => {
   instances.length = 0;
-  vi.stubGlobal("WebSocket", MockWebSocket);
+  vi.stubGlobal("WebSocket", MockWebSocket as unknown as typeof WebSocket);
   vi.useFakeTimers();
 });
 

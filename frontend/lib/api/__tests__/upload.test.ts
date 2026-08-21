@@ -48,7 +48,9 @@ beforeEach(() => {
 
   vi.stubGlobal(
     "XMLHttpRequest",
-    vi.fn(() => xhrMock)
+    vi.fn(function () {
+      return xhrMock;
+    })
   );
 });
 
@@ -242,7 +244,7 @@ describe("uploadFiles — error handling", () => {
   it("throws ApiError on non-2xx status (413 too_large)", async () => {
     simulateError(413, { code: "too_large", message: "file exceeds 100 MB limit" });
 
-    const err = await uploadFiles([makeFile()], ["test.pdf"]).catch((e: unknown) => e as ApiError);
+    const err = (await uploadFiles([makeFile()], ["test.pdf"]).catch((e: unknown) => e)) as ApiError;
     expect(err).toBeInstanceOf(ApiError);
     expect(err.status).toBe(413);
     expect(err.kind).toBe("too_large");
@@ -252,7 +254,7 @@ describe("uploadFiles — error handling", () => {
   it("throws ApiError on 422 unsupported_format", async () => {
     simulateError(422, { code: "unsupported_format", message: "cannot read this" });
 
-    const err = await uploadFiles([makeFile()], ["test.pdf"]).catch((e: unknown) => e as ApiError);
+    const err = (await uploadFiles([makeFile()], ["test.pdf"]).catch((e: unknown) => e)) as ApiError;
     expect(err.kind).toBe("unsupported_format");
     expect(err.status).toBe(422);
   });
