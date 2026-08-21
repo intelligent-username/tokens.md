@@ -9,7 +9,7 @@ import pytest
 from typer.testing import CliRunner
 
 from src.cli import app
-from src.file_selector import DirectoryFileSelector, DiscreteFileSelector, GlobPatternFileSelector, select_files
+from src.file_selector import DiscreteFileSelector, GlobPatternFileSelector, select_files
 
 runner = CliRunner()
 
@@ -24,7 +24,6 @@ def complex_workspace(tmp_path: Path) -> Path:
     doc.save(tmp_path / "root_doc.docx")
 
     (tmp_path / "root_plain.txt").write_text("hello root", encoding="utf-8")
-
 
     # docs directory
     docs_dir = tmp_path / "docs"
@@ -52,6 +51,7 @@ def complex_workspace(tmp_path: Path) -> Path:
 # ==============================================================================
 # Unit Tests for select_files() & FileSelector Strategies
 # ==============================================================================
+
 
 def test_select_files_current_dir(complex_workspace: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(complex_workspace)
@@ -124,6 +124,7 @@ def test_select_files_discrete_file_strategy(complex_workspace: Path) -> None:
 # ==============================================================================
 # CLI Integration Tests for All Path Arguments
 # ==============================================================================
+
 
 def test_cli_convert_dot_current_dir(complex_workspace: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test `tmd convert . -o out` from working directory."""
@@ -220,7 +221,6 @@ def test_cli_convert_multiple_singular_pdfs(tmp_path: Path) -> None:
     assert "Content in first.pdf" in (out_dir / "first.md").read_text(encoding="utf-8")
 
 
-
 def test_cli_convert_mixed_directory_and_files(complex_workspace: Path) -> None:
     """Test `tmd convert ./docs data/table.csv -o out` (mix of dir and file paths)."""
     docs_dir = complex_workspace / "docs"
@@ -267,7 +267,6 @@ def test_cli_convert_merge_all_sources(complex_workspace: Path) -> None:
     assert "| a | b | c |" in merged_text
 
 
-
 def test_cli_convert_nonexistent_path_fails(complex_workspace: Path) -> None:
     """Test that nonexistent paths exit with code 1."""
     nonexistent = complex_workspace / "does_not_exist"
@@ -303,6 +302,7 @@ def test_cli_convert_nested_subdirectories(tmp_path: Path) -> None:
     f2 = sub2 / "file2.txt"
     f2.write_text("Sub 2 content", encoding="utf-8")
 
+
 def test_cli_convert_default_source_fallback(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test `tmd convert` with no source argument uses default input directory."""
     monkeypatch.chdir(tmp_path)
@@ -327,5 +327,3 @@ def test_cli_convert_glob_patterns(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     assert res.exit_code == 0
     assert (out_dir / "sample.md").exists()
     assert not (out_dir / "ignored.md").exists()
-
-

@@ -51,7 +51,7 @@ def sync_internal_versions(version: str) -> None:
 def main() -> None:
     # Extract tag if provided as argument or via GITHUB_REF environment variable
     tag_input = sys.argv[1] if len(sys.argv) > 1 else os.environ.get("GITHUB_REF", "")
-    
+
     tag_version = ""
     if tag_input:
         # Match v1.2.3, refs/tags/v1.2.3, or 1.2.3
@@ -83,7 +83,5 @@ def main() -> None:
     sync_manifests()
 
 
-
 if __name__ == "__main__":
     main()
-

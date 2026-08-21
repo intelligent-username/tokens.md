@@ -8,14 +8,13 @@ Exit code is non-zero if any suite fails.
 from __future__ import annotations
 
 import argparse
-from collections.abc import Callable
 import concurrent.futures
 import os
 import re
 import shutil
 import subprocess
 import sys
-import time
+from collections.abc import Callable
 from pathlib import Path
 
 from rich.console import Console
@@ -34,12 +33,7 @@ def _strip_ansi(text: str) -> str:
     return re.sub(r"\x1b\[[0-9;]*[a-zA-Z]", "", text)
 
 
-def _run_streaming_cmd(
-    cmd: list[str],
-    cwd: Path,
-    env: dict[str, str] | None = None,
-    on_line: Callable[[str], None] | None = None,
-) -> tuple[int, str, str]:
+def _run_streaming_cmd(cmd: list[str], cwd: Path, env: dict[str, str] | None = None, on_line: Callable[[str], None] | None = None) -> tuple[int, str, str]:
     """Execute a command, streaming stdout lines in real time to a callback."""
     executable_cmd = list(cmd)
     if os.name == "nt" and executable_cmd[0] in {"npm", "npx"}:
@@ -51,17 +45,7 @@ def _run_streaming_cmd(
     try:
         import threading
 
-        proc = subprocess.Popen(
-            executable_cmd,
-            cwd=str(cwd),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            env=env,
-            bufsize=1,
-        )
+        proc = subprocess.Popen(executable_cmd, cwd=str(cwd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8", errors="replace", env=env, bufsize=1)
 
         def _read_stream(stream, accumulator, is_stdout=True):
             if stream is None:
@@ -85,10 +69,7 @@ def _run_streaming_cmd(
         return 1, "", str(exc)
 
 
-def _run_backend_tests(
-    on_progress: Callable[[int], None] | None = None,
-    on_finished: Callable[[int, str | None], None] | None = None,
-) -> tuple[int, str, str]:
+def _run_backend_tests(on_progress: Callable[[int], None] | None = None, on_finished: Callable[[int, str | None], None] | None = None) -> tuple[int, str, str]:
     """Run pytest with live streaming progress updates."""
     TEMP_DIR.mkdir(parents=True, exist_ok=True)
     cov_file = TEMP_DIR / ".coverage"
@@ -122,10 +103,7 @@ def _run_backend_tests(
     return code, out, err
 
 
-def _run_frontend_tests(
-    on_progress: Callable[[int], None] | None = None,
-    on_finished: Callable[[int, str | None], None] | None = None,
-) -> tuple[int, str, str]:
+def _run_frontend_tests(on_progress: Callable[[int], None] | None = None, on_finished: Callable[[int, str | None], None] | None = None) -> tuple[int, str, str]:
     """Run vitest with live streaming progress updates."""
     if not FRONTEND_DIR.exists():
         if on_finished is not None:
@@ -221,14 +199,7 @@ def run_tests(verbose: bool = False) -> int:
         console.print("\n[bold]Running test suites sequentially (single-core environment)…[/bold]\n")
 
     try:
-        with Progress(
-            SpinnerColumn(spinner_name="dots"),
-            TextColumn("{task.description}"),
-            BarColumn(bar_width=22, style="dim", complete_style="bold green"),
-            TaskProgressColumn(),
-            console=console,
-            transient=False,
-        ) as progress:
+        with Progress(SpinnerColumn(spinner_name="dots"), TextColumn("{task.description}"), BarColumn(bar_width=22, style="dim", complete_style="bold green"), TaskProgressColumn(), console=console, transient=False) as progress:
             t_be = progress.add_task("[bold cyan]⟳[/bold cyan] [bright_white]Backend (pytest)[/bright_white]", total=100)
             t_fe = progress.add_task("[bold cyan]⟳[/bold cyan] [bright_white]Frontend (vitest)[/bright_white]", total=100)
 

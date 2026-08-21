@@ -22,4 +22,3 @@ def omml_to_latex(omml: str | ET.Element) -> str:
 
 
 __all__ = ["omath_element_to_latex", "omml_to_latex"]
-

@@ -11,14 +11,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DIST = ROOT / "dist"
 MANIFESTS = ROOT / "manifests"
 
-REQUIRED_BINARIES = [
-    "tmd-linux-x64",
-    "tmd-linux-arm64",
-    "tmd-macos-x64",
-    "tmd-macos-arm64",
-    "tmd-windows-x64.exe",
-    "tmd-windows-arm64.exe",
-]
+REQUIRED_BINARIES = ["tmd-linux-x64", "tmd-linux-arm64", "tmd-macos-x64", "tmd-macos-arm64", "tmd-windows-x64.exe", "tmd-windows-arm64.exe"]
 
 
 def get_hashes() -> dict[str, str]:
@@ -66,10 +59,7 @@ def main() -> None:
     # Check for all required binaries
     missing = [b for b in REQUIRED_BINARIES if b not in hashes]
     if missing:
-        raise RuntimeError(
-            f"Release is incomplete! Missing required binary checksums in SHA256SUMS.txt: {missing}\n"
-            f"Manifests will NOT be updated."
-        )
+        raise RuntimeError(f"Release is incomplete! Missing required binary checksums in SHA256SUMS.txt: {missing}\nManifests will NOT be updated.")
 
     print("All required binary checksums are present. Updating manifests...")
 
@@ -294,7 +284,7 @@ test.args           --version
     if snap_file.exists():
         text = snap_file.read_text(encoding="utf-8")
         text = re.sub(r'version:\s*"[^"]+"', f'version: "{version}"', text)
-        text = re.sub(r'(releases/download/v)' + semver_pattern, rf'\g<1>{version}', text)
+        text = re.sub(r"(releases/download/v)" + semver_pattern, rf"\g<1>{version}", text)
         snap_file.write_text(text, encoding="utf-8")
         print("Updated Snapcraft manifest (version + download urls).")
 

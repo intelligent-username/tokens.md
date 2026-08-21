@@ -53,6 +53,7 @@ def test_mathml_invalid_fallback() -> None:
 # OMML Tests
 # ==============================================================================
 
+
 def test_omml_basic_run() -> None:
     omml = """
     <m:oMath xmlns:m="http://schemas.openxmlformats.org/officeDocument/2006/math">

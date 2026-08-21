@@ -70,7 +70,6 @@ def test_build_toc() -> None:
     assert "[Section](#section-1)" in toc
 
 
-
 def test_resolve_to_markdown_with_convert_dir(sample_pdf: Path, tmp_path: Path) -> None:
     custom_dir = tmp_path / "custom_temp"
     custom_dir.mkdir()

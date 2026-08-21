@@ -100,9 +100,7 @@ def watch(
 
 @app.command()
 def fetch(
-    url: str = typer.Argument(..., help="URL to fetch."),
-    output: str = typer.Option(DEFAULT_OUTPUT_DIR, "-o", "--output", help="Output directory for saved Markdown article."),
-    loc: str | None = typer.Option(None, "--loc", help="Output location directory (e.g. --loc=outputs or --loc=.)."),
+    url: str = typer.Argument(..., help="URL to fetch."), output: str = typer.Option(DEFAULT_OUTPUT_DIR, "-o", "--output", help="Output directory for saved Markdown article."), loc: str | None = typer.Option(None, "--loc", help="Output location directory (e.g. --loc=outputs or --loc=.).")
 ) -> None:
     """Fetch a web page and save clean article Markdown."""
     from ..fetch import fetch_url
