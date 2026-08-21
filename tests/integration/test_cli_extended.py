@@ -82,8 +82,48 @@ def test_cli_ui_options_invoked_correctly(monkeypatch: pytest.MonkeyPatch) -> No
     assert called_args.get("reload") is False
     assert called_args.get("port") == 9999
 
+    called_args.clear()
+
     # Test opt-in reload -> reload should be True
     res_reload = runner.invoke(app, ["ui", "--no-browser", "--reload", "--port", "9998"])
     assert res_reload.exit_code == 0
     assert called_args.get("reload") is True
     assert called_args.get("port") == 9998
+
+
+def test_cli_merge_output_and_loc_combinations(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    f1 = tmp_path / "a.md"
+    f1.write_text("Hello A", encoding="utf-8")
+    f2 = tmp_path / "b.md"
+    f2.write_text("Hello B", encoding="utf-8")
+
+    # 1. --output merged.md --loc=outputs
+    res1 = runner.invoke(app, ["merge", "a.md", "b.md", "--output", "merged.md", "--loc", "outputs"])
+    assert res1.exit_code == 0
+    assert (tmp_path / "outputs" / "merged.md").exists()
+
+    # 2. --output=merged2.md --loc=outputs
+    res2 = runner.invoke(app, ["merge", "a.md", "b.md", "--output=merged2.md", "--loc=outputs"])
+    assert res2.exit_code == 0
+    assert (tmp_path / "outputs" / "merged2.md").exists()
+
+    # 3. --output custom.md (no --loc)
+    res3 = runner.invoke(app, ["merge", "a.md", "b.md", "--output", "custom.md"])
+    assert res3.exit_code == 0
+    assert (tmp_path / "custom.md").exists()
+
+    # 4. --output custom_loc.md --loc ""
+    res4 = runner.invoke(app, ["merge", "a.md", "b.md", "--output", "custom_loc.md", "--loc", ""])
+    assert res4.exit_code == 0
+    assert (tmp_path / "custom_loc.md").exists()
+
+    # 5. --output custom_dot.md --loc=.
+    res5 = runner.invoke(app, ["merge", "a.md", "b.md", "--output", "custom_dot.md", "--loc=."])
+    assert res5.exit_code == 0
+    assert (tmp_path / "custom_dot.md").exists()
+
+    # 6. Invalid output filename with illegal characters
+    res6 = runner.invoke(app, ["merge", "a.md", "b.md", "--output", "invalid*file?.md"])
+    assert res6.exit_code == 1
+    assert "Invalid output filename" in res6.output

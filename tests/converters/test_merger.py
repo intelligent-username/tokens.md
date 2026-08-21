@@ -67,5 +67,25 @@ def test_build_toc() -> None:
 
 
 
+def test_resolve_to_markdown_with_convert_dir(sample_pdf: Path, tmp_path: Path) -> None:
+    custom_dir = tmp_path / "custom_temp"
+    custom_dir.mkdir()
+    md = resolve_to_markdown(sample_pdf, convert_dir=custom_dir)
+    assert "Hello from tokens.md" in md
+    assert (custom_dir / f"{sample_pdf.stem}.md").exists()
+
+
+def test_merge_files_temp_dir_cleanup(sample_pdf: Path, sample_docx: Path, tmp_path: Path) -> None:
+    out = tmp_path / "out_merged.md"
+    merge_files([sample_pdf, sample_docx], out)
+    assert out.exists()
+    text = out.read_text(encoding="utf-8")
+    assert "=== FILE: sample.pdf ===" in text
+    assert "=== FILE: letter.docx ===" in text
+    # Intermediate files should not be left in tmp_path next to out_merged.md
+    assert not (tmp_path / "sample.md").exists()
+    assert not (tmp_path / "letter.md").exists()
+
+
 def test_dedup_lines() -> None:
     assert dedup_lines("x\ny\nx\n") == "x\ny"

@@ -127,8 +127,11 @@ Navigate to the folder containing the files you want to convert and run the foll
 # Convert all supported files in current repository and write to out/ folder
 tmd convert . --loc="out"
 
+# Convert multiple discrete files
+tmd convert 1.pdf 2.docx 3.html -o out/
+
 # Convert current folder into current directory
-tmd convert . --loc
+tmd convert . --loc=.
 
 # Bare `tmd` command uses default input/ and output/ directories
 tmd

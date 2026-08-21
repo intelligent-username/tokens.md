@@ -25,11 +25,12 @@ The "before" count comes from the raw file size, not from parsing the file. It r
 
 ## `tmd convert`: batch file conversion
 
-Convert a file, a folder, or a glob pattern.
+Convert one or more files, folders, or glob patterns.
 
 ```bash
 tmd convert input/
 tmd convert report.pdf -o out/
+tmd convert 1.pdf 2.pdf 3.docx -o out/
 tmd convert docs/ --recursive
 tmd convert docs/ -e pdf,docx,html
 tmd convert report.pdf --strip-headers-footers
@@ -40,9 +41,9 @@ tmd convert docs/ --clip
 
 | Flag | Default | Meaning |
 |---|---|---|
-| `SOURCE` | `input` | Directory, file path, or glob pattern |
+| `SOURCE...` | (required) | One or more space-separated directories, file paths, or glob patterns |
 | `-o, --output DIR` | `output` | Output directory |
-| `--loc [DIR]` | none | Target folder. Bare `--loc` or `""` writes to `.`, or specify folder (e.g. `--loc=outputs`) |
+| `--loc DIR` | none | Target folder (e.g. `--loc=outputs` or `--loc=.` / `--loc=""` for current directory) |
 | `-r, --recursive` | off | Recurse into subdirectories |
 | `-e, --extensions` | all supported | Comma-separated extension filter (e.g. `pdf,docx`) |
 | `--strip-headers-footers` | off | Strip running headers and footers from each page |
@@ -138,11 +139,12 @@ Binary files are skipped automatically.
 
 ## `tmd merge`: combine files into one document
 
-Merges multiple files into a single Markdown document with a Table of Contents and `=== FILE: <name> ===` section separators. Non-Markdown inputs are converted first.
+Merges multiple files into a single Markdown document with a Table of Contents and `=== FILE: <name> ===` section separators. Non-Markdown inputs are converted first. Intermediate conversions share an isolated single temporary directory that is automatically cleaned up when the merge completes.
 
 ```bash
 tmd merge input/ -o mega.md
-tmd merge a.md b.pdf -o mega.md
+tmd merge a.md b.pdf c.docx -o mega.md
+tmd merge input/ --loc=outputs --output=mega.md
 tmd merge input/ --recursive
 tmd merge input/ -o mega.md --no-toc
 tmd merge input/ -o mega.md --dedup
@@ -153,8 +155,9 @@ tmd merge input/ -o mega.md --delta
 
 | Flag | Default | Meaning |
 |---|---|---|
-| `SOURCE` | (required) | Directory, file, or glob pattern |
-| `-o, --output FILE` | `merged.md` | Output file |
+| `SOURCE...` | (required) | One or more space-separated directories, files, or glob patterns |
+| `-o, --output FILE` | `merged.md` | Output Markdown filename (default: `merged.md`) |
+| `--loc DIR` | none | Output directory location (e.g. `--loc=outputs` or bare `--loc` for `.`) |
 | `-r, --recursive` | off | Recurse into subdirectories |
 | `--no-toc` | off | Skip the generated Table of Contents |
 | `--dedup` | off | Remove exact duplicate lines (order preserved) |
@@ -163,9 +166,28 @@ tmd merge input/ -o mega.md --delta
 | `--budget N` | off | Prune output to fit a hard token budget (see below) |
 | `--delta` | off | Print a per-file token delta summary after merging |
 
-Files are merged in sorted path order.
+Files are merged in sorted natural path order.
 
----
+Output structure:
+
+```markdown
+# output — Merged Document
+
+> Sources: 2 files · Total tokens: 1,588
+
+### Table of Contents
+- notes.md
+  - [Overview](#overview)
+  - [Installation](#installation)
+- guide.md
+  - [Configuration](#configuration)
+
+=== FILE: notes.md ===
+<notes markdown contents>
+
+=== FILE: guide.md ===
+<guide markdown contents>
+```
 
 ---
 

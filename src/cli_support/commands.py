@@ -60,7 +60,7 @@ def help_cmd(ctx: typer.Context) -> None:
 def convert(
     source: list[str] = typer.Argument(..., help="Directory, file, or glob pattern(s)."),
     output: str = typer.Option(DEFAULT_OUTPUT_DIR, "-o", "--output", help="Output directory."),
-    loc: str | None = typer.Option(None, "--loc", help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs)."),
+    loc: str | None = typer.Option(None, "--loc", help="Output location directory (e.g. --loc=outputs or --loc=.)."),
     recursive: bool = typer.Option(False, "-r", "--recursive", help="Recurse into subdirectories."),
     extensions: str = typer.Option(_default_extensions, "-e", "--extensions", help="Comma-separated extensions filter."),
     strip_headers_footers: bool = typer.Option(False, "--strip-headers-footers", help="Strip running headers and footers from each page."),
@@ -79,7 +79,7 @@ def convert(
 def watch(
     source: str = typer.Option(DEFAULT_WATCH_SOURCE, "-s", "--source", help="Hot folder to monitor."),
     output: str = typer.Option(DEFAULT_OUTPUT_DIR, "-o", "--output", help="Output directory for converted files."),
-    loc: str | None = typer.Option(None, "--loc", help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs)."),
+    loc: str | None = typer.Option(None, "--loc", help="Output location directory (e.g. --loc=outputs or --loc=.)."),
     poll_interval: float = typer.Option(DEFAULT_POLL_INTERVAL, "--poll-interval", help="Stability wait in seconds."),
     clip: bool = typer.Option(False, "--clip", help="Copy converted text to clipboard automatically."),
     once: bool = typer.Option(False, "--once", help="Process existing files and exit."),
@@ -101,7 +101,7 @@ def watch(
 def fetch(
     url: str = typer.Argument(..., help="URL to fetch."),
     output: str = typer.Option(DEFAULT_OUTPUT_DIR, "-o", "--output", help="Output directory for saved Markdown article."),
-    loc: str | None = typer.Option(None, "--loc", help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs)."),
+    loc: str | None = typer.Option(None, "--loc", help="Output location directory (e.g. --loc=outputs or --loc=.)."),
 ) -> None:
     """Fetch a web page and save clean article Markdown."""
     from ..fetch import fetch_url
@@ -119,7 +119,7 @@ def fetch(
 def repo(
     directory: str = typer.Argument(..., help="Repository directory path or Git URL (e.g. '.' or 'https://github.com/user/repo')."),
     output: str = typer.Option(DEFAULT_OUTPUT_DIR, "-o", "--output", help="Output directory for generated manifest."),
-    loc: str | None = typer.Option(None, "--loc", help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs)."),
+    loc: str | None = typer.Option(None, "--loc", help="Output location directory (e.g. --loc=outputs or --loc=.)."),
     exclude: list[str] = typer.Option([], "--exclude", help="Extra gitignore patterns."),
     full: bool = typer.Option(False, "-f", "--full", help="Include full source code contents for all repository files."),
 ) -> None:
@@ -137,8 +137,8 @@ def repo(
 @app.command()
 def merge(
     source: list[str] = typer.Argument(..., help="Directory, file, or glob pattern(s)."),
-    output: str = typer.Option(DEFAULT_MERGED_FILENAME, "-o", "--output", help="Output Markdown filename."),
-    loc: str | None = typer.Option(None, "--loc", help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs)."),
+    output: str = typer.Option(DEFAULT_MERGED_FILENAME, "-o", "--output", help="Output Markdown filename (default: 'merged.md')."),
+    loc: str | None = typer.Option(None, "--loc", help="Output location directory (e.g. --loc=outputs or --loc=.)."),
     recursive: bool = typer.Option(False, "-r", "--recursive", help="Recurse into subdirectories."),
     budget: int | None = typer.Option(None, "--budget", help="Hard token budget limit."),
     encoding: str = typer.Option(DEFAULT_ENCODING, "--encoding", help="tiktoken encoding for token counting."),
@@ -156,9 +156,17 @@ def merge(
     if loc is not None:
         out_dir = _resolve_output_dir(output, loc)
         filename = Path(output).name if output else DEFAULT_MERGED_FILENAME
+        cleaned = filename.replace(".", "").replace("-", "").replace("_", "")
+        if not cleaned.isalnum():
+            console.print(f"[red]Error:[/red] Invalid output filename '{output}'.")
+            raise typer.Exit(code=EXIT_CODE_ERROR)
         output_path = out_dir / filename
     else:
         output_path = Path(output)
+        cleaned = output_path.name.replace(".", "").replace("-", "").replace("_", "")
+        if not cleaned.isalnum():
+            console.print(f"[red]Error:[/red] Invalid output filename '{output}'.")
+            raise typer.Exit(code=EXIT_CODE_ERROR)
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
     include_tokens = budget is not None or delta
@@ -175,14 +183,14 @@ def merge(
     saved_tokens = max(0, total_source - total_target)
     pct = delta_percent(total_source, total_target)
 
-    console.print(f"[green]Merged[/green] {len(files)} file(s) -> {output_path.name} [dim cyan](output ≈ {format_tokens(total_target)} tokens | saved ≈ {format_tokens(saved_tokens)} tokens [{pct:+.1f}%])[/dim cyan]")
+    console.print(f"[green]Merged[/green] {len(files)} file(s) -> {output_path} [dim cyan](output ≈ {format_tokens(total_target)} tokens | saved ≈ {format_tokens(saved_tokens)} tokens [{pct:+.1f}%])[/dim cyan]")
 
 
 @app.command(hidden=True)
 def delta(
     source: list[str] = typer.Argument(..., help="Directory, file, or glob pattern(s)."),
     output: str = typer.Option(DEFAULT_OUTPUT_DIR, "-o", "--output", help="Directory containing converted .md files."),
-    loc: str | None = typer.Option(None, "--loc", help="Output location. Bare --loc or '' writes to current dir '.', or specify folder (e.g. --loc=outputs)."),
+    loc: str | None = typer.Option(None, "--loc", help="Output location directory (e.g. --loc=outputs or --loc=.)."),
     encoding: str = typer.Option(DEFAULT_ENCODING, "--encoding", help="tiktoken encoding for token counting."),
 ) -> None:
     """Print a token delta summary for converted files."""
