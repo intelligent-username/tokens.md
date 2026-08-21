@@ -34,7 +34,7 @@ def convert_impl(
     budget: int | None = None,
 ) -> None:
     """Convert files to Markdown, with optional merging and token budgeting."""
-    output_dir = _resolve_output_dir(output, loc)
+    output_dir = Path(output) if clip else _resolve_output_dir(output, loc)
     files = select_files(source, extensions=_parse_extensions(extensions if extensions is not None else _default_extensions()), recursive=recursive)
     if not files:
         typer.echo(f"No matching files found in {source!r}.")
@@ -42,11 +42,11 @@ def convert_impl(
 
     kwargs = _convert_kwargs(strip_headers_footers, write_images, image_path, pages)
 
-    # When merging, convert into a temporary directory so intermediate .md
-    # files are not left behind in the output folder.
+    # When merging or copying directly to clipboard, convert into a temporary
+    # directory so no files are left behind on disk.
     import tempfile
 
-    convert_dir = tempfile.TemporaryDirectory(prefix="tmd_convert_") if merge else None
+    convert_dir = tempfile.TemporaryDirectory(prefix="tmd_convert_") if (merge or clip) else None
 
     with Progress(SpinnerColumn(spinner_name="dots"), TextColumn("{task.description}"), BarColumn(bar_width=22, style=PROGRESS_BAR_STYLE, complete_style=PROGRESS_BAR_COMPLETE_STYLE), TaskProgressColumn(), console=console, transient=False) as progress:
         task_map = {}
@@ -86,7 +86,7 @@ def convert_impl(
                 stop_event.set()
                 ticker.join(timeout=0.2)
 
-                flow_str = _truncate_desc(f"Converted {path.name} -> {out.name}", 44)
+                flow_str = _truncate_desc(f"Converted {path.name}", 44) if clip else _truncate_desc(f"Converted {path.name} -> {out.name}", 44)
                 tok_str = f"({format_tokens(source_tokens)} → {format_tokens(target_tokens)} tokens)"
                 desc = f"[bold green]✓[/bold green] [bright_white]{flow_str}[/bright_white] [dim cyan]{tok_str}[/dim cyan]"
                 progress.update(t_id, completed=100, description=desc)
@@ -127,38 +127,48 @@ def convert_impl(
             converted_outputs.append(out)
 
     if merge and successful_paths:
-        if output.endswith((".md", ".markdown")):
-            merged_filename = Path(output).name
-            merged_out_dir = _resolve_output_dir(str(Path(output).parent), loc)
-            merged_path = merged_out_dir / merged_filename
-        else:
-            merged_path = output_dir / "merged.md"
-
-        # Merge the already-converted .md files (no re-conversion) so the
-        # intermediate files stay in the temp dir and are cleaned up below.
-        merge_files(converted_outputs, merged_path, no_convert=True, encoding=DEFAULT_ENCODING, include_tokens=budget is not None, **kwargs)
-
-        if budget is not None:
-            result = prune_to_budget(merged_path.read_text(encoding="utf-8"), budget, DEFAULT_ENCODING)
-            merged_path.write_text(result.content, encoding="utf-8")
-            console.print(format_prune_report(result, budget, DEFAULT_ENCODING))
-
-        merged_text = merged_path.read_text(encoding="utf-8", errors="replace")
-        total_target = count_tokens(merged_text, DEFAULT_ENCODING)
-        console.print(f"[green]Merged[/green] {len(successful_paths)} file(s) -> {merged_path} [dim cyan]({format_tokens(total_target)} tokens)[/dim cyan]")
-
         if clip:
+            assert convert_dir is not None
+            merged_path = Path(convert_dir.name) / "merged.md"
+            merge_files(converted_outputs, merged_path, no_convert=True, encoding=DEFAULT_ENCODING, include_tokens=budget is not None, **kwargs)
+            if budget is not None:
+                result = prune_to_budget(merged_path.read_text(encoding="utf-8"), budget, DEFAULT_ENCODING)
+                merged_path.write_text(result.content, encoding="utf-8")
+                console.print(format_prune_report(result, budget, DEFAULT_ENCODING))
+
+            merged_text = merged_path.read_text(encoding="utf-8", errors="replace")
+            total_target = count_tokens(merged_text, DEFAULT_ENCODING)
             from ..clipboard import copy_to_clipboard
 
             copy_to_clipboard(merged_text)
-            console.print("[cyan]Copied merged output[/cyan] to clipboard.")
+            console.print(f"[green]Merged & copied[/green] {len(successful_paths)} file(s) to clipboard [dim cyan]({format_tokens(total_target)} tokens)[/dim cyan]")
+        else:
+            if output.endswith((".md", ".markdown")):
+                merged_filename = Path(output).name
+                merged_out_dir = _resolve_output_dir(str(Path(output).parent), loc)
+                merged_path = merged_out_dir / merged_filename
+            else:
+                merged_path = output_dir / "merged.md"
+
+            # Merge the already-converted .md files (no re-conversion) so the
+            # intermediate files stay in the temp dir and are cleaned up below.
+            merge_files(converted_outputs, merged_path, no_convert=True, encoding=DEFAULT_ENCODING, include_tokens=budget is not None, **kwargs)
+
+            if budget is not None:
+                result = prune_to_budget(merged_path.read_text(encoding="utf-8"), budget, DEFAULT_ENCODING)
+                merged_path.write_text(result.content, encoding="utf-8")
+                console.print(format_prune_report(result, budget, DEFAULT_ENCODING))
+
+            merged_text = merged_path.read_text(encoding="utf-8", errors="replace")
+            total_target = count_tokens(merged_text, DEFAULT_ENCODING)
+            console.print(f"[green]Merged[/green] {len(successful_paths)} file(s) -> {merged_path} [dim cyan]({format_tokens(total_target)} tokens)[/dim cyan]")
     elif clip and combined:
         from ..clipboard import copy_to_clipboard
 
         copy_to_clipboard("\n\n".join(combined))
         console.print(f"[cyan]Copied[/cyan] {len(combined)} file(s) to clipboard.")
 
-    if converted_count and not merge:
+    if converted_count and not merge and not clip:
         pct = delta_percent(total_source, total_target)
         console.print(f"[bold]TOTAL[/bold] ({format_tokens(total_source)} tokens) -> ({format_tokens(total_target)} tokens) [{pct:+.1f}%]")
 

@@ -67,7 +67,7 @@ def convert(
     write_images: bool = typer.Option(False, "--write-images", help="Extract embedded images to disk."),
     image_path: str | None = typer.Option(None, "--image-path", help="Custom directory for extracted images."),
     pages: str | None = typer.Option(None, "--pages", help="Comma-separated zero-based page indices (e.g. '0,1,4')."),
-    clip: bool = typer.Option(False, "--clip", help="Copy combined Markdown output to clipboard."),
+    clip: bool = typer.Option(False, "--clip", help="Copy combined Markdown output straight to clipboard without writing to disk."),
     merge: bool = typer.Option(False, "-m", "--merge", help="Merge all converted files into a single unified Markdown document."),
     budget: int | None = typer.Option(None, "-b", "--budget", help="Prune output to fit a hard token budget limit."),
 ) -> None:

@@ -55,10 +55,30 @@ def test_delta(sample_md: Path, tmp_path: Path) -> None:
     assert "tokens" in result.output
 
 
-def test_clip_supports_all_formats(sample_docx_headed: Path, monkeypatch) -> None:
+def test_clip_supports_all_formats(sample_docx_headed: Path, tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
     captured: dict[str, str] = {}
     monkeypatch.setattr("src.clipboard.copy_to_clipboard", lambda text: captured.setdefault("text", text))
     result = runner.invoke(app, ["convert", str(sample_docx_headed), "--clip"])
     assert result.exit_code == 0
     assert "# Chapter One" in captured.get("text", "")
     assert "Hello from python-docx." in captured.get("text", "")
+    # Verify no file is written to current directory or output folder
+    assert not (tmp_path / "sample_docx_headed.md").exists()
+    assert not (tmp_path / "output").exists()
+
+
+def test_clip_with_merge_copies_to_clipboard_without_disk_writes(sample_docx_headed: Path, sample_pdf: Path, tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    captured: dict[str, str] = {}
+    monkeypatch.setattr("src.clipboard.copy_to_clipboard", lambda text: captured.setdefault("text", text))
+    result = runner.invoke(app, ["convert", str(sample_docx_headed), str(sample_pdf), "-m", "--clip"])
+    assert result.exit_code == 0
+    text = captured.get("text", "")
+    assert "### Table of Contents" in text
+    assert "Hello from python-docx." in text
+    assert "Hello from tokens.md" in text
+    # Verify no merged file is written to disk
+    assert not (tmp_path / "merged.md").exists()
+    assert not (tmp_path / "output").exists()
+

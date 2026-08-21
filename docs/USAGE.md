@@ -50,7 +50,7 @@ tmd convert docs/ --clip
 | `--write-images` | off | Extract embedded images to disk |
 | `--image-path DIR` | auto | Where to write extracted images |
 | `--pages` | all | Comma-separated zero-based page indices (e.g. `0,1,4`) |
-| `--clip` | off | Also copy combined output to the system clipboard |
+| `--clip` | off | Direct pipe: copy converted Markdown straight to clipboard without writing files to disk |
 
 Unsupported formats exit with code `1` and print a clear message. If a required optional package is missing, the error tells you exactly what to install.
 
