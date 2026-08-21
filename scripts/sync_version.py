@@ -68,6 +68,11 @@ def main() -> None:
             text_updated = re.sub(r'"version": ".*"', f'"version": "{version}"', text_updated)
         elif path.name == "tmd.nuspec":
             text_updated = re.sub(r"<version>.*</version>", f"<version>{version}</version>", text_updated)
+            text_updated = re.sub(r"(releases/tag/v)" + version_regex, rf"\g<1>{version}", text_updated)
+        elif path.name == "Portfile":
+            text_updated = re.sub(r"version\s+.*", f"version             {version}", text_updated)
+        elif path.name.endswith(".metainfo.xml"):
+            text_updated = re.sub(r'<release version="[^"]+"', f'<release version="{version}"', text_updated)
 
         if text != text_updated:
             path.write_text(text_updated, encoding="utf-8")

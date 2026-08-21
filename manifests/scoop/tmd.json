@@ -7,6 +7,10 @@
     "64bit": {
       "url": "https://github.com/intelligent-username/tokens.md/releases/download/v0.0.14/tmd-windows-x64.exe",
       "hash": "5a8e1e1989973ea26bd9ad1b0a352a13ba5b76efd9a3bac4ef8b9aad4e26b276"
+    },
+    "arm64": {
+      "url": "https://github.com/intelligent-username/tokens.md/releases/download/v0.0.14/tmd-windows-arm64.exe",
+      "hash": "889434ee116c8fbfcc15619c612990d2c10712fddce2f704c66b39dd7e692605"
     }
   },
   "bin": "tmd.exe",
@@ -17,6 +21,9 @@
     "architecture": {
       "64bit": {
         "url": "https://github.com/intelligent-username/tokens.md/releases/download/v$version/tmd-windows-x64.exe"
+      },
+      "arm64": {
+        "url": "https://github.com/intelligent-username/tokens.md/releases/download/v$version/tmd-windows-arm64.exe"
       }
     }
   }

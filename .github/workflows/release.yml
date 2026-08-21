@@ -47,7 +47,7 @@ jobs:
     name: Publish to Chocolatey
     needs: github-release
     runs-on: windows-latest
-    if: env.CHOCOLATEY_API_KEY != ''
+    if: ${{ secrets.CHOCOLATEY_API_KEY != '' }}
     env:
       CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
     steps:

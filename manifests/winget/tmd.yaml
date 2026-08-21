@@ -28,5 +28,11 @@ Installers:
     InstallerType: portable
     Commands:
       - tmd
+  - Architecture: arm64
+    InstallerUrl: https://github.com/intelligent-username/tokens.md/releases/download/v0.0.14/tmd-windows-arm64.exe
+    InstallerSha256: 889434ee116c8fbfcc15619c612990d2c10712fddce2f704c66b39dd7e692605
+    InstallerType: portable
+    Commands:
+      - tmd
 ManifestType: singleton
 ManifestVersion: 1.6.0
