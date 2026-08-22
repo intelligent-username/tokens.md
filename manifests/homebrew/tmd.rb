@@ -13,20 +13,20 @@ class Tmd < Formula
   on_macos do
     if Hardware::CPU.arm?
       url "https://github.com/intelligent-username/tokens.md/releases/download/v#{version}/tmd-macos-arm64"
-      sha256 "a1ef76f10818b51c1e58ca93d508aeedb8da22e0490e01bb589d90c948ad41cc"
+      sha256 "23c994329e4fdeb5f39c0fde788af6c60da4da6976640f954345d496bb41ba65"
     else
       url "https://github.com/intelligent-username/tokens.md/releases/download/v#{version}/tmd-macos-x64"
-      sha256 "c664401035f6cb55bb546cfbb11bb6a7f52355af0a337d4f16226adbb26a560b"
+      sha256 "bf9d5aee1b415ad6fe5e9711455bd2b88c5059acfe21b2c8a84065262727cf90"
     end
   end
 
   on_linux do
     if Hardware::CPU.arm?
       url "https://github.com/intelligent-username/tokens.md/releases/download/v#{version}/tmd-linux-arm64"
-      sha256 "d135d720840cff69a652c544c26d2dd45acfbe9f09577da6005433be6d1f6b70"
+      sha256 "c87bd85024802ceebadf5a68f60700f0b96d92d5c495d9fe784c5e66d117f9e5"
     else
       url "https://github.com/intelligent-username/tokens.md/releases/download/v#{version}/tmd-linux-x64"
-      sha256 "11b4ad968671c76e7aa4fb5cc5bc6b740e77fea86c98417a0a11a57e855718e1"
+      sha256 "b50b69d79af5a504f76db6696a1b2790e7917374b039b8cf9b6a15e21e73b487"
     end
   end
 

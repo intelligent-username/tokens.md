@@ -6,11 +6,11 @@
   "architecture": {
     "64bit": {
       "url": "https://github.com/intelligent-username/tokens.md/releases/download/v0.0.18/tmd-windows-x64.exe",
-      "hash": "5a8e1e1989973ea26bd9ad1b0a352a13ba5b76efd9a3bac4ef8b9aad4e26b276"
+      "hash": "e611517b030eb0e2a3d03e802d818f53643e4569683f0a39900e2c8efbdbea36"
     },
     "arm64": {
       "url": "https://github.com/intelligent-username/tokens.md/releases/download/v0.0.18/tmd-windows-arm64.exe",
-      "hash": "889434ee116c8fbfcc15619c612990d2c10712fddce2f704c66b39dd7e692605"
+      "hash": "2ab0b3fe449378943cff9562a1df3ee559a998da61b662597582d4f033dce9a4"
     }
   },
   "bin": "tmd.exe",
