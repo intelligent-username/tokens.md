@@ -120,8 +120,16 @@ def _slugify(text: str) -> str:
 
 def _extract_meta_markdown(html: str) -> str:
     """Extract title and meta description for minimal SPA HTML shells."""
-    title_match = re.search(r"<title[^>]*>(.*?)</title>", html, re.IGNORECASE | re.DOTALL)
-    desc_match = re.search(r'<meta[^>]*name=["\']description["\'][^>]*content=["\'](.*?)["\']', html, re.IGNORECASE) or re.search(r'<meta[^>]*property=["\']og:description["\'][^>]*content=["\'](.*?)["\']', html, re.IGNORECASE)
+    title_match = re.search(r"<title[^>]*>([^<]*)</title>", html, re.IGNORECASE)
+    desc_match: re.Match[str] | None = None
+    # Evaluate attributes per <meta> tag to keep matching linear (ReDoS-safe).
+    for meta_tag in re.finditer(r"<meta\b[^>]*>", html, re.IGNORECASE):
+        tag = meta_tag.group(0)
+        name_match = re.search(r'name=["\']description["\']', tag, re.IGNORECASE) or re.search(r'property=["\']og:description["\']', tag, re.IGNORECASE)
+        content_match = re.search(r'content=["\']([^"\']*)["\']', tag, re.IGNORECASE)
+        if name_match is not None and content_match is not None and name_match.start() < content_match.start():
+            desc_match = content_match
+            break
 
     parts: list[str] = []
     if title_match:
