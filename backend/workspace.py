@@ -14,7 +14,7 @@ from typing import Any
 
 from src.tokenizer import count_raw_file_tokens
 
-from .workspace_support.constants import ID_HEX_LENGTH, WORKSPACE_DIR_PREFIX
+from .workspace_support.constants import ID_HEX_LENGTH, SAFE_SESSION_ID_RE, WORKSPACE_DIR_PREFIX
 from .workspace_support.janitor import cleanup_all, start_janitor, sweep_workspaces
 from .workspace_support.samples import SAMPLES_DIR, list_samples, read_sample_path
 from .workspace_support.sanitizer import sanitize_name, sanitize_relpath
@@ -41,6 +41,8 @@ class Workspace:
     """Filesystem-backed session workspace with a JSON manifest registry."""
 
     def __init__(self, sid: str | None = None) -> None:
+        if sid and not SAFE_SESSION_ID_RE.fullmatch(sid):
+            raise WorkspaceError("Invalid session id")
         self.sid = sid or uuid.uuid4().hex[:ID_HEX_LENGTH]
         self.root = Path(tempfile.gettempdir()) / f"{WORKSPACE_DIR_PREFIX}{self.sid}"
         self.uploads_dir = self.root / "uploads"

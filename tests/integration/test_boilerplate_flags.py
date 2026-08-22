@@ -16,45 +16,38 @@ FOOTER = "Confidential Draft"
 PAGE_COUNT = 6
 
 
+DUMMIES_DIR = Path(__file__).resolve().parent.parent / "dummies"
+CANONICAL_DIR = DUMMIES_DIR / "canonical"
+
+
 @pytest.fixture()
-def multipage_pdf(tmp_path: Path) -> Path:
-    """Generate a six-page PDF with repeating page furniture."""
-    pymupdf = pytest.importorskip("pymupdf")
-    pdf_path = tmp_path / "report.pdf"
-    doc = pymupdf.open()
-    for i in range(1, PAGE_COUNT + 1):
-        page = doc.new_page()
-        page.insert_text((50, 40), HEADER)
-        page.insert_text((50, 100), f"Unique body content for page {i} about topic number {i}.")
-        page.insert_text((50, 160), f"Additional distinct paragraph for page {i} with more words here.")
-        page.insert_text((280, 780), str(i))
-        page.insert_text((50, 800), FOOTER)
-    doc.save(str(pdf_path))
-    doc.close()
+def multipage_pdf() -> Path:
+    """Return pre-generated six-page PDF with repeating page furniture."""
+    pdf_path = CANONICAL_DIR / "report.pdf"
+    assert pdf_path.exists(), f"report.pdf not found at {pdf_path}"
     return pdf_path
 
 
-def _convert(tmp_path: Path, pdf: Path, name: str, *flags: str) -> str:
-    out = tmp_path / name
+def _convert(out: Path, pdf: Path, *flags: str) -> str:
     result = runner.invoke(app, ["convert", str(pdf), "-o", str(out), *flags])
     assert result.exit_code == 0
     return (out / "report.md").read_text(encoding="utf-8")
 
 
-def test_convert_default_strips_page_numbers_only(multipage_pdf: Path) -> None:
-    md = _convert(multipage_pdf.parent, multipage_pdf, "out_default")
+def test_convert_default_strips_page_numbers_only(multipage_pdf: Path, tmp_path: Path) -> None:
+    md = _convert(tmp_path / "out_default", multipage_pdf)
     assert HEADER in md
     assert FOOTER in md
 
 
-def test_convert_budget_strips_headers_too(multipage_pdf: Path) -> None:
-    md = _convert(multipage_pdf.parent, multipage_pdf, "out_budget", "--budget", "100000")
+def test_convert_budget_strips_headers_too(multipage_pdf: Path, tmp_path: Path) -> None:
+    md = _convert(tmp_path / "out_budget", multipage_pdf, "--budget", "100000")
     assert HEADER not in md
     assert FOOTER not in md
 
 
-def test_convert_keep_boilerplate_restores_everything(multipage_pdf: Path) -> None:
-    md = _convert(multipage_pdf.parent, multipage_pdf, "out_keep", "--keep-boilerplate")
+def test_convert_keep_boilerplate_restores_everything(multipage_pdf: Path, tmp_path: Path) -> None:
+    md = _convert(tmp_path / "out_keep", multipage_pdf, "--keep-boilerplate")
     assert HEADER in md
     assert FOOTER in md
 

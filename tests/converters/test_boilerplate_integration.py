@@ -24,21 +24,15 @@ FOOTER = "Confidential Draft"
 PAGE_COUNT = 6
 
 
+DUMMIES_DIR = Path(__file__).resolve().parent.parent / "dummies"
+CANONICAL_DIR = DUMMIES_DIR / "canonical"
+
+
 @pytest.fixture()
-def multipage_pdf(tmp_path: Path) -> Path:
-    """Generate a six-page PDF with repeating page furniture."""
-    pymupdf = pytest.importorskip("pymupdf")
-    pdf_path = tmp_path / "multipage.pdf"
-    doc = pymupdf.open()
-    for i in range(1, PAGE_COUNT + 1):
-        page = doc.new_page()
-        page.insert_text((50, 40), HEADER)
-        page.insert_text((50, 100), f"Unique body content for page {i} about topic number {i}.")
-        page.insert_text((50, 160), f"Additional distinct paragraph for page {i} with more words here.")
-        page.insert_text((280, 780), str(i))
-        page.insert_text((50, 800), FOOTER)
-    doc.save(str(pdf_path))
-    doc.close()
+def multipage_pdf() -> Path:
+    """Return pre-generated six-page PDF with repeating page furniture."""
+    pdf_path = CANONICAL_DIR / "multipage.pdf"
+    assert pdf_path.exists(), f"multipage.pdf not found at {pdf_path}"
     return pdf_path
 
 

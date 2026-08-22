@@ -14,6 +14,7 @@ import re
 import shutil
 import subprocess
 import sys
+import time
 from collections.abc import Callable
 from pathlib import Path
 
@@ -36,7 +37,7 @@ def _strip_ansi(text: str) -> str:
 def _run_streaming_cmd(cmd: list[str], cwd: Path, env: dict[str, str] | None = None, on_line: Callable[[str], None] | None = None) -> tuple[int, str, str]:
     """Execute a command, streaming stdout lines in real time to a callback."""
     executable_cmd = list(cmd)
-    if os.name == "nt" and executable_cmd[0] in {"npm", "npx"}:
+    if os.name == "nt" and executable_cmd[0] in {"npm", "npx", "pnpm"}:
         executable_cmd[0] = f"{executable_cmd[0]}.cmd"
 
     stdout_lines: list[str] = []
@@ -69,7 +70,7 @@ def _run_streaming_cmd(cmd: list[str], cwd: Path, env: dict[str, str] | None = N
         return 1, "", str(exc)
 
 
-def _run_backend_tests(on_progress: Callable[[int], None] | None = None, on_finished: Callable[[int, str | None], None] | None = None) -> tuple[int, str, str]:
+def _run_backend_tests(on_progress: Callable[[int], None] | None = None, on_finished: Callable[[int, str | None], None] | None = None, coverage: bool = False) -> tuple[int, str, str]:
     """Run pytest with live streaming progress updates."""
     TEMP_DIR.mkdir(parents=True, exist_ok=True)
     cov_file = TEMP_DIR / ".coverage"
@@ -78,10 +79,13 @@ def _run_backend_tests(on_progress: Callable[[int], None] | None = None, on_fini
     env["COVERAGE_FILE"] = str(cov_file)
     env["PYTHONUNBUFFERED"] = "1"
 
-    total_tests = 186
+    total_tests = 256
     completed_tests = 0
 
-    cmd = [sys.executable, "-u", "-m", "pytest", "--tb=short", "-v"]
+    if coverage:
+        cmd = [sys.executable, "-u", "-m", "pytest", "--cov=src", "--cov=backend", "--cov-report=", "--tb=short", "-v"]
+    else:
+        cmd = [sys.executable, "-u", "-m", "pytest", "--tb=short", "-v"]
 
     def _handle_line(line: str) -> None:
         nonlocal completed_tests
@@ -98,13 +102,13 @@ def _run_backend_tests(on_progress: Callable[[int], None] | None = None, on_fini
 
     code, out, err = _run_streaming_cmd(cmd, ROOT_DIR, env=env, on_line=_handle_line)
     if on_finished is not None:
-        pct = _parse_coverage_pct(out + "\n" + err)
+        pct = _parse_coverage_pct(out + "\n" + err) if coverage else None
         on_finished(code, pct)
     return code, out, err
 
 
-def _run_frontend_tests(on_progress: Callable[[int], None] | None = None, on_finished: Callable[[int, str | None], None] | None = None) -> tuple[int, str, str]:
-    """Run vitest with live streaming progress updates."""
+def _run_frontend_tests(on_progress: Callable[[int, str | None], None] | None = None, on_finished: Callable[[int, str | None], None] | None = None, coverage: bool = False) -> tuple[int, str, str]:
+    """Run vitest unit tests followed by vitest E2E workflow tests with live streaming progress updates."""
     if not FRONTEND_DIR.exists():
         if on_finished is not None:
             on_finished(0, "n/a")
@@ -113,29 +117,56 @@ def _run_frontend_tests(on_progress: Callable[[int], None] | None = None, on_fin
     env = os.environ.copy()
     env["CI"] = "1"
     env["FORCE_COLOR"] = "1"
+    env["VITE_CONFIG_NATIVE_IGNORE_WARNING"] = "true"
 
-    test_files = [p for p in FRONTEND_DIR.glob("**/*.test.ts") if "node_modules" not in p.parts and ".next" not in p.parts]
-    total_files = max(1, len(test_files))
-    completed_files = 0
+    runner_bin = "pnpm" if shutil.which("pnpm") else "npm"
 
-    npm = "npm.cmd" if os.name == "nt" else "npm"
-    cmd = [npm, "run", "test:coverage"]
+    # 1. Unit tests (0-50% of progress)
+    unit_files = [p for p in FRONTEND_DIR.glob("lib/**/__tests__/**/*.test.ts") if "node_modules" not in p.parts and ".next" not in p.parts]
+    total_unit = max(1, len(unit_files))
+    completed_unit = 0
 
-    def _handle_line(line: str) -> None:
-        nonlocal completed_files
+    def _handle_unit_line(line: str) -> None:
+        nonlocal completed_unit
         if on_progress is None:
             return
         clean = _strip_ansi(line)
         if re.search(r"[✓❯×]\s+.*\.test\.ts", clean):
-            completed_files += 1
-            pct = min(99, int((completed_files / total_files) * 100))
-            on_progress(pct)
+            completed_unit += 1
+            pct = min(50, int((completed_unit / total_unit) * 50))
+            on_progress(pct, "unit")
 
-    code, out, err = _run_streaming_cmd(cmd, FRONTEND_DIR, env=env, on_line=_handle_line)
+    unit_cmd = [runner_bin, "run", "test:coverage"] if coverage else [runner_bin, "run", "test"]
+    unit_code, unit_out, unit_err = _run_streaming_cmd(unit_cmd, FRONTEND_DIR, env=env, on_line=_handle_unit_line)
+
+    # 2. E2E tests (50-99% of progress)
+    e2e_dir = FRONTEND_DIR / "e2e"
+    e2e_files = list(e2e_dir.glob("**/*.test.ts")) if e2e_dir.exists() else []
+    total_e2e = max(1, len(e2e_files))
+    completed_e2e = 0
+
+    def _handle_e2e_line(line: str) -> None:
+        nonlocal completed_e2e
+        if on_progress is None:
+            return
+        clean = _strip_ansi(line)
+        if re.search(r"[✓❯×]\s+.*\.test\.ts", clean):
+            completed_e2e += 1
+            pct = min(99, 50 + int((completed_e2e / total_e2e) * 49))
+            on_progress(pct, "e2e")
+
+    e2e_cmd = [runner_bin, "run", "test:e2e"]
+    e2e_code, e2e_out, e2e_err = _run_streaming_cmd(e2e_cmd, FRONTEND_DIR, env=env, on_line=_handle_e2e_line)
+
+    code = max(unit_code, e2e_code)
+    combined_out = unit_out + ("\n=== Frontend E2E Tests ===\n" + e2e_out if e2e_out else "")
+    combined_err = unit_err + ("\n" + e2e_err if e2e_err else "")
+
     if on_finished is not None:
-        pct = _parse_coverage_pct(out + "\n" + err)
+        pct = _parse_coverage_pct(unit_out + "\n" + unit_err) if coverage else None
         on_finished(code, pct)
-    return code, out, err
+
+    return code, combined_out, combined_err
 
 
 def _parse_coverage_pct(output: str) -> str | None:
@@ -188,8 +219,9 @@ def _cleanup_coverage_files() -> None:
             pass
 
 
-def run_tests(verbose: bool = False) -> int:
+def run_tests(verbose: bool = False, coverage: bool = False) -> int:
     """Run backend + frontend test suites in parallel with live progress bars, falling back to sequential on single-core systems."""
+    start_time = time.perf_counter()
     cores = os.cpu_count() or 1
     can_parallelize = cores > 1
 
@@ -207,48 +239,54 @@ def run_tests(verbose: bool = False) -> int:
                 progress.update(t_be, completed=pct)
                 progress.refresh()
 
-            def _update_fe(pct: int) -> None:
-                progress.update(t_fe, completed=pct)
+            def _update_fe(pct: int, phase: str | None = None) -> None:
+                desc = "[bold cyan]⟳[/bold cyan] [bright_white]Frontend (e2e)[/bright_white]" if phase == "e2e" else "[bold cyan]⟳[/bold cyan] [bright_white]Frontend (vitest)[/bright_white]"
+                progress.update(t_fe, completed=pct, description=desc)
                 progress.refresh()
 
             def _finish_be(code: int, pct: str | None) -> None:
                 icon = "[bold green]✓[/bold green]" if code == 0 else "[bold red]✗[/bold red]"
-                desc = f"{icon} [bright_white]Backend (pytest)[/bright_white] [dim cyan]({pct or 'n/a'})[/dim cyan]"
+                cov_str = f" [dim cyan]({pct})[/dim cyan]" if (coverage and pct) else ""
+                desc = f"{icon} [bright_white]Backend (pytest)[/bright_white]{cov_str}"
                 progress.update(t_be, completed=100, description=desc)
                 progress.refresh()
 
             def _finish_fe(code: int, pct: str | None) -> None:
                 icon = "[bold green]✓[/bold green]" if code == 0 else "[bold red]✗[/bold red]"
-                desc = f"{icon} [bright_white]Frontend (vitest)[/bright_white] [dim cyan]({pct or 'n/a'})[/dim cyan]"
+                cov_str = f" [dim cyan]({pct})[/dim cyan]" if (coverage and pct) else ""
+                desc = f"{icon} [bright_white]Frontend (vitest)[/bright_white]{cov_str}"
                 progress.update(t_fe, completed=100, description=desc)
                 progress.refresh()
 
             if can_parallelize:
                 try:
                     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-                        f_be = executor.submit(_run_backend_tests, _update_be, _finish_be)
-                        f_fe = executor.submit(_run_frontend_tests, _update_fe, _finish_fe)
+                        f_be = executor.submit(_run_backend_tests, _update_be, _finish_be, coverage)
+                        f_fe = executor.submit(_run_frontend_tests, _update_fe, _finish_fe, coverage)
                         concurrent.futures.wait([f_be, f_fe])
                         be_code, be_out, be_err = f_be.result()
                         fe_code, fe_out, fe_err = f_fe.result()
                 except Exception:
-                    be_code, be_out, be_err = _run_backend_tests(_update_be, _finish_be)
-                    fe_code, fe_out, fe_err = _run_frontend_tests(_update_fe, _finish_fe)
+                    be_code, be_out, be_err = _run_backend_tests(_update_be, _finish_be, coverage)
+                    fe_code, fe_out, fe_err = _run_frontend_tests(_update_fe, _finish_fe, coverage)
             else:
-                be_code, be_out, be_err = _run_backend_tests(_update_be, _finish_be)
-                fe_code, fe_out, fe_err = _run_frontend_tests(_update_fe, _finish_fe)
+                be_code, be_out, be_err = _run_backend_tests(_update_be, _finish_be, coverage)
+                fe_code, fe_out, fe_err = _run_frontend_tests(_update_fe, _finish_fe, coverage)
 
             be_combined = be_out + "\n" + be_err
             fe_combined = fe_out + "\n" + fe_err
 
-            be_pct = _parse_coverage_pct(be_combined)
-            fe_pct = _parse_coverage_pct(fe_combined)
-
             be_icon = "[bold green]✓[/bold green]" if be_code == 0 else "[bold red]✗[/bold red]"
             fe_icon = "[bold green]✓[/bold green]" if fe_code == 0 else "[bold red]✗[/bold red]"
 
-            be_desc = f"{be_icon} [bright_white]Backend (pytest)[/bright_white] [dim cyan]({be_pct or 'n/a'})[/dim cyan]"
-            fe_desc = f"{fe_icon} [bright_white]Frontend (vitest)[/bright_white] [dim cyan]({fe_pct or 'n/a'})[/dim cyan]"
+            if coverage:
+                be_pct = _parse_coverage_pct(be_combined)
+                fe_pct = _parse_coverage_pct(fe_combined)
+                be_desc = f"{be_icon} [bright_white]Backend (pytest)[/bright_white] [dim cyan]({be_pct or 'n/a'})[/dim cyan]"
+                fe_desc = f"{fe_icon} [bright_white]Frontend (vitest)[/bright_white] [dim cyan]({fe_pct or 'n/a'})[/dim cyan]"
+            else:
+                be_desc = f"{be_icon} [bright_white]Backend (pytest)[/bright_white]"
+                fe_desc = f"{fe_icon} [bright_white]Frontend (vitest)[/bright_white]"
 
             progress.update(t_be, completed=100, description=be_desc)
             progress.update(t_fe, completed=100, description=fe_desc)
@@ -263,13 +301,14 @@ def run_tests(verbose: bool = False) -> int:
                 console.print("\n[bold]=== Frontend test output ===[/bold]")
                 console.print(fe_combined.strip())
 
+        elapsed = time.perf_counter() - start_time
         overall = max(be_code, fe_code)
         if overall != 0:
-            console.print("[bold red]One or more test suites failed.[/bold red]")
+            console.print(f"[bold red]One or more test suites failed in {elapsed:.2f}s.[/bold red]")
             if not verbose:
                 console.print("▫ Run [bold cyan]tmd test -v[/bold cyan] for full output.")
         else:
-            console.print("[bold green]✓ All tests passed.[/bold green]")
+            console.print(f"[bold green]✓ All tests passed in {elapsed:.2f}s.[/bold green]")
 
         return overall
     finally:
@@ -279,8 +318,9 @@ def run_tests(verbose: bool = False) -> int:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Parallel test runner with live progress bars.")
     parser.add_argument("-v", "--v", "--verbose", dest="verbose", action="store_true", help="Show full test output.")
+    parser.add_argument("--cov", "--coverage", dest="coverage", action="store_true", help="Run with test coverage.")
     args = parser.parse_args()
-    sys.exit(run_tests(verbose=args.verbose))
+    sys.exit(run_tests(verbose=args.verbose, coverage=args.coverage))
 
 
 if __name__ == "__main__":

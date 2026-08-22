@@ -255,7 +255,10 @@ def lint(fix: bool = typer.Option(False, "--fix", help="Automatically fix linter
 
 
 @app.command(hidden=True)
-def test(verbose: bool = typer.Option(False, "-v", "--v", "--verbose", help="Show detailed test outputs.")) -> None:
+def test(
+    verbose: bool = typer.Option(False, "-v", "--v", "--verbose", help="Show detailed test outputs."),
+    cov: bool = typer.Option(False, "--cov", "--coverage", help="Run with test coverage."),
+) -> None:
     """Hidden developer command: run test runner script."""
     import subprocess
     import sys
@@ -267,6 +270,8 @@ def test(verbose: bool = typer.Option(False, "-v", "--v", "--verbose", help="Sho
     cmd = [sys.executable, str(script_path)]
     if verbose:
         cmd.append("-v")
+    if cov:
+        cmd.append("--cov")
     res = subprocess.run(cmd)
     if res.returncode != 0:
         raise typer.Exit(code=EXIT_CODE_ERROR)

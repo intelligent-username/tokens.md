@@ -9,7 +9,6 @@ from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
-from backend.app import create_app
 from backend.config import Settings
 
 JSON_BYTES = b'{"host": "localhost", "port": 8080}'
@@ -24,11 +23,12 @@ def _upload(client: TestClient, name: str, content: bytes, paths: str = "[]", se
     return resp.json()
 
 
-def _client_with(**overrides: object) -> TestClient:
+def _client_with(app, **overrides: object) -> TestClient:
     settings = Settings.from_env()
     for key, value in overrides.items():
         setattr(settings, key, value)
-    return TestClient(create_app(settings))
+    app.state.settings = settings
+    return TestClient(app)
 
 
 def test_health(client: TestClient) -> None:
@@ -230,8 +230,8 @@ def test_unknown_format_422(client: TestClient) -> None:
     assert resp.json()["results"][0]["status"] == "error"
 
 
-def test_oversize_upload_413(tmd_workspace: Path) -> None:
-    client = _client_with(max_upload_mb=1)
+def test_oversize_upload_413(tmd_workspace: Path, _shared_fastapi_app) -> None:
+    client = _client_with(_shared_fastapi_app, max_upload_mb=1)
     resp = client.post("/api/uploads", files=[("files", ("big.json", b"x" * (2 * 1024 * 1024), "application/octet-stream"))], data={"paths": "[]"})
     assert resp.status_code == 413
     assert resp.json()["code"] == "too_large"
@@ -245,30 +245,30 @@ def test_local_path_gated_off(client: TestClient, tmp_path: Path) -> None:
     assert resp.json()["code"] == "local_paths_disabled"
 
 
-def test_local_path_allowed(tmd_workspace: Path, tmp_path: Path) -> None:
+def test_local_path_allowed(tmd_workspace: Path, tmp_path: Path, _shared_fastapi_app) -> None:
     target = tmp_path / "local.json"
     target.write_text('{"x": 1}', encoding="utf-8")
-    client = _client_with(allow_local_paths=True, local_paths_root=tmp_path)
+    client = _client_with(_shared_fastapi_app, allow_local_paths=True, local_paths_root=tmp_path)
     resp = client.post("/api/convert", json={"session_id": "s", "path": str(target)})
     assert resp.status_code == 200, resp.text
     assert resp.json()["converted_count"] == 1
 
 
-def test_local_directory_path_conversion(tmd_workspace: Path, tmp_path: Path) -> None:
+def test_local_directory_path_conversion(tmd_workspace: Path, tmp_path: Path, _shared_fastapi_app) -> None:
     dir_target = tmp_path / "docs"
     dir_target.mkdir()
     (dir_target / "a.json").write_text('{"a": 1}', encoding="utf-8")
     (dir_target / "b.json").write_text('{"b": 2}', encoding="utf-8")
-    client = _client_with(allow_local_paths=True, local_paths_root=tmp_path)
+    client = _client_with(_shared_fastapi_app, allow_local_paths=True, local_paths_root=tmp_path)
     resp = client.post("/api/convert", json={"session_id": "s", "path": str(dir_target)})
     assert resp.status_code == 200, resp.text
     assert resp.json()["converted_count"] == 2
 
 
-def test_local_path_outside_root(tmd_workspace: Path, tmp_path: Path) -> None:
+def test_local_path_outside_root(tmd_workspace: Path, tmp_path: Path, _shared_fastapi_app) -> None:
     outside = tmp_path.parent / "outside.json"
     outside.write_text('{"x": 1}', encoding="utf-8")
-    client = _client_with(allow_local_paths=True, local_paths_root=tmp_path)
+    client = _client_with(_shared_fastapi_app, allow_local_paths=True, local_paths_root=tmp_path)
     resp = client.post("/api/convert", json={"session_id": "s", "path": str(outside)})
     assert resp.status_code == 403
     assert resp.json()["code"] == "local_paths_disallowed"

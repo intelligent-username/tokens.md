@@ -1,0 +1,17 @@
+{
+  "title": "Book the First\u2014Recalled to Life",
+  "marker": "VERBATIM_TEST_CONTENT_12345",
+  "equation": "E = mc^2",
+  "records": [
+    {
+      "id": 10492,
+      "amount": 94821.5,
+      "token_count": 4291
+    },
+    {
+      "id": 99012,
+      "quantity": 852,
+      "price": 19.99
+    }
+  ]
+}
