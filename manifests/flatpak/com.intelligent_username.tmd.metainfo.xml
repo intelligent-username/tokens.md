@@ -16,6 +16,6 @@
     <binary>tmd</binary>
   </provides>
   <releases>
-    <release version="0.0.17" date="2026-08-21" />
+    <release version="0.0.18" date="2026-08-21" />
   </releases>
 </component>
