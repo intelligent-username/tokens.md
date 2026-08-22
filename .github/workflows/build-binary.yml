@@ -21,7 +21,7 @@ jobs:
 
   build-macos-x64:
     name: Build (macOS / x64)
-    runs-on: macos-13
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/build-macos-x64

@@ -7,6 +7,7 @@ runs:
     - uses: actions/setup-python@v5
       with:
         python-version: "3.12"
+        architecture: "x64"
         cache: pip
 
     - name: Setup sccache
