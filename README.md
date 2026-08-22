@@ -44,10 +44,18 @@ First, make sure you have Python 3.13+, uv, and TypeScript support on your machi
 git clone https://github.com/intelligent-username/tokens.md
 ```
 
-And create the environment:
+And create the environment using uv:
 
 ```bash
-uv venv --python=3.13 .venv
+uv sync
+
+```
+
+Or work with the virtual environment manually:
+
+```bash
+
+python3 -m venv --python=3.13 .venv
 
 # On Linux or Mac
 source .venv/bin/activate
@@ -55,15 +63,8 @@ source .venv/bin/activate
 # On Windows
 .venv\Scripts\activate
 
-uv pip install -e .               # editable install (provides `tmd`)
-```
-
-To update dependencies, just run `uv sync`.
-
-Or install the runtime dependencies directly:
-
-```bash
-uv pip install -r requirements.txt
+# Install editable package
+pip install -e .               # editable install (provides `tmd`)
 ```
 
 ## Running
