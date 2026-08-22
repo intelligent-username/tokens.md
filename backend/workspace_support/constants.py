@@ -6,6 +6,7 @@ import re
 from re import Pattern
 
 SAFE_NAME_RE: Pattern[str] = re.compile(r"[^A-Za-z0-9._ -]+")
+SAFE_SESSION_ID_RE: Pattern[str] = re.compile(r"[A-Za-z0-9_-]{1,64}")
 MAX_NAME_LENGTH = 120
 ID_HEX_LENGTH = 12
 
