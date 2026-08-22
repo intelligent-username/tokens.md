@@ -40,4 +40,4 @@ destroot {
 
 test.run            yes
 test.cmd            ${prefix}/bin/tmd
-test.args           --version
+test.args           --version             0.0.18

@@ -76,12 +76,15 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Checking out code at tag: $TAG"
           git checkout "$TAG"
+          # Restore .github/actions/publish-pypi from workflow branch to use fixed action definition
+          git checkout HEAD -- .github/actions/publish-pypi 2>/dev/null || true
 
       - name: Publish to PyPI
         uses: ./.github/actions/publish-pypi
         with:
           pypi_token: ${{ secrets.PYPI_API_TOKEN || secrets.PYPI_TOKEN }}
           skip_existing: ${{ inputs.skip_existing && 'true' || 'false' }}
+          tag: ${{ steps.get_tag.outputs.tag }}
 
 
 
