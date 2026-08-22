@@ -228,7 +228,8 @@ def fetch_url(url: str, output_dir: Path, **kwargs: object) -> Path:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     parsed = urlparse(raw_url)
-    if "github.com" in parsed.netloc.lower():
+    gh_host = parsed.hostname or ""
+    if gh_host == "github.com" or gh_host.endswith(".github.com"):
         path_parts = [p for p in parsed.path.strip("/").split("/") if p]
         if len(path_parts) == 2 or (len(path_parts) == 3 and path_parts[2].endswith(".git")):
             try:
@@ -280,10 +281,10 @@ def fetch_url(url: str, output_dir: Path, **kwargs: object) -> Path:
 
     t_conv = time.monotonic()
     parsed = urlparse(successful_url)
-    host = parsed.netloc.lower() or "page"
     path_parts = [p for p in parsed.path.strip("/").split("/") if p]
 
-    if "github.com" in host and len(path_parts) >= 2:
+    gh_host = parsed.hostname or ""
+    if (gh_host == "github.com" or gh_host.endswith(".github.com")) and len(path_parts) >= 2:
         repo_name = f"{path_parts[0]}/{path_parts[1]}"
         header = f"# Repository [{repo_name}]({successful_url})\n\n"
         filename = f"{_slugify(repo_name)}.md"
