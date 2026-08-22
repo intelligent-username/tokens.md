@@ -75,12 +75,18 @@ def pdf_to_markdown(pdf_path: str | Path, *, strip_headers_footers: bool = False
         import tempfile
 
         image_path = Path(tempfile.mkdtemp(prefix="tmd_images_"))
-    markdown_kwargs = build_markdown_kwargs(strip_headers_footers=strip_headers_footers, write_images=write_images, image_path=image_path, pages=pages, **kwargs)
-    result = pymupdf4llm.to_markdown(str(pdf_path), **markdown_kwargs)
-    if isinstance(result, str) and not keep_boilerplate:
-        result = strip_boilerplate(result, full=full_boilerplate_strip)
-    if not isinstance(result, str):
+    markdown_kwargs = build_markdown_kwargs(strip_headers_footers=strip_headers_footers, write_images=write_images, image_path=image_path, pages=pages, page_chunks=True, **kwargs)
+    raw = pymupdf4llm.to_markdown(str(pdf_path), **markdown_kwargs)
+    if isinstance(raw, list):
+        pages_text = [c["text"] if isinstance(c, dict) else str(c) for c in raw]
+        result = PAGE_DELIMITER.join(pages_text)
+    elif isinstance(raw, str):
+        result = raw
+    else:
         raise UnsupportedFormatError(f"pymupdf4llm returned non-string output for {pdf_path.name}")
+
+    if not keep_boilerplate:
+        result = strip_boilerplate(result, full=full_boilerplate_strip)
     return result
 
 
@@ -108,22 +114,31 @@ class PymupdfConverter(Converter):
             output_path.write_text(result, encoding="utf-8")
             return output_path
 
-        markdown_kwargs = build_markdown_kwargs(output_dir=output_dir, stem=input_path.stem, page_chunks=page_chunks, **kwargs)
+        if page_chunks:
+            markdown_kwargs = build_markdown_kwargs(output_dir=output_dir, stem=input_path.stem, page_chunks=True, **kwargs)
+            try:
+                chunk_result = pymupdf4llm.to_markdown(str(input_path), **markdown_kwargs)
+            except Exception:
+                chunk_result = [input_path.read_text(encoding="utf-8", errors="replace")]
+            output_path = output_dir / f"{input_path.stem}_chunks.json"
+            output_path.write_text(json.dumps(chunk_result, indent=2, ensure_ascii=False), encoding="utf-8")
+            return output_path
+
+        markdown_kwargs = build_markdown_kwargs(output_dir=output_dir, stem=input_path.stem, page_chunks=True, **kwargs)
         try:
-            result = pymupdf4llm.to_markdown(str(input_path), **markdown_kwargs)
+            raw = pymupdf4llm.to_markdown(str(input_path), **markdown_kwargs)
+            if isinstance(raw, list):
+                pages_text = [c["text"] if isinstance(c, dict) else str(c) for c in raw]
+                result = PAGE_DELIMITER.join(pages_text)
+            else:
+                result = str(raw)
         except Exception:
             result = input_path.read_text(encoding="utf-8", errors="replace")
 
-        if isinstance(result, str):
-            if not keep_boilerplate:
-                result = strip_boilerplate(result, full=full_boilerplate_strip)
-            output_path = output_dir / f"{input_path.stem}.md"
-            output_path.write_text(result, encoding="utf-8")
-            return output_path
-
-        # page_chunks=True returns a list of per-page strings.
-        output_path = output_dir / f"{input_path.stem}_chunks.json"
-        output_path.write_text(json.dumps(result, indent=2, ensure_ascii=False), encoding="utf-8")
+        if not keep_boilerplate:
+            result = strip_boilerplate(result, full=full_boilerplate_strip)
+        output_path = output_dir / f"{input_path.stem}.md"
+        output_path.write_text(result, encoding="utf-8")
         return output_path
 
 

@@ -111,6 +111,7 @@ def strip_boilerplate(text: str, *, full: bool = False) -> str:
         out_pages.append("\n".join(kept))
 
     result = PAGE_DELIMITER.join(out_pages)
-    if len(result) < len(text) // 2:
+    if len(result) < len(text) // 3:
         return text
     return result
+
