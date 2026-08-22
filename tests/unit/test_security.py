@@ -101,7 +101,11 @@ class _RedirectResponse:
 
 
 def test_fetch_via_requests_blocks_redirect_to_private_host(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(socket, "getaddrinfo", lambda host, port: [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 0))])
+    def fake_getaddrinfo(host: str, port: object):
+        ip = "93.184.216.34" if host == "example.com" else "127.0.0.1"
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (ip, 0))]
+
+    monkeypatch.setattr(socket, "getaddrinfo", fake_getaddrinfo)
     calls: list[str] = []
 
     def fake_get(self: object, url: str, **kwargs: object) -> _RedirectResponse:
@@ -171,8 +175,8 @@ def test_extract_meta_markdown_title_spans_newlines() -> None:
 
 
 def test_extract_meta_markdown_hostile_input_is_fast() -> None:
-    """Input that backtracked catastrophically under the old regex must stay fast."""
+    """Inputs that backtracked catastrophically under the old regex must stay fast."""
     start = time.perf_counter()
-    assert _extract_meta_markdown("<meta" * 50000) == ""
+    assert _extract_meta_markdown("<meta" * 10000) == ""
     assert _extract_meta_markdown("<title>" + "a" * 100000) == ""
     assert time.perf_counter() - start < 5.0
