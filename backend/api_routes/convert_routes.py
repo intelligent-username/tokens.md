@@ -153,8 +153,7 @@ def repo(req: RepoRequest, request: Request) -> RepoResponse:
         for file_id in req.file_ids:
             meta = ws.upload_meta(file_id)
             src = ws.resolve_upload(file_id)
-            dest = ws.repo_root / str(meta["relpath"])
-            ws.enforce_within(dest)
+            dest = ws.enforce_within(ws.repo_root / str(meta["relpath"]))
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dest)
         root = ws.repo_root
