@@ -52,13 +52,10 @@ def test_workspace_empty_and_none_sid_generate_ids(tmp_path: Path, monkeypatch: 
 # ---------------------------------------------------------------------------
 
 
-def test_api_rejects_malicious_session_id(tmd_workspace: Path) -> None:
+def test_api_rejects_malicious_session_id(tmd_workspace: Path, _shared_fastapi_app) -> None:
     from fastapi.testclient import TestClient
 
-    from backend.app import create_app
-
-    app = create_app()
-    with TestClient(app, raise_server_exceptions=False) as test_client:
+    with TestClient(_shared_fastapi_app, raise_server_exceptions=False) as test_client:
         response = test_client.post("/api/convert", json={"session_id": "../../evil", "file_ids": []})
     assert response.status_code == 500
 

@@ -1,5 +1,5 @@
 name: "Test Suite (Backend & Frontend)"
-description: "Runs backend pytest and frontend vitest via scripts/test.py"
+description: "Runs backend pytest and frontend vitest with coverage via scripts/test.py"
 
 runs:
   using: "composite"
@@ -23,7 +23,12 @@ runs:
         uv pip install -e ".[dev]"
         cd frontend && npm ci && cd ..
 
-    - name: Run test runner script
+    - name: Generate static dummy test fixtures
       shell: bash
       run: |
-        uv run python scripts/test.py -v
+        uv run python tests/dummies/GEN_ALL_FILES.py
+
+    - name: Run test runner script with coverage
+      shell: bash
+      run: |
+        uv run python scripts/test.py -v --cov

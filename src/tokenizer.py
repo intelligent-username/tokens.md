@@ -4,9 +4,9 @@ tiktoken wrapper for token counting
 
 from __future__ import annotations
 
-from functools import cache
+from functools import cache, lru_cache
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from .deps import require
 
@@ -19,11 +19,12 @@ DEFAULT_ENCODING = "o200k_base"
 @cache
 def get_encoding(name: str = DEFAULT_ENCODING) -> tiktoken.Encoding:
     """Return a cached tiktoken encoding."""
-    tiktoken = require("tiktoken", "token counting")
+    tiktoken_mod = require("tiktoken", "token counting")
 
-    return tiktoken.get_encoding(name)
+    return cast("tiktoken.Encoding", tiktoken_mod.get_encoding(name))
 
 
+@lru_cache(maxsize=8192)
 def count_tokens(text: str, encoding: str = DEFAULT_ENCODING) -> int:
     """Count the number of tokens in ``text``."""
     return len(get_encoding(encoding).encode(text))
