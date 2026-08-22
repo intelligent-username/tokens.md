@@ -7,19 +7,25 @@ from __future__ import annotations
 
 from .budget_support.constants import BOILERPLATE_PATTERNS, HEADING_RE, IMAGE_PATTERN, STOPWORDS
 from .budget_support.models import PruneResult
-from .budget_support.passes import _finalize, _pass1_boilerplate, _pass2_gentle, _pass3_medium, _pass4_drop_sections, _pass5_truncate
+from .budget_support.passes import _finalize, _pass1_boilerplate, _pass1_collapse_duplicates, _pass2_gentle, _pass3_medium, _pass4_drop_sections, _pass5_truncate
 from .budget_support.section_utils import _density, _split_sections
 from .tokenizer import DEFAULT_ENCODING, count_tokens, format_tokens
 
 
 def prune_to_budget(content: str, budget: int, encoding: str = DEFAULT_ENCODING) -> PruneResult:
-    """Prune ``content`` to fit ``budget`` tokens via an escalating cascade."""
+    """Prune ``content`` to fit ``budget`` tokens via an escalating cascade.
+
+    Pass order: 1 (boilerplate lines) and 1b (near-duplicate paragraph
+    collapse) always run; passes 2-5 escalate only while the budget is
+    still exceeded.
+    """
     result = PruneResult(content=content)
     original_tokens = count_tokens(content, encoding)
 
     removed: list[str] = []
 
     current = _pass1_boilerplate(content, removed)
+    current = _pass1_collapse_duplicates(current, removed, encoding)
     if count_tokens(current, encoding) <= budget:
         return _finalize(result, current, original_tokens, removed, budget, encoding)
 

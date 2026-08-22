@@ -14,6 +14,7 @@ from typing import Any
 from watchdog.events import FileSystemEvent, FileSystemEventHandler
 from watchdog.observers import Observer
 
+from .budget import prune_to_budget
 from .merger import resolve_to_markdown
 from .registry import UnsupportedFormatError
 
@@ -27,13 +28,14 @@ def _is_matching(path: Path, extensions: Sequence[str]) -> bool:
 class WatcherHandler(FileSystemEventHandler):
     """Enqueues matching files and processes them once stable."""
 
-    def __init__(self, output_dir: Path, extensions: Sequence[str], poll_interval: float, clip: bool = False, on_event: Callable[[dict[str, object]], None] | None = None, **convert_kwargs: Any) -> None:
+    def __init__(self, output_dir: Path, extensions: Sequence[str], poll_interval: float, clip: bool = False, on_event: Callable[[dict[str, object]], None] | None = None, budget: int | None = None, **convert_kwargs: Any) -> None:
         super().__init__()
         self.output_dir = output_dir
         self.extensions = extensions
         self.poll_interval = poll_interval
         self.clip = clip
         self.on_event = on_event
+        self.budget = budget
         self.convert_kwargs = convert_kwargs
         self._queue: Queue[Path] = Queue()
         self._processed: set[str] = set()
@@ -98,6 +100,8 @@ class WatcherHandler(FileSystemEventHandler):
                 return False
             self._emit("converting", path)
             markdown = resolve_to_markdown(path, **self.convert_kwargs)
+            if self.budget is not None:
+                markdown = prune_to_budget(markdown, self.budget).content
             out_path = self.output_dir / f"{path.stem}.md"
             out_path.write_text(markdown, encoding="utf-8")
             if self.clip:
@@ -131,15 +135,16 @@ class WatcherHandler(FileSystemEventHandler):
             self.process_one(path)
 
 
-def run_watcher(source: Path, output: Path, *, poll_interval: float, clip: bool = False, once: bool = False, extensions: Sequence[str] = (".pdf",), stop_event: threading.Event | None = None, on_event: Callable[[dict[str, object]], None] | None = None, **convert_kwargs: Any) -> None:
+def run_watcher(source: Path, output: Path, *, poll_interval: float, clip: bool = False, once: bool = False, extensions: Sequence[str] = (".pdf",), stop_event: threading.Event | None = None, on_event: Callable[[dict[str, object]], None] | None = None, budget: int | None = None, **convert_kwargs: Any) -> None:
     """Watch ``source`` and convert matching files into ``output``.
 
     With ``once``, process existing files and return immediately. Otherwise run
-    until SIGINT / SIGTERM, exiting cleanly.
+    until SIGINT / SIGTERM, exiting cleanly. When ``budget`` is set, each
+    converted file is pruned to fit the token budget.
     """
     source.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=True)
-    handler = WatcherHandler(output, extensions, poll_interval, clip, on_event=on_event, **convert_kwargs)
+    handler = WatcherHandler(output, extensions, poll_interval, clip, on_event=on_event, budget=budget, **convert_kwargs)
 
     if once:
         for path in sorted(source.iterdir()):

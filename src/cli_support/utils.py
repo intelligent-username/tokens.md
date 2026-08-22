@@ -24,8 +24,8 @@ def _parse_extensions(value: str) -> Sequence[str]:
     return result
 
 
-def _convert_kwargs(strip_headers_footers: bool, write_images: bool, image_path: str | None, pages: str | None) -> dict[str, Any]:
-    kwargs: dict[str, Any] = {"strip_headers_footers": strip_headers_footers, "write_images": write_images}
+def _convert_kwargs(strip_headers_footers: bool, write_images: bool, image_path: str | None, pages: str | None, *, keep_boilerplate: bool = False, full_boilerplate_strip: bool = False) -> dict[str, Any]:
+    kwargs: dict[str, Any] = {"strip_headers_footers": strip_headers_footers, "write_images": write_images, "keep_boilerplate": keep_boilerplate, "full_boilerplate_strip": full_boilerplate_strip}
     if image_path:
         kwargs["image_path"] = image_path
     if pages:

@@ -28,7 +28,8 @@ def _settings(request: Request) -> Settings:
 
 def _convert_kwargs(opts: Any) -> dict[str, Any]:
     """Build converter kwargs from an options object with optional fields."""
-    kwargs: dict[str, Any] = {"strip_headers_footers": bool(getattr(opts, "strip_headers_footers", False)), "write_images": bool(getattr(opts, "write_images", False))}
+    budget = getattr(opts, "budget", None)
+    kwargs: dict[str, Any] = {"strip_headers_footers": bool(getattr(opts, "strip_headers_footers", False)), "write_images": bool(getattr(opts, "write_images", False)), "keep_boilerplate": bool(getattr(opts, "keep_boilerplate", False)), "full_boilerplate_strip": budget is not None}
     image_path = getattr(opts, "image_path", None)
     if image_path:
         kwargs["image_path"] = image_path

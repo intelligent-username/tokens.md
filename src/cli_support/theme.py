@@ -76,10 +76,11 @@ class OrderGroup(typer.core.TyperGroup):
         opt_table.add_column("Option", style=CLITheme.ACCENT_STYLE, min_width=col1_width, max_width=col1_width, no_wrap=True)
         opt_table.add_column("Description", style="default")
         opt_table.add_row("-m, --merge", "Merge converted files into a single master document (convert)")
-        opt_table.add_row("-b, --budget INT", "Hard token ceiling budget for pruning (convert, merge)")
+        opt_table.add_row("-b, --budget INT", "Hard token ceiling budget for pruning (convert, watch, merge)")
         opt_table.add_row("-f, --full", "Include full file contents in output (repo)")
         opt_table.add_row("--pages PAGES", "Comma-separated zero-based page indices e.g. '0,1' (convert, merge)")
         opt_table.add_row("--strip-headers-footers", "Strip repeating headers and footers from PDFs (convert, merge)")
+        opt_table.add_row("--keep-boilerplate", "Keep repeating page furniture that is auto-stripped (convert, watch, merge)")
         opt_table.add_row("--write-images", "Extract embedded images to image path (convert, merge)")
         opt_table.add_row("--clip", "Copy converted output to clipboard (convert)")
 

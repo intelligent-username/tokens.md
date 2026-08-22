@@ -29,6 +29,7 @@ def convert_impl(
     write_images: bool = False,
     image_path: str | None = None,
     pages: str | None = None,
+    keep_boilerplate: bool = False,
     clip: bool = False,
     merge: bool = False,
     budget: int | None = None,
@@ -40,7 +41,7 @@ def convert_impl(
         typer.echo(f"No matching files found in {source!r}.")
         raise typer.Exit(code=EXIT_CODE_ERROR)
 
-    kwargs = _convert_kwargs(strip_headers_footers, write_images, image_path, pages)
+    kwargs = _convert_kwargs(strip_headers_footers, write_images, image_path, pages, keep_boilerplate=keep_boilerplate, full_boilerplate_strip=budget is not None)
 
     # When merging or copying directly to clipboard, convert into a temporary
     # directory so no files are left behind on disk.

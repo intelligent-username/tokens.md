@@ -23,14 +23,14 @@ OpenAI's `tiktoken` is used to estimate how many tokens are saved (pretty accura
 
 The features of this tool are all encompassed by the `tmd` CLI commands. The front end displays this with an accessible GUI. 
 
-- **`tmd convert`**: convert files to Markdown.
+- **`tmd convert`**: convert files to Markdown. Multi-page PDFs get repeated page numbers stripped automatically; with a budget set, running headers/footers are fingerprinted and removed too (`--keep-boilerplate` opts out).
 - **`tmd clip`**: convert files to markdown and copy the result to your clipboard.
-- **`tmd watch`**: watch a hot folder and auto-convert new files as they appear.
+- **`tmd watch`**: watch a hot folder and auto-convert new files as they appear (supports `--budget`).
 - **`tmd fetch`**: pull a web page and save clean article Markdown.
 - **`tmd repo`**: collapse an entire code repository into a single Markdown manifest.
 - **`tmd merge`**: combine many files into one master document with a Table of Contents.
 - **`tmd delta`**: show how many tokens were saved.
-- **`--budget`**: an extra argument to force output size in tokens.
+- **`--budget`**: an extra argument to force output size in tokens; also activates near-duplicate paragraph collapsing and full header/footer stripping.
 
 See [the usage guide](#running) for examples
 

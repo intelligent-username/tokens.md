@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from ..tokenizer import count_tokens
 from .constants import HEADING_RE, IMAGE_PATTERN, PASS2_KEEP_RATIO, PASS3_MAX_RATIO, PASS3_MIN_RATIO
+from .fuzzy import MAX_DISTANCE, MIN_BLOCK_WORDS, hamming, is_immutable_block, simhash
 from .models import PruneResult, _Section
 from .section_utils import _is_boilerplate, _rebuild, _textrank_prune
 
@@ -17,6 +18,34 @@ def _pass1_boilerplate(content: str, removed: list[str]) -> str:
         else:
             kept.append(line)
     return "\n".join(kept)
+
+
+def _pass1_collapse_duplicates(content: str, removed: list[str], encoding: str) -> str:
+    """Collapse near-duplicate paragraphs (simhash), keeping the first occurrence.
+
+    Later near-duplicates are replaced with a compact ``(repeated from §N)``
+    marker pointing at the ordinal of the kept block. Headings, FILE
+    separators, TOC/list blocks, and short blocks are immune.
+    """
+    blocks = content.split("\n\n")
+    kept: list[tuple[int, int]] = []  # (simhash, ordinal)
+    out: list[str] = []
+    ordinal = 0
+    for block in blocks:
+        stripped = block.strip()
+        if is_immutable_block(block) or len(stripped.split()) < MIN_BLOCK_WORDS:
+            out.append(block)
+            continue
+        fingerprint = simhash(stripped)
+        match = next((n for fp, n in kept if hamming(fingerprint, fp) <= MAX_DISTANCE), None)
+        if match is not None:
+            removed.append(f"[duplicate of §{match}] {stripped[:60]}…")
+            out.append(f"(repeated from §{match})")
+        else:
+            ordinal += 1
+            kept.append((fingerprint, ordinal))
+            out.append(block)
+    return "\n\n".join(out)
 
 
 def _pass2_gentle(sections: list[_Section], removed: list[str], encoding: str) -> str:

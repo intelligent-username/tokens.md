@@ -64,6 +64,7 @@ def convert(
     recursive: bool = typer.Option(False, "-r", "--recursive", help="Recurse into subdirectories."),
     extensions: str = typer.Option(_default_extensions, "-e", "--extensions", help="Comma-separated extensions filter."),
     strip_headers_footers: bool = typer.Option(False, "--strip-headers-footers", help="Strip running headers and footers from each page."),
+    keep_boilerplate: bool = typer.Option(False, "--keep-boilerplate", help="Keep repeating headers, footers, and page numbers."),
     write_images: bool = typer.Option(False, "--write-images", help="Extract embedded images to disk."),
     image_path: str | None = typer.Option(None, "--image-path", help="Custom directory for extracted images."),
     pages: str | None = typer.Option(None, "--pages", help="Comma-separated zero-based page indices (e.g. '0,1,4')."),
@@ -73,7 +74,7 @@ def convert(
 ) -> None:
     """Convert files to Markdown."""
     target_source = source if (source is not None and len(source) > 0) else [DEFAULT_SOURCE_DIR]
-    convert_impl(source=target_source, output=output, loc=loc, recursive=recursive, extensions=extensions, strip_headers_footers=strip_headers_footers, write_images=write_images, image_path=image_path, pages=pages, clip=clip, merge=merge, budget=budget)
+    convert_impl(source=target_source, output=output, loc=loc, recursive=recursive, extensions=extensions, strip_headers_footers=strip_headers_footers, keep_boilerplate=keep_boilerplate, write_images=write_images, image_path=image_path, pages=pages, clip=clip, merge=merge, budget=budget)
 
 
 @app.command()
@@ -85,17 +86,19 @@ def watch(
     clip: bool = typer.Option(False, "--clip", help="Copy converted text to clipboard automatically."),
     once: bool = typer.Option(False, "--once", help="Process existing files and exit."),
     strip_headers_footers: bool = typer.Option(False, "--strip-headers-footers", help="Strip running headers and footers from each page."),
+    keep_boilerplate: bool = typer.Option(False, "--keep-boilerplate", help="Keep repeating headers, footers, and page numbers."),
     write_images: bool = typer.Option(False, "--write-images", help="Extract embedded images to disk."),
     image_path: str | None = typer.Option(None, "--image-path", help="Custom directory for extracted images."),
     pages: str | None = typer.Option(None, "--pages", help="Comma-separated zero-based page indices."),
+    budget: int | None = typer.Option(None, "--budget", help="Prune each converted file to fit a hard token budget limit."),
 ) -> None:
     """Watch a folder and convert new files automatically."""
     require("watchdog", "tmd watch")
     from ..watcher import run_watcher
 
-    kwargs = _convert_kwargs(strip_headers_footers, write_images, image_path, pages)
+    kwargs = _convert_kwargs(strip_headers_footers, write_images, image_path, pages, keep_boilerplate=keep_boilerplate, full_boilerplate_strip=budget is not None)
     output_dir = _resolve_output_dir(output, loc)
-    run_watcher(Path(source), output_dir, poll_interval=poll_interval, clip=clip, once=once, extensions=_parse_extensions(_default_extensions()), **kwargs)
+    run_watcher(Path(source), output_dir, poll_interval=poll_interval, clip=clip, once=once, extensions=_parse_extensions(_default_extensions()), budget=budget, **kwargs)
 
 
 @app.command()
@@ -143,6 +146,7 @@ def merge(
     encoding: str = typer.Option(DEFAULT_ENCODING, "--encoding", help="tiktoken encoding for token counting."),
     no_convert: bool = typer.Option(False, "--no-convert", help="Use raw file contents without converting first."),
     dedup: bool = typer.Option(False, "--dedup", help="Remove exact duplicate lines while preserving order."),
+    keep_boilerplate: bool = typer.Option(False, "--keep-boilerplate", help="Keep repeating headers, footers, and page numbers in converted sources."),
     no_toc: bool = typer.Option(False, "--no-toc", help="Skip generating Table of Contents header."),
     delta: bool = typer.Option(False, "--delta", help="Print token savings delta summary after merging."),
 ) -> None:
@@ -169,7 +173,7 @@ def merge(
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
     include_tokens = budget is not None or delta
-    merge_files(files, output_path, no_convert=no_convert, dedup=dedup, toc=not no_toc, encoding=encoding, include_tokens=include_tokens)
+    merge_files(files, output_path, no_convert=no_convert, dedup=dedup, toc=not no_toc, encoding=encoding, include_tokens=include_tokens, keep_boilerplate=keep_boilerplate, full_boilerplate_strip=budget is not None)
 
     if budget is not None:
         result = prune_to_budget(output_path.read_text(encoding="utf-8"), budget, encoding)

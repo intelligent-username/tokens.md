@@ -47,6 +47,7 @@ tmd convert docs/ --clip
 | `-r, --recursive` | off | Recurse into subdirectories |
 | `-e, --extensions` | all supported | Comma-separated extension filter (e.g. `pdf,docx`) |
 | `--strip-headers-footers` | off | Strip running headers and footers from each page |
+| `--keep-boilerplate` | off | Keep repeating page furniture (headers, footers, page numbers) that is auto-stripped |
 | `--write-images` | off | Extract embedded images to disk |
 | `--image-path DIR` | auto | Where to write extracted images |
 | `--pages` | all | Comma-separated zero-based page indices (e.g. `0,1,4`) |
@@ -74,6 +75,8 @@ tmd watch --poll-interval 3.0
 | `--poll-interval SECONDS` | `2.0` | Stability wait before converting a file (lets in-progress copies finish) |
 | `--clip` | off | Copy each result to the clipboard |
 | `--once` | off | Process existing files in the source folder and exit |
+| `--budget N` | off | Prune each converted file to fit a hard token budget |
+| `--keep-boilerplate` | off | Keep repeating page furniture (headers, footers, page numbers) that is auto-stripped |
 | `--strip-headers-footers`, `--write-images`, `--image-path`, `--pages` | | Same as `convert` |
 
 `Ctrl+C` stops the watcher cleanly (exit code `0`). Per-file failures are logged and never stop the loop.
@@ -161,6 +164,7 @@ tmd merge input/ -o mega.md --delta
 | `-r, --recursive` | off | Recurse into subdirectories |
 | `--no-toc` | off | Skip the generated Table of Contents |
 | `--dedup` | off | Remove exact duplicate lines (order preserved) |
+| `--keep-boilerplate` | off | Keep repeating page furniture in converted sources (headers, footers, page numbers) |
 | `--no-convert` | off | Use raw file contents instead of converting first |
 | `--encoding NAME` | `o200k_base` | tiktoken encoding for token counting |
 | `--budget N` | off | Prune output to fit a hard token budget (see below) |
@@ -225,15 +229,18 @@ The REST API is available at `http://127.0.0.1:8642/api` with interactive Swagge
 
 ## Token budgeting
 
-`--budget N` forces the output to fit within `N` tokens. Pruning executes via an escalating 5-pass cascade that halts as soon as the token target is reached:
+`--budget N` forces the output to fit within `N` tokens. Pruning executes via an escalating cascade that halts as soon as the token target is reached:
 
 1. **Pass 1 (Boilerplate & Images)**: Removes copyright disclaimers, legal notices, and embedded markdown image links.
-2. **Pass 2 (Gentle TextRank)**: Uses TextRank graph summarization to reduce sentences in low-density sections.
-3. **Pass 3 (Medium TextRank)**: Applies heavier sentence-level extraction across all non-heading paragraphs.
-4. **Pass 4 (Density-Ranked Section Drops)**: Computes information density (`unique_words / total_words`) per section and removes lowest-scoring sections while retaining structure.
-5. **Pass 5 (Hard Truncation)**: Truncates remaining content from the end and appends a truncation marker with token metadata.
+2. **Pass 1b (Duplicate Collapse)**: Detects near-duplicate paragraphs via simhash fingerprints and keeps only the first occurrence, replacing later ones with a compact `(repeated from §N)` marker. Headings, file separators, and short blocks are immune.
+3. **Pass 2 (Gentle TextRank)**: Uses TextRank graph summarization to reduce sentences in low-density sections.
+4. **Pass 3 (Medium TextRank)**: Applies heavier sentence-level extraction across all non-heading paragraphs.
+5. **Pass 4 (Density-Ranked Section Drops)**: Computes information density (`unique_words / total_words`) per section and removes lowest-scoring sections while retaining structure.
+6. **Pass 5 (Hard Truncation)**: Truncates remaining content from the end and appends a truncation marker with token metadata.
 
 If the raw input already fits within `N` tokens, no pruning or stripping occurs.
+
+Independent of the budget cascade, multi-page PDFs always get bare page numbers removed by cross-page fingerprinting; when a budget is set, the same fingerprinting also removes running headers, footers, and watermarks repeated across most pages. Pass `--keep-boilerplate` to disable both.
 
 Example output:
 
