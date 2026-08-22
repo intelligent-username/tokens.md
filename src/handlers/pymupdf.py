@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from types import ModuleType
-from typing import Any
+from typing import Any, cast
 
 from ..deps import MissingDependencyError, require
 from ..engine.boilerplate import PAGE_DELIMITER, strip_boilerplate
@@ -29,7 +29,7 @@ def _load_pymupdf4llm() -> ModuleType | None:
     back to :func:`_pdf_to_markdown_fallback` in that case.
     """
     try:
-        return require("pymupdf4llm", "conversion")
+        return cast(ModuleType, require("pymupdf4llm", "conversion"))
     except MissingDependencyError:
         return None
 

@@ -48,7 +48,8 @@ def _is_page_number(normalized: str) -> bool:
     Matches "#", "##", "page #", "- #", and similar; requires at least one "#".
     """
     cleaned = re.sub(r"^(page|pg|p)\b[.:\s]*", "", normalized, flags=re.IGNORECASE).strip()
-    return bool("#" in cleaned and set(cleaned) <= {"#", "-", " ", "/", "|", "."})
+    return "#" in cleaned and set(cleaned) <= {"#", "-", " ", "/", "|", "."}
+
 
 
 
@@ -74,6 +75,9 @@ def find_boilerplate_keys(pages: list[str], *, full: bool, min_full_pages: int =
     return banned
 
 
+_PAGE_SPLIT_RE = re.compile(r"\n+[-*_]{3,}\n+|\x0c")
+
+
 def strip_boilerplate(text: str, *, full: bool = False) -> str:
     """Remove fingerprinted boilerplate lines from paginated Markdown.
 
@@ -83,7 +87,10 @@ def strip_boilerplate(text: str, *, full: bool = False) -> str:
     unchanged for single-page input or when detection is unreliable
     (>50% of the document would be removed).
     """
-    pages = text.split(PAGE_DELIMITER)
+    if PAGE_DELIMITER in text:
+        pages = text.split(PAGE_DELIMITER)
+    else:
+        pages = _PAGE_SPLIT_RE.split(text)
     if len(pages) < 2:
         return text
     banned = find_boilerplate_keys(pages, full=full)

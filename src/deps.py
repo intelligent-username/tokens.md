@@ -11,14 +11,14 @@ instead of a bare ``ModuleNotFoundError``.
 from __future__ import annotations
 
 import importlib
-from typing import Any
+from types import ModuleType
 
 
 class MissingDependencyError(RuntimeError):
     """Raised when an optional dependency is required but not installed."""
 
 
-def require(module_name: str, feature: str) -> Any:
+def require(module_name: str, feature: str) -> ModuleType:
     """Import ``module_name`` or raise a friendly :class:`MissingDependencyError`.
 
     ``feature`` is a short human-readable description of what needs the
