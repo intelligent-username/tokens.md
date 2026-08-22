@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import ipaddress
 import logging
+import socket
 import ssl
 import time
 import urllib.request
@@ -12,6 +14,22 @@ from .constants import CHROME_CIPHERS, MAX_REDIRECT_HOPS
 from .decompress import decompress_body
 
 logger = logging.getLogger("backend")
+
+
+def assert_public_http_url(url: str) -> None:
+    """Reject non-http(s) URLs and hosts resolving to non-public addresses.
+
+    Raises ``ValueError`` when the URL scheme is not http/https or when any
+    resolved IP for the hostname is loopback, private, link-local, or otherwise
+    not globally routable (SSRF protection).
+    """
+    parsed = urlparse(url)
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        raise ValueError(f"Unsupported URL scheme or missing host: {url}")
+    for info in socket.getaddrinfo(parsed.hostname, None):
+        ip = ipaddress.ip_address(info[4][0])
+        if not ip.is_global:
+            raise ValueError(f"Blocked non-public address for host: {parsed.hostname}")
 
 
 def fetch_via_curl_cffi(target_url: str, headers: dict[str, str], timeout_sec: float) -> str | None:
@@ -40,6 +58,7 @@ def fetch_via_requests(target_url: str, headers: dict[str, str], timeout_sec: fl
 
         url = target_url
         for _ in range(MAX_REDIRECT_HOPS):
+            assert_public_http_url(url)
             t_hop = time.monotonic()
             resp = session.get(url, allow_redirects=False, timeout=(2.0, timeout_sec))
             elapsed = time.monotonic() - t_hop
@@ -79,6 +98,7 @@ def fetch_via_urllib(target_url: str, headers: dict[str, str], timeout_sec: floa
             max_redirections = MAX_REDIRECT_HOPS
 
             def redirect_request(self, req, fp, code, msg, req_headers, newurl):
+                assert_public_http_url(newurl)
                 new_req = super().redirect_request(req, fp, code, msg, req_headers, newurl)
                 if new_req:
                     for k, v in headers.items():
@@ -86,6 +106,7 @@ def fetch_via_urllib(target_url: str, headers: dict[str, str], timeout_sec: floa
                 return new_req
 
         opener = urllib.request.build_opener(SpoofedRedirectHandler(), urllib.request.HTTPSHandler(context=ctx))
+        assert_public_http_url(target_url)
         req = urllib.request.Request(target_url, headers=headers)
         with opener.open(req, timeout=timeout_sec) as resp:
             data = resp.read()
