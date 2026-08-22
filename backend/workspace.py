@@ -41,7 +41,7 @@ class Workspace:
     """Filesystem-backed session workspace with a JSON manifest registry."""
 
     def __init__(self, sid: str | None = None) -> None:
-        if sid is not None and not SAFE_SESSION_ID_RE.fullmatch(sid):
+        if sid and not SAFE_SESSION_ID_RE.fullmatch(sid):
             raise WorkspaceError("Invalid session id")
         self.sid = sid or uuid.uuid4().hex[:ID_HEX_LENGTH]
         self.root = Path(tempfile.gettempdir()) / f"{WORKSPACE_DIR_PREFIX}{self.sid}"
