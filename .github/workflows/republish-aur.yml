@@ -1,0 +1,35 @@
+# ==============================================================================
+# WORKFLOW: Manual AUR (Arch User Repository) Re-Publish / Fallback Sync
+# ==============================================================================
+# PURPOSE:
+#   Directly push PKGBUILD and update the AUR package (tmd-bin).
+#
+# HOW TO RUN:
+#   1. Go to "Actions" -> "Manual Re-Publish to AUR (Fallback / Recovery)"
+#   2. Click "Run workflow".
+# ==============================================================================
+
+name: "Manual Re-Publish to AUR (Fallback / Recovery)"
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  republish-aur:
+    name: "Manual Re-Publish to AUR"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - name: Publish to Arch User Repository (AUR)
+        uses: ./.github/actions/publish-aur
+        with:
+          aur_ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY || secrets.AUR_KEY }}
+          pkgname: "tmd-bin"
+          pkgbuild_path: "manifests/aur/PKGBUILD"
