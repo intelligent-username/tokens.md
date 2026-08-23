@@ -14,8 +14,10 @@ Comprehensive operational manual for distributing and maintaining the `tmd` CLI 
 6. [Platform 3: Homebrew Tap (macOS & Linux)](#6-platform-3-homebrew-tap-macos--linux)
 7. [Platform 4: WinGet (Windows Package Manager)](#7-platform-4-winget-windows-package-manager)
 8. [Platform 5: Scoop (Windows)](#8-platform-5-scoop-windows)
-9. [End-to-End Release Runbook](#9-end-to-end-release-runbook)
-10. [Emergency Recovery & Troubleshooting Guide](#10-emergency-recovery--troubleshooting-guide)
+9. [Platform 6: Arch User Repository (AUR)](#9-platform-6-arch-user-repository-aur)
+10. [Platform 7: MacPorts (macOS)](#10-platform-7-macports-macos)
+11. [End-to-End Release Runbook](#11-end-to-end-release-runbook)
+12. [Emergency Recovery & Troubleshooting Guide](#12-emergency-recovery--troubleshooting-guide)
 
 ---
 
@@ -62,7 +64,9 @@ Configure the following secrets in GitHub (**Settings** > **Secrets and variable
 | :--- | :--- | :--- | :--- |
 | `CHOCOLATEY_API_KEY` | Chocolatey | API key generated on `community.chocolatey.org` | Package Push / Publish |
 | `HOMEBREW_TAP_TOKEN` | Homebrew | Personal Access Token (Classic or Fine-Grained) | `public_repo` (to push to `intelligent-username/homebrew-tap`) |
-| `WINGET_TOKEN` | WinGet & Scoop | Personal Access Token (Classic) | `public_repo` (to submit PRs to `microsoft/winget-pkgs` & `ScoopInstaller/Main`) |
+| `WINGET_TOKEN` | WinGet, Scoop & MacPorts | Personal Access Token (Classic) | `public_repo` (to submit PRs to `microsoft/winget-pkgs`, `ScoopInstaller/Main` & `macports/macports-ports`) |
+| `MACPORTS_TOKEN` | MacPorts | Personal Access Token (Classic) | `public_repo` (optional override for `macports/macports-ports` PRs) |
+| `AUR_SSH_PRIVATE_KEY` | AUR (Arch Linux) | SSH Private Key matching public key registered on `aur.archlinux.org` | Push access to `ssh://aur@aur.archlinux.org/tmd-bin.git` |
 | *(OIDC / Environment)* | PyPI | Configured via PyPI Trusted Publisher (or `PYPI_API_TOKEN`) | `pypi` GitHub Environment with claim to repository |
 
 ---
@@ -387,7 +391,89 @@ The manifest configures native shims for both `64bit` (x64) and `arm64` executab
 
 ---
 
-## 9. End-to-End Release Runbook
+## 9. Platform 6: Arch User Repository (AUR)
+
+### Overview
+- **Package Name**: `tmd-bin`
+- **Installation Command**:
+  ```bash
+  yay -S tmd-bin
+  # or
+  paru -S tmd-bin
+  ```
+- **Manifest Location**: `manifests/aur/PKGBUILD`
+
+### Initial Setup & SSH Authentication
+1. Register an account on [aur.archlinux.org](https://aur.archlinux.org/register).
+2. Generate a dedicated SSH key pair for AUR deployment:
+   ```powershell
+   ssh-keygen -t ed25519 -f "$HOME\.ssh\aur_key"
+   ```
+3. Copy the **Public Key** and upload it to your [AUR Profile Settings](https://aur.archlinux.org/account):
+   ```powershell
+   Get-Content "$HOME\.ssh\aur_key.pub"
+   ```
+4. Copy the entire **Private Key** (including header and footer lines) and add it to GitHub Secrets:
+   ```powershell
+   Get-Content "$HOME\.ssh\aur_key"
+   ```
+   - **Secret Name**: `AUR_SSH_PRIVATE_KEY` (or `AUR_KEY`)
+
+### Automation Details
+- Manifest version and Linux binary SHA-256 sums (x86_64 and arm64) are automatically updated by `scripts/update_manifest_hashes.py`.
+- Handled by `.github/actions/publish-aur/action.yml` using `KSXGitHub/github-actions-deploy-aur@v3`.
+- Automatically generates `.SRCINFO` and pushes updates to `ssh://aur@aur.archlinux.org/tmd-bin.git`.
+
+### Manual Re-Publishing (Recovery Workflow)
+1. Go to **Actions** > **Manual Re-Publish to AUR (Fallback / Recovery)**.
+2. Click **Run workflow** on `main`.
+
+### Verification
+```bash
+yay -Syu tmd-bin
+tmd --version
+```
+
+---
+
+## 10. Platform 7: MacPorts (macOS)
+
+### Overview
+- **Port Name**: `tmd`
+- **Installation Command**:
+  ```bash
+  sudo port selfupdate
+  sudo port install tmd
+  ```
+- **Manifest Location**: `manifests/macports/Portfile`
+
+### Overview & Is This For macOS?
+Yes, **MacPorts** is an open-source package manager designed specifically for macOS (Darwin). The `Portfile` instructs MacPorts on downloading pre-built native binaries (`tmd-macos-arm64` for Apple Silicon, `tmd-macos-x64` for Intel) from GitHub Releases and installing them to `/opt/local/bin/tmd`.
+
+### Initial Setup & Credentials
+1. Uses your existing GitHub PAT (`MACPORTS_TOKEN`, `WINGET_TOKEN`, or `HOMEBREW_TAP_TOKEN`) with `public_repo` scope.
+2. The workflow automatically forks `macports/macports-ports`, updates `textproc/tmd/Portfile`, and opens/updates a Pull Request.
+
+### Automation Details
+- Manifest version and macOS SHA-256 sums are automatically updated by `scripts/update_manifest_hashes.py`.
+- Handled by `.github/actions/publish-macports/action.yml`.
+
+### Manual Re-Publishing (Recovery Workflow)
+1. Go to **Actions** > **Manual Re-Publish to MacPorts (Fallback / Recovery)**.
+2. Click **Run workflow** on `main`.
+
+### Verification
+- Track PR status at `https://github.com/macports/macports-ports/pulls?q=is%3Apr+tmd`.
+- Once merged:
+  ```bash
+  sudo port selfupdate
+  sudo port install tmd
+  tmd --version
+  ```
+
+---
+
+## 11. End-to-End Release Runbook
 
 Follow these steps for every new version release:
 
@@ -424,10 +510,12 @@ git push origin v0.0.19
    - `publish-homebrew`
    - `publish-winget`
    - `publish-scoop`
+   - `publish-aur`
+   - `publish-macports`
 
 ---
 
-## 10. Emergency Recovery & Troubleshooting Guide
+## 12. Emergency Recovery & Troubleshooting Guide
 
 | Symptom / Error | Root Cause | Remediation |
 | :--- | :--- | :--- |

@@ -1,0 +1,33 @@
+# ==============================================================================
+# WORKFLOW: Manual MacPorts PR Submit / Fallback Sync
+# ==============================================================================
+# PURPOSE:
+#   Directly submits or updates the MacPorts Portfile PR to macports/macports-ports.
+#
+# HOW TO RUN:
+#   1. Go to "Actions" -> "Manual Re-Publish to MacPorts (Fallback / Recovery)"
+#   2. Click "Run workflow".
+# ==============================================================================
+
+name: "Manual Re-Publish to MacPorts (Fallback / Recovery)"
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  republish-macports:
+    name: "Submit PR to macports/macports-ports"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - name: Publish to MacPorts
+        uses: ./.github/actions/publish-macports
+        with:
+          macports_token: ${{ secrets.MACPORT_KEY || secrets.MACPORTS_TOKEN || secrets.MACPORT_TOKEN || secrets.WINGET_TOKEN || secrets.HOMEBREW_TAP_TOKEN || secrets.TAP_GITHUB_TOKEN }}

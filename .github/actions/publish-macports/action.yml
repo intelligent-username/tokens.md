@@ -1,0 +1,85 @@
+name: "Submit / Update MacPorts Portfile (macports/macports-ports)"
+description: "Forks macports/macports-ports, syncs manifests/macports/Portfile into textproc/tmd/Portfile, and opens/updates a Pull Request."
+
+inputs:
+  macports_token:
+    description: "GitHub Personal Access Token with public_repo scope"
+    required: true
+  target_repo:
+    description: "Target MacPorts repository"
+    required: false
+    default: "macports/macports-ports"
+  portfile_path:
+    description: "Path to local Portfile manifest"
+    required: false
+    default: "manifests/macports/Portfile"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Submit Pull Request to MacPorts
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.macports_token }}
+        TARGET_REPO: ${{ inputs.target_repo }}
+        PORTFILE_PATH: ${{ inputs.portfile_path }}
+      run: |
+        if [ -z "$GH_TOKEN" ]; then
+          echo "::error::GitHub token with public_repo scope is required."
+          exit 1
+        fi
+
+        if [ ! -f "$PORTFILE_PATH" ]; then
+          echo "::error::Portfile not found at $PORTFILE_PATH"
+          exit 1
+        fi
+
+        VERSION=$(grep -E "^version\s+" "$PORTFILE_PATH" | awk '{print $2}')
+        BRANCH_NAME="tmd-$VERSION"
+        PR_TITLE="tmd: update/add port at $VERSION"
+
+        echo "Forking $TARGET_REPO (if not already forked)..."
+        gh repo fork "$TARGET_REPO" --clone=false || true
+
+        FORK_OWNER=$(gh api user --jq .login)
+        FORK_URL="https://x-access-token:${GH_TOKEN}@github.com/${FORK_OWNER}/macports-ports.git"
+
+        TMP_DIR=$(mktemp -d)
+        echo "Cloning fork from ${FORK_OWNER}/macports-ports..."
+        git clone "$FORK_URL" "$TMP_DIR"
+        cd "$TMP_DIR"
+
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        git remote add upstream "https://github.com/${TARGET_REPO}.git"
+        git fetch upstream master || git fetch upstream main
+        UPSTREAM_BRANCH=$(git symbolic-ref refs/remotes/upstream/HEAD 2>/dev/null | sed 's@^refs/remotes/upstream/@@' || echo "master")
+        git checkout -B "$BRANCH_NAME" "upstream/$UPSTREAM_BRANCH"
+
+        mkdir -p textproc/tmd
+        cp "$GITHUB_WORKSPACE/$PORTFILE_PATH" textproc/tmd/Portfile
+
+        git add textproc/tmd/Portfile
+        if git diff --staged --quiet; then
+          echo "Portfile in $TARGET_REPO is already identical. No changes needed."
+          exit 0
+        fi
+
+        git commit -m "$PR_TITLE"
+        git push -u origin "$BRANCH_NAME" --force
+
+        echo "Checking for existing PR..."
+        EXISTING_PR=$(gh pr list --repo "$TARGET_REPO" --head "${FORK_OWNER}:${BRANCH_NAME}" --json number --jq '.[0].number')
+
+        if [ -n "$EXISTING_PR" ]; then
+          echo "Pull Request #$EXISTING_PR already exists and has been updated."
+        else
+          echo "Creating new Pull Request to $TARGET_REPO..."
+          gh pr create \
+            --repo "$TARGET_REPO" \
+            --base "$UPSTREAM_BRANCH" \
+            --head "${FORK_OWNER}:${BRANCH_NAME}" \
+            --title "$PR_TITLE" \
+            --body "Updates/adds \`tmd\` Portfile to version $VERSION. Native binary distribution for macOS (x86_64 and arm64)."
+        fi
