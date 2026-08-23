@@ -1,0 +1,28 @@
+name: "Publish to Arch User Repository (AUR)"
+description: "Pushes PKGBUILD and updates the AUR package (tmd-bin)."
+
+inputs:
+  aur_ssh_private_key:
+    description: "AUR SSH Private Key registered with aur.archlinux.org"
+    required: true
+  pkgname:
+    description: "AUR package name"
+    required: false
+    default: "tmd-bin"
+  pkgbuild_path:
+    description: "Path to PKGBUILD manifest"
+    required: false
+    default: "manifests/aur/PKGBUILD"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Deploy to AUR via KSXGitHub action
+      uses: KSXGitHub/github-actions-deploy-aur@v3
+      with:
+        pkgname: ${{ inputs.pkgname }}
+        pkgbuild: ${{ inputs.pkgbuild_path }}
+        ssh_private_key: ${{ inputs.aur_ssh_private_key }}
+        commit_username: "github-actions[bot]"
+        commit_email: "github-actions[bot]@users.noreply.github.com"
+        commit_message: "Update AUR package to latest release"

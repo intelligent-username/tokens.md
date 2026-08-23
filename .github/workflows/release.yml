@@ -114,5 +114,24 @@ jobs:
         with:
           scoop_token: ${{ secrets.SCOOP_BUCKET_TOKEN || secrets.HOMEBREW_TAP_TOKEN || secrets.WINGET_TOKEN }}
 
+  # 9. Publish to Arch User Repository (AUR)
+  aur:
+    name: Publish to AUR (Arch Linux)
+    needs: github-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: ./.github/actions/publish-aur
+        if: ${{ env.AUR_SSH_PRIVATE_KEY != '' }}
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY || secrets.AUR_KEY }}
+        with:
+          aur_ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY || secrets.AUR_KEY }}
+          pkgname: "tmd-bin"
+          pkgbuild_path: "manifests/aur/PKGBUILD"
+
+
 
 

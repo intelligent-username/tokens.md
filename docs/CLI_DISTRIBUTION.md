@@ -23,35 +23,25 @@ Comprehensive operational manual for distributing and maintaining the `tmd` CLI 
 
 The `tmd` distribution strategy provides OS-native, zero-dependency command line binaries and standard package manager integrations:
 
-```
-                                  +-------------------+
-                                  |    git tag v*     |
-                                  +---------+---------+
-                                            |
-                                            v
-                                 +--------------------+
-                                 |  check.yml (tests) |
-                                 +----------+---------+
-                                            |
-                                            v
-                               +------------------------+
-                               |    build-binary.yml    |
-                               | (6 OS/Arch binaries)   |
-                               +------------+-----------+
-                                            |
-                                            v
-                               +------------------------+
-                               |     github-release     |
-                               |  (SHA256SUMS + release)|
-                               +------------+-----------+
-                                            |
-           +-----------------+--------------+-----------------+-----------------+-----------------+
-           |                 |                                |                 |                 |
-           v                 v                                v                 v                 v
-    +--------------+  +--------------+                 +--------------+  +--------------+  +--------------+
-    |     PyPI     |  |  Chocolatey  |                 | Homebrew Tap |  |    WinGet    |  | Scoop Bucket |
-    | (pip / pipx) |  |   (Windows)  |                 | (macOS/Linux)|  | (winget-pkgs)|  |  (Windows)   |
-    +--------------+  +--------------+                 +--------------+  +--------------+  +--------------+
+```mermaid
+flowchart TD
+    A["Push Git Tag (v*)"] --> B["check.yml<br/>(Tests, Security, CodeQL)"]
+    B --> C["build-binary.yml<br/>(Nuitka 6x OS/Arch Matrix)"]
+    C --> D["github-release<br/>(SHA256SUMS + GitHub Release)"]
+    
+    D --> E["PyPI<br/>(pip / pipx)"]
+    D --> F["Chocolatey<br/>(community.chocolatey.org)"]
+    D --> G["Homebrew Tap<br/>(intelligent-username/homebrew-tap)"]
+    D --> H["WinGet<br/>(microsoft/winget-pkgs)"]
+    D --> I["Scoop<br/>(ScoopInstaller/Main)"]
+
+    subgraph Targets ["Distribution Targets"]
+        E
+        F
+        G
+        H
+        I
+    end
 ```
 
 ### Supported Binary Targets
@@ -72,8 +62,7 @@ Configure the following secrets in GitHub (**Settings** > **Secrets and variable
 | :--- | :--- | :--- | :--- |
 | `CHOCOLATEY_API_KEY` | Chocolatey | API key generated on `community.chocolatey.org` | Package Push / Publish |
 | `HOMEBREW_TAP_TOKEN` | Homebrew | Personal Access Token (Classic or Fine-Grained) | `public_repo` (to push to `intelligent-username/homebrew-tap`) |
-| `WINGET_TOKEN` | WinGet | Personal Access Token (Classic) | `public_repo` (to fork and submit PRs to `microsoft/winget-pkgs`) |
-| `SCOOP_BUCKET_TOKEN` | Scoop | Personal Access Token *(can reuse `HOMEBREW_TAP_TOKEN`)* | `public_repo` (to push to `intelligent-username/scoop-bucket`) |
+| `WINGET_TOKEN` | WinGet & Scoop | Personal Access Token (Classic) | `public_repo` (to submit PRs to `microsoft/winget-pkgs` & `ScoopInstaller/Main`) |
 | *(OIDC / Environment)* | PyPI | Configured via PyPI Trusted Publisher (or `PYPI_API_TOKEN`) | `pypi` GitHub Environment with claim to repository |
 
 ---
@@ -90,6 +79,7 @@ The primary release workflow is defined in `.github/workflows/release.yml`. When
    - `publish-chocolatey` (`.github/actions/publish-chocolatey`)
    - `publish-homebrew` (`.github/actions/publish-homebrew`)
    - `publish-winget` (`.github/actions/publish-winget`)
+   - `publish-scoop` (`.github/actions/publish-scoop`)
 
 ---
 
