@@ -43,6 +43,7 @@ runs:
       shell: bash
       run: |
         pip install --upgrade build twine
+        rm -rf dist/
         python -m build --outdir dist/
 
     - name: Publish to PyPI
@@ -56,4 +57,4 @@ runs:
         if [ "${{ inputs.skip_existing }}" = "true" ]; then
           SKIP_FLAG="--skip-existing"
         fi
-        twine upload $SKIP_FLAG dist/*
+        twine upload $SKIP_FLAG dist/*.tar.gz dist/*.whl

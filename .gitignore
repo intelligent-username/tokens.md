@@ -26,3 +26,7 @@ coverage/
 
 **/temp/
 **/.temp/
+
+dist/
+build/
+*.egg-info/
