@@ -42,13 +42,18 @@ runs:
     - name: Build sdist and wheel
       shell: bash
       run: |
-        pip install --upgrade build
+        pip install --upgrade build twine
         python -m build --outdir dist/
 
     - name: Publish to PyPI
-      uses: pypa/gh-action-pypi-publish@v1.12.4
-      with:
-        user: __token__
-        password: ${{ inputs.pypi_token }}
-        packages-dir: dist/
-        skip-existing: ${{ inputs.skip_existing == 'true' }}
+      shell: bash
+      env:
+        TWINE_USERNAME: __token__
+        TWINE_PASSWORD: ${{ inputs.pypi_token }}
+        TWINE_NON_INTERACTIVE: "true"
+      run: |
+        SKIP_FLAG=""
+        if [ "${{ inputs.skip_existing }}" = "true" ]; then
+          SKIP_FLAG="--skip-existing"
+        fi
+        twine upload $SKIP_FLAG dist/*

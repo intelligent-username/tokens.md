@@ -76,15 +76,42 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Checking out code at tag: $TAG"
           git checkout "$TAG"
-          # Restore .github/actions/publish-pypi from workflow branch to use fixed action definition
-          git checkout HEAD -- .github/actions/publish-pypi 2>/dev/null || true
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Sync pyproject.toml with Release Tag
+        shell: bash
+        run: |
+          TAG_VERSION="${{ steps.get_tag.outputs.tag }}"
+          TAG_VERSION="${TAG_VERSION#v}"
+          if [ -n "$TAG_VERSION" ]; then
+            echo "Syncing pyproject.toml and source files to release tag version: $TAG_VERSION"
+            python -c "import pathlib, re; p = pathlib.Path('pyproject.toml'); p.write_text(re.sub(r'version\s*=\s*[\"\'][^\"\']+[\"\']', f'version = \"$TAG_VERSION\"', p.read_text(encoding='utf-8')), encoding='utf-8')"
+            python scripts/sync_version.py
+          fi
+
+      - name: Build sdist and wheel
+        shell: bash
+        run: |
+          pip install --upgrade build twine
+          python -m build --outdir dist/
 
       - name: Publish to PyPI
-        uses: ./.github/actions/publish-pypi
-        with:
-          pypi_token: ${{ secrets.PYPI_API_TOKEN || secrets.PYPI_TOKEN }}
-          skip_existing: ${{ inputs.skip_existing && 'true' || 'false' }}
-          tag: ${{ steps.get_tag.outputs.tag }}
+        shell: bash
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN || secrets.PYPI_TOKEN }}
+          TWINE_NON_INTERACTIVE: "true"
+        run: |
+          SKIP_FLAG=""
+          if [ "${{ inputs.skip_existing }}" = "true" ]; then
+            SKIP_FLAG="--skip-existing"
+          fi
+          twine upload $SKIP_FLAG dist/*
+
 
 
 
