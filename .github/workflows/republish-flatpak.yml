@@ -1,0 +1,35 @@
+# ==============================================================================
+# WORKFLOW: Manual Flatpak (Flathub) PR Submit / Fallback Sync
+# ==============================================================================
+# PURPOSE:
+#   Directly submits or updates the Flatpak manifest PR on Flathub.
+#
+# HOW TO RUN:
+#   1. Go to "Actions" -> "Manual Re-Publish to Flatpak (Fallback / Recovery)"
+#   2. Click "Run workflow".
+# ==============================================================================
+
+name: "Manual Re-Publish to Flatpak (Fallback / Recovery)"
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  republish-flatpak:
+    name: "Submit PR to Flathub"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - name: Publish to Flatpak / Flathub
+        uses: ./.github/actions/publish-flatpak
+        with:
+          flatpak_token: ${{ secrets.FLATHUB_TOKEN || secrets.FLATPAK_TOKEN || secrets.WINGET_TOKEN || secrets.HOMEBREW_TAP_TOKEN }}
+          app_id: "com.intelligent_username.tmd"
+          manifest_dir: "manifests/flatpak"

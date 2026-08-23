@@ -17,8 +17,9 @@ Comprehensive operational manual for distributing and maintaining the `tmd` CLI 
 9. [Platform 6: Arch User Repository (AUR)](#9-platform-6-arch-user-repository-aur)
 10. [Platform 7: MacPorts (macOS)](#10-platform-7-macports-macos)
 11. [Platform 8: Snapcraft (Canonical Snap Store)](#11-platform-8-snapcraft-canonical-snap-store)
-12. [End-to-End Release Runbook](#12-end-to-end-release-runbook)
-13. [Emergency Recovery & Troubleshooting Guide](#13-emergency-recovery--troubleshooting-guide)
+12. [Platform 9: Flatpak (Flathub)](#12-platform-9-flatpak-flathub)
+13. [End-to-End Release Runbook](#13-end-to-end-release-runbook)
+14. [Emergency Recovery & Troubleshooting Guide](#14-emergency-recovery--troubleshooting-guide)
 
 ---
 
@@ -65,8 +66,9 @@ Configure the following secrets in GitHub (**Settings** > **Secrets and variable
 | :--- | :--- | :--- | :--- |
 | `CHOCOLATEY_API_KEY` | Chocolatey | API key generated on `community.chocolatey.org` | Package Push / Publish |
 | `HOMEBREW_TAP_TOKEN` | Homebrew | Personal Access Token (Classic or Fine-Grained) | `public_repo` (to push to `intelligent-username/homebrew-tap`) |
-| `WINGET_TOKEN` | WinGet, Scoop & MacPorts | Personal Access Token (Classic) | `public_repo` (to submit PRs to `microsoft/winget-pkgs`, `ScoopInstaller/Main` & `macports/macports-ports`) |
+| `WINGET_TOKEN` | WinGet, Scoop, MacPorts & Flatpak | Personal Access Token (Classic) | `public_repo` (to submit PRs to `microsoft/winget-pkgs`, `ScoopInstaller/Main`, `macports/macports-ports` & `flathub/flathub`) |
 | `MACPORTS_TOKEN` | MacPorts | Personal Access Token (Classic) | `public_repo` (optional override for `macports/macports-ports` PRs) |
+| `FLATHUB_TOKEN` | Flatpak / Flathub | Personal Access Token (Classic) | `public_repo` (optional override for `flathub/flathub` PRs) |
 | `AUR_SSH_PRIVATE_KEY` | AUR (Arch Linux) | SSH Private Key matching public key registered on `aur.archlinux.org` | Push access to `ssh://aur@aur.archlinux.org/tmd-bin.git` |
 | `SNAPCRAFT_STORE_CREDENTIALS` | Snapcraft | Login token exported via `snapcraft export-login` | Package release access on `snapcraft.io` |
 | *(OIDC / Environment)* | PyPI | Configured via PyPI Trusted Publisher (or `PYPI_API_TOKEN`) | `pypi` GitHub Environment with claim to repository |
@@ -502,7 +504,39 @@ tmd --version
 
 ---
 
-## 12. End-to-End Release Runbook
+## 12. Platform 9: Flatpak (Flathub)
+
+### Overview
+- **Application ID**: `com.intelligent_username.tmd`
+- **Installation Command**:
+  ```bash
+  flatpak install flathub com.intelligent_username.tmd
+  ```
+- **Manifest Location**: `manifests/flatpak/` (`com.intelligent_username.tmd.yaml` + `com.intelligent_username.tmd.metainfo.xml`)
+
+### Overview
+Flatpak provides sandboxed distribution for Linux desktop distributions and SteamOS. Flathub serves as the centralized app repository.
+
+### Initial Setup & Credentials
+1. Uses your existing GitHub PAT (`FLATHUB_TOKEN`, `FLATPAK_TOKEN`, `WINGET_TOKEN`, or `HOMEBREW_TAP_TOKEN`) with `public_repo` scope.
+2. Initial submission forks `flathub/flathub` (branch `new-pr`) and opens a submission PR. Once merged, Flathub provisions a dedicated repo (`flathub/com.intelligent_username.tmd`).
+
+### Automation Details
+- Manifest version and Linux binary SHA-256 sums (x86_64 and arm64) are automatically updated by `scripts/update_manifest_hashes.py`.
+- Handled by `.github/actions/publish-flatpak/action.yml`.
+
+### Manual Re-Publishing (Recovery Workflow)
+1. Go to **Actions** > **Manual Re-Publish to Flatpak (Fallback / Recovery)**.
+2. Click **Run workflow** on `main`.
+
+### Verification
+```bash
+flatpak run com.intelligent_username.tmd --version
+```
+
+---
+
+## 13. End-to-End Release Runbook
 
 Follow these steps for every new version release:
 
@@ -542,10 +576,11 @@ git push origin v0.0.19
    - `publish-aur`
    - `publish-macports`
    - `publish-snap`
+   - `publish-flatpak`
 
 ---
 
-## 13. Emergency Recovery & Troubleshooting Guide
+## 14. Emergency Recovery & Troubleshooting Guide
 
 | Symptom / Error | Root Cause | Remediation |
 | :--- | :--- | :--- |

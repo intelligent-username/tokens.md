@@ -165,6 +165,24 @@ jobs:
           snapcraft_token: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS || secrets.SNAPCRAFT_TOKEN || secrets.SNAP_TOKEN }}
           snapcraft_file: "manifests/snap/snapcraft.yaml"
 
+  # 12. Publish to Flatpak / Flathub
+  flatpak:
+    name: Publish to Flatpak / Flathub
+    needs: github-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: ./.github/actions/publish-flatpak
+        if: ${{ env.FLATPAK_TOKEN != '' }}
+        env:
+          FLATPAK_TOKEN: ${{ secrets.FLATHUB_TOKEN || secrets.FLATPAK_TOKEN || secrets.WINGET_TOKEN || secrets.HOMEBREW_TAP_TOKEN }}
+        with:
+          flatpak_token: ${{ secrets.FLATHUB_TOKEN || secrets.FLATPAK_TOKEN || secrets.WINGET_TOKEN || secrets.HOMEBREW_TAP_TOKEN }}
+          app_id: "com.intelligent_username.tmd"
+          manifest_dir: "manifests/flatpak"
+
 
 
 

@@ -1,0 +1,106 @@
+name: "Submit / Update Flatpak Manifest (Flathub)"
+description: "Forks flathub/flathub or syncs manifests/flatpak into Flathub application repository."
+
+inputs:
+  flatpak_token:
+    description: "GitHub Personal Access Token with public_repo scope"
+    required: true
+  app_id:
+    description: "Flatpak Application ID"
+    required: false
+    default: "com.intelligent_username.tmd"
+  manifest_dir:
+    description: "Path to local flatpak manifest directory"
+    required: false
+    default: "manifests/flatpak"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Submit PR to Flathub
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.flatpak_token }}
+        APP_ID: ${{ inputs.app_id }}
+        MANIFEST_DIR: ${{ inputs.manifest_dir }}
+      run: |
+        if [ -z "$GH_TOKEN" ]; then
+          echo "::error::GitHub token with public_repo scope is required for Flathub publishing."
+          exit 1
+        fi
+
+        if [ ! -d "$MANIFEST_DIR" ]; then
+          echo "::error::Manifest directory not found at $MANIFEST_DIR"
+          exit 1
+        fi
+
+        MANIFEST_FILE="$MANIFEST_DIR/${APP_ID}.yaml"
+        if [ ! -f "$MANIFEST_FILE" ]; then
+          echo "::error::Manifest file not found at $MANIFEST_FILE"
+          exit 1
+        fi
+
+        VERSION=$(grep -o "releases/download/v[^/]*" "$MANIFEST_FILE" | head -n 1 | cut -d'v' -f2)
+        BRANCH_NAME="tmd-$VERSION"
+        PR_TITLE="com.intelligent_username.tmd: update to $VERSION"
+
+        # Check if Flathub dedicated repo exists for this app
+        FLATHUB_REPO="flathub/$APP_ID"
+        if gh repo view "$FLATHUB_REPO" >/dev/null 2>&1; then
+          TARGET_REPO="$FLATHUB_REPO"
+          BASE_BRANCH="master"
+        else
+          TARGET_REPO="flathub/flathub"
+          BASE_BRANCH="new-pr"
+        fi
+
+        echo "Forking $TARGET_REPO (if not already forked)..."
+        gh repo fork "$TARGET_REPO" --clone=false || true
+
+        FORK_OWNER=$(gh api user --jq .login)
+        REPO_NAME=$(echo "$TARGET_REPO" | cut -d'/' -f2)
+        FORK_URL="https://x-access-token:${GH_TOKEN}@github.com/${FORK_OWNER}/${REPO_NAME}.git"
+
+        TMP_DIR=$(mktemp -d)
+        echo "Cloning fork from ${FORK_OWNER}/${REPO_NAME}..."
+        git clone "$FORK_URL" "$TMP_DIR"
+        cd "$TMP_DIR"
+
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        git remote add upstream "https://github.com/${TARGET_REPO}.git"
+        git fetch upstream "$BASE_BRANCH"
+        git checkout -B "$BRANCH_NAME" "upstream/$BASE_BRANCH"
+
+        if [ "$TARGET_REPO" = "flathub/flathub" ]; then
+          mkdir -p "$APP_ID"
+          cp "$GITHUB_WORKSPACE/$MANIFEST_DIR"/* "$APP_ID/"
+          git add "$APP_ID"
+        else
+          cp "$GITHUB_WORKSPACE/$MANIFEST_DIR"/* .
+          git add .
+        fi
+
+        if git diff --staged --quiet; then
+          echo "Flatpak manifest in $TARGET_REPO is already up to date. No changes to commit."
+          exit 0
+        fi
+
+        git commit -m "$PR_TITLE"
+        git push -u origin "$BRANCH_NAME" --force
+
+        echo "Checking for existing PR..."
+        EXISTING_PR=$(gh pr list --repo "$TARGET_REPO" --head "${FORK_OWNER}:${BRANCH_NAME}" --json number --jq '.[0].number')
+
+        if [ -n "$EXISTING_PR" ]; then
+          echo "Pull Request #$EXISTING_PR already exists and has been updated."
+        else
+          echo "Creating new Pull Request to $TARGET_REPO..."
+          gh pr create \
+            --repo "$TARGET_REPO" \
+            --base "$BASE_BRANCH" \
+            --head "${FORK_OWNER}:${BRANCH_NAME}" \
+            --title "$PR_TITLE" \
+            --body "Updates/adds \`$APP_ID\` Flatpak manifest for release version $VERSION."
+        fi
