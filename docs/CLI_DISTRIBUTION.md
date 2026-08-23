@@ -16,8 +16,9 @@ Comprehensive operational manual for distributing and maintaining the `tmd` CLI 
 8. [Platform 5: Scoop (Windows)](#8-platform-5-scoop-windows)
 9. [Platform 6: Arch User Repository (AUR)](#9-platform-6-arch-user-repository-aur)
 10. [Platform 7: MacPorts (macOS)](#10-platform-7-macports-macos)
-11. [End-to-End Release Runbook](#11-end-to-end-release-runbook)
-12. [Emergency Recovery & Troubleshooting Guide](#12-emergency-recovery--troubleshooting-guide)
+11. [Platform 8: Snapcraft (Canonical Snap Store)](#11-platform-8-snapcraft-canonical-snap-store)
+12. [End-to-End Release Runbook](#12-end-to-end-release-runbook)
+13. [Emergency Recovery & Troubleshooting Guide](#13-emergency-recovery--troubleshooting-guide)
 
 ---
 
@@ -67,6 +68,7 @@ Configure the following secrets in GitHub (**Settings** > **Secrets and variable
 | `WINGET_TOKEN` | WinGet, Scoop & MacPorts | Personal Access Token (Classic) | `public_repo` (to submit PRs to `microsoft/winget-pkgs`, `ScoopInstaller/Main` & `macports/macports-ports`) |
 | `MACPORTS_TOKEN` | MacPorts | Personal Access Token (Classic) | `public_repo` (optional override for `macports/macports-ports` PRs) |
 | `AUR_SSH_PRIVATE_KEY` | AUR (Arch Linux) | SSH Private Key matching public key registered on `aur.archlinux.org` | Push access to `ssh://aur@aur.archlinux.org/tmd-bin.git` |
+| `SNAPCRAFT_STORE_CREDENTIALS` | Snapcraft | Login token exported via `snapcraft export-login` | Package release access on `snapcraft.io` |
 | *(OIDC / Environment)* | PyPI | Configured via PyPI Trusted Publisher (or `PYPI_API_TOKEN`) | `pypi` GitHub Environment with claim to repository |
 
 ---
@@ -200,24 +202,20 @@ tmd --version
 
 ---
 
-## 6. Platform 3: Homebrew Tap (macOS & Linux)
+## 6. Platform 3: Homebrew Core (macOS & Linux)
 
 ### Overview
 - **Formula Name**: `tmd`
-- **Tap Repository**: [`intelligent-username/homebrew-tap`](https://github.com/intelligent-username/homebrew-tap) (private)
+- **Target Repository**: `Homebrew/homebrew-core` (official main repository)
 - **Installation Command**:
   ```bash
-  brew tap intelligent-username/tap
-  brew install intelligent-username/tap/tmd
+  brew install tmd
   ```
 - **Manifest Location**: `manifests/homebrew/tmd.rb`
 
-### Initial Setup & Repository Configuration
-1. Create a public GitHub repository: `https://github.com/intelligent-username/homebrew-tap`.
-2. Generate a GitHub Personal Access Token (Classic):
-   - Name: `HOMEBREW_TAP_TOKEN`
-   - Scopes: `public_repo`
-3. Add the token to GitHub Secrets as `HOMEBREW_TAP_TOKEN`.
+### Initial Setup & Credentials
+1. Uses your existing GitHub Personal Access Token (`WINGET_TOKEN` or `HOMEBREW_TAP_TOKEN`) with `public_repo` scope.
+2. **No custom tap repository required**: Formulas are submitted directly to official `Homebrew/homebrew-core` without requiring any forks or tap repositories on your GitHub profile.
 
 ### Formula Architecture (`manifests/homebrew/tmd.rb`)
 The formula dynamically supports 4 target architectures by pulling pre-compiled native binaries from GitHub Releases:
@@ -227,33 +225,26 @@ The formula dynamically supports 4 target architectures by pulling pre-compiled 
 - Linux ARM64 -> `tmd-linux-arm64`
 
 ### Automation Details
-- Handled by [`.github/actions/publish-homebrew/action.yml`]
-- Automatically clones `intelligent-username/homebrew-tap`, creates `Formula/tmd.rb`, commits, and pushes to `main`.
+- Handled by `.github/actions/publish-homebrew/action.yml`.
+- Runs `brew bump-formula-pr` directly within GitHub Actions to submit or update the formula PR in `Homebrew/homebrew-core`.
 
 ### Manual Re-Publishing (Recovery Workflow)
 1. Go to **Actions** > **Manual Re-Publish to Homebrew (Fallback / Recovery)**.
 2. Click **Run workflow** on `main`.
 
-### Local Manual Sync (CLI Fallback)
+### Local Manual Submission (CLI Fallback)
 ```bash
-# Clone the tap repository
-git clone https://github.com/intelligent-username/homebrew-tap.git /tmp/homebrew-tap
-mkdir -p /tmp/homebrew-tap/Formula
-
-# Copy formula
-cp manifests/homebrew/tmd.rb /tmp/homebrew-tap/Formula/tmd.rb
-
-# Commit and push
-cd /tmp/homebrew-tap
-git add Formula/tmd.rb
-git commit -m "feat(tmd): update formula to v<version>"
-git push origin main
+brew bump-formula-pr \
+  --new-formula \
+  --url="https://github.com/intelligent-username/tokens.md/releases/download/v<VERSION>/tmd-macos-arm64" \
+  --sha256="<SHA256_HASH>" \
+  tmd
 ```
 
 ### Verification
 ```bash
 brew update
-brew upgrade intelligent-username/tap/tmd || brew install intelligent-username/tap/tmd
+brew upgrade tmd || brew install tmd
 tmd --version
 ```
 
@@ -473,7 +464,45 @@ Yes, **MacPorts** is an open-source package manager designed specifically for ma
 
 ---
 
-## 11. End-to-End Release Runbook
+## 11. Platform 8: Snapcraft (Canonical Snap Store)
+
+### Overview
+- **Snap Name**: `tmd`
+- **Installation Command**:
+  ```bash
+  sudo snap install tmd
+  ```
+- **Manifest Location**: `manifests/snap/snapcraft.yaml`
+
+### Overview
+Snapcraft packages (`.snap`) provide containerized, self-contained binaries for Ubuntu, Debian, Fedora, Arch Linux, and any Linux distribution running `snapd`.
+
+### Initial Setup & Credentials
+1. Register an account at [snapcraft.io](https://snapcraft.io) and register the package name `tmd`.
+2. Generate export login credentials:
+   ```bash
+   snapcraft login
+   snapcraft export-login --snaps=tmd --channels=stable snapcraft.login
+   ```
+3. Copy the contents of `snapcraft.login` and add it to GitHub Secrets as `SNAPCRAFT_STORE_CREDENTIALS`.
+
+### Automation Details
+- Manifest version and release download URLs are automatically updated by `scripts/update_manifest_hashes.py`.
+- Handled by `.github/actions/publish-snap/action.yml` using `snapcore/action-build@v1` and `snapcore/action-publish@v1`.
+
+### Manual Re-Publishing (Recovery Workflow)
+1. Go to **Actions** > **Manual Re-Publish to Snapcraft (Fallback / Recovery)**.
+2. Click **Run workflow** on `main`.
+
+### Verification
+```bash
+sudo snap install tmd
+tmd --version
+```
+
+---
+
+## 12. End-to-End Release Runbook
 
 Follow these steps for every new version release:
 
@@ -512,10 +541,11 @@ git push origin v0.0.19
    - `publish-scoop`
    - `publish-aur`
    - `publish-macports`
+   - `publish-snap`
 
 ---
 
-## 12. Emergency Recovery & Troubleshooting Guide
+## 13. Emergency Recovery & Troubleshooting Guide
 
 | Symptom / Error | Root Cause | Remediation |
 | :--- | :--- | :--- |

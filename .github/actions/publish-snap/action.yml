@@ -1,0 +1,27 @@
+name: "Build & Publish Snap Package to Canonical Snap Store"
+description: "Builds snap package from manifests/snap/snapcraft.yaml and publishes to Canonical Snap Store."
+
+inputs:
+  snapcraft_token:
+    description: "Snapcraft store credentials exported via snapcraft export-login"
+    required: true
+  snapcraft_file:
+    description: "Path to snapcraft.yaml manifest"
+    required: false
+    default: "manifests/snap/snapcraft.yaml"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Build Snap package
+      uses: snapcore/action-build@v1
+      with:
+        path: manifests/snap
+
+    - name: Publish Snap package to Snap Store
+      uses: snapcore/action-publish@v1
+      env:
+        SNAPCRAFT_STORE_CREDENTIALS: ${{ inputs.snapcraft_token }}
+      with:
+        snap: ${{ steps.build.outputs.snap || 'manifests/snap/*.snap' }}
+        release: stable

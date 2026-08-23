@@ -1,0 +1,37 @@
+# ==============================================================================
+# WORKFLOW: Manual Snapcraft (Canonical Snap Store) Build & Publish / Fallback Sync
+# ==============================================================================
+# PURPOSE:
+#   Directly builds and publishes the Snap package to Canonical Snap Store.
+#
+# HOW TO RUN:
+#   1. Go to "Actions" -> "Manual Re-Publish to Snapcraft (Fallback / Recovery)"
+#   2. Click "Run workflow".
+# ==============================================================================
+
+name: "Manual Re-Publish to Snapcraft (Fallback / Recovery)"
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  republish-snap:
+    name: "Build & Publish to Snap Store"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - name: Build & Publish Snap
+        uses: ./.github/actions/publish-snap
+        if: ${{ env.SNAPCRAFT_STORE_CREDENTIALS != '' }}
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS || secrets.SNAPCRAFT_TOKEN || secrets.SNAP_TOKEN }}
+        with:
+          snapcraft_token: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS || secrets.SNAPCRAFT_TOKEN || secrets.SNAP_TOKEN }}
+          snapcraft_file: "manifests/snap/snapcraft.yaml"

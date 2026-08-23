@@ -148,6 +148,24 @@ jobs:
         with:
           macports_token: ${{ secrets.MACPORT_KEY || secrets.MACPORTS_TOKEN || secrets.MACPORT_TOKEN || secrets.WINGET_TOKEN || secrets.HOMEBREW_TAP_TOKEN || secrets.TAP_GITHUB_TOKEN }}
 
+  # 11. Publish to Snapcraft Store
+  snap:
+    name: Publish to Snapcraft Store
+    needs: github-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: ./.github/actions/publish-snap
+        if: ${{ env.SNAPCRAFT_STORE_CREDENTIALS != '' }}
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS || secrets.SNAPCRAFT_TOKEN || secrets.SNAP_TOKEN }}
+        with:
+          snapcraft_token: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS || secrets.SNAPCRAFT_TOKEN || secrets.SNAP_TOKEN }}
+          snapcraft_file: "manifests/snap/snapcraft.yaml"
+
+
 
 
 

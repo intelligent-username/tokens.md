@@ -1,14 +1,10 @@
-name: "Publish to Homebrew Tap"
-description: "Syncs manifests/homebrew/tmd.rb into the user's homebrew-tap repository."
+name: "Submit Formula to Homebrew Core"
+description: "Submits or bumps the formula PR directly to Homebrew/homebrew-core without requiring a custom tap repository."
 
 inputs:
-  tap_token:
-    description: "GitHub Personal Access Token with repo scope for homebrew-tap"
+  homebrew_token:
+    description: "GitHub Personal Access Token with public_repo scope"
     required: true
-  tap_repo:
-    description: "Target tap repository (e.g. intelligent-username/homebrew-tap)"
-    required: false
-    default: "intelligent-username/homebrew-tap"
   formula_path:
     description: "Source formula file path"
     required: false
@@ -17,15 +13,14 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Push Formula to Homebrew Tap
+    - name: Submit / Bump Formula to Homebrew Core
       shell: bash
       env:
-        TAP_TOKEN: ${{ inputs.tap_token }}
-        TAP_REPO: ${{ inputs.tap_repo }}
+        HOMEBREW_GITHUB_API_TOKEN: ${{ inputs.homebrew_token }}
         FORMULA_PATH: ${{ inputs.formula_path }}
       run: |
-        if [ -z "$TAP_TOKEN" ]; then
-          echo "::error::HOMEBREW_TAP_TOKEN is not configured."
+        if [ -z "$HOMEBREW_GITHUB_API_TOKEN" ]; then
+          echo "::error::GitHub token with public_repo scope is required."
           exit 1
         fi
 
@@ -34,30 +29,16 @@ runs:
           exit 1
         fi
 
-        echo "Syncing $FORMULA_PATH to https://github.com/$TAP_REPO..."
-        
-        TMP_DIR=$(mktemp -d)
-        git clone "https://x-access-token:${TAP_TOKEN}@github.com/${TAP_REPO}.git" "$TMP_DIR"
-        
-        mkdir -p "$TMP_DIR/Formula"
-        cp "$FORMULA_PATH" "$TMP_DIR/Formula/tmd.rb"
-        
-        cd "$TMP_DIR"
-        git config user.name "github-actions[bot]"
-        git config user.email "github-actions[bot]@users.noreply.github.com"
+        VERSION=$(grep -E "^\s*version\s+" "$FORMULA_PATH" | awk '{print $2}' | tr -d '"')
+        echo "Submitting formula for version $VERSION to Homebrew Core..."
 
-        if [ ! -f "README.md" ]; then
-          printf "# Homebrew Tap for tmd\n\nOfficial Homebrew tap for [\`tmd\`](https://github.com/intelligent-username/tokens.md).\n\n## Installation\n\n\`\`\`bash\nbrew install intelligent-username/tap/tmd\n\`\`\`\n\n## Update\n\n\`\`\`bash\nbrew update\nbrew upgrade tmd\n\`\`\`\n" > README.md
-          git add README.md
-        fi
+        # Extract SHA-256 for macos arm64
+        SHA256=$(grep -A 10 "on_macos" "$FORMULA_PATH" | grep "sha256" | head -n 1 | awk '{print $2}' | tr -d '"')
 
-        git add Formula/tmd.rb
-        
-        if git diff --staged --quiet; then
-          echo "Homebrew tap formula is already up to date. No changes to commit."
-        else
-          git commit -m "chore(formula): update tmd formula for release"
-          git branch -M main
-          git push -u origin main || git push origin HEAD
-          echo "Successfully pushed updated formula to $TAP_REPO."
-        fi
+        brew bump-formula-pr \
+          --new-formula \
+          --url="https://github.com/intelligent-username/tokens.md/releases/download/v${VERSION}/tmd-macos-arm64" \
+          --sha256="$SHA256" \
+          --no-audit \
+          --no-browse \
+          tmd || echo "::warning::brew bump-formula-pr exited with code $?. Check if PR already exists on Homebrew/homebrew-core."
