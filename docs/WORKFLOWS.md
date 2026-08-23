@@ -4,13 +4,18 @@ This document describes the automated CI/CD pipelines in this repository.
 
 ## Core workflows
 
-### Checks & Tests (`.github/workflows/check.yml`)
+### Checks, Tests & Security (`.github/workflows/check.yml`)
 
-Runs on pull requests and pushes to `main` or `master`, as well as manual dispatches and workflow calls.
+Runs on pull requests and pushes to `main` or `master`, as well as manual dispatches, workflow calls, and a weekly Monday cron schedule.
 
-It runs two jobs:
+It executes 5 jobs in parallel:
 - **Version Verification & Alignment**: Runs `scripts/verify.py` to check tag alignment and sync internal version declarations.
 - **Backend & Frontend Tests**: Runs `scripts/test.py` to execute both `pytest` and `vitest` in parallel with live progress and coverage metrics.
+- **Security & Dependency Audit**: Scans Python (`pip-audit`), Frontend dependencies (`npm audit`), and code for secrets (`gitleaks`).
+- **CodeQL Security Analysis (Python)**: Deep semantic static analysis for Python vulnerabilities.
+- **CodeQL Security Analysis (JavaScript/TypeScript)**: Deep semantic static analysis for frontend code.
+
+*(On scheduled Monday runs, `verify`, `test`, and `security` are skipped so only the weekly CodeQL security analysis runs).*
 
 ### Release pipeline (`.github/workflows/release.yml`)
 

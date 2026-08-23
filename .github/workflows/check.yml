@@ -6,12 +6,19 @@ on:
     branches: [main, master]
   pull_request:
     branches: [main, master]
+  schedule:
+    - cron: "0 6 * * 1" # Weekly Monday scan at 06:00 UTC
   workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
 
 jobs:
   # 1. Verify version alignment across pyproject.toml, package.json, and packaging manifests
   verify:
     name: Verify & Align Version
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -21,6 +28,7 @@ jobs:
 
   test:
     name: Test Suite (Backend & Frontend)
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -30,6 +38,7 @@ jobs:
 
   security:
     name: Security & Dependency Audit
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -65,3 +74,24 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+  codeql:
+    name: CodeQL Scan (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ["python", "javascript-typescript"]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
