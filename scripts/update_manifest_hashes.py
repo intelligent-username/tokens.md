@@ -157,17 +157,49 @@ end
         scoop_file.write_text(content, encoding="utf-8")
         print("Updated Scoop manifest (version + url + hash).")
 
-    # 3. Winget (tmd.yaml)
-    winget_file = MANIFESTS / "winget" / "tmd.yaml"
-    if winget_file.exists():
-        content = f"""# yaml-language-server: $schema=https://aka.ms/winget-manifest.singleton.1.6.0.schema.json
+    # 3. Winget (multi-file manifests)
+    winget_dir = MANIFESTS / "winget"
+    if winget_dir.exists():
+        version_file = winget_dir / "intelligent-username.tmd.yaml"
+        installer_file = winget_dir / "intelligent-username.tmd.installer.yaml"
+        locale_file = winget_dir / "intelligent-username.tmd.locale.en-US.yaml"
+
+        version_content = f"""# yaml-language-server: $schema=https://aka.ms/winget-manifest.version.1.6.0.schema.json
+
+PackageIdentifier: intelligent-username.tmd
+PackageVersion: {version}
+DefaultLocale: en-US
+ManifestType: version
+ManifestVersion: 1.6.0
+"""
+        installer_content = f"""# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
+
+PackageIdentifier: intelligent-username.tmd
+PackageVersion: {version}
+Installers:
+  - Architecture: x64
+    InstallerType: portable
+    InstallerUrl: https://github.com/intelligent-username/tokens.md/releases/download/v{version}/tmd-windows-x64.exe
+    InstallerSha256: {win_x64}
+    Commands:
+      - tmd
+  - Architecture: arm64
+    InstallerType: portable
+    InstallerUrl: https://github.com/intelligent-username/tokens.md/releases/download/v{version}/tmd-windows-arm64.exe
+    InstallerSha256: {win_arm64}
+    Commands:
+      - tmd
+ManifestType: installer
+ManifestVersion: 1.6.0
+"""
+        locale_content = f"""# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
 
 PackageIdentifier: intelligent-username.tmd
 PackageVersion: {version}
 PackageLocale: en-US
-PackageName: tmd
 Publisher: intelligent-username
 PublisherUrl: https://github.com/intelligent-username
+PackageName: tmd
 PackageUrl: https://github.com/intelligent-username/tokens.md
 License: AGPL-3.0-only
 LicenseUrl: https://github.com/intelligent-username/tokens.md/blob/main/LICENSE
@@ -184,18 +216,13 @@ Tags:
   - cli
   - pdf
   - converter
-Installers:
-  - Architecture: x64
-    InstallerUrl: https://github.com/intelligent-username/tokens.md/releases/download/v{version}/tmd-windows-x64.exe
-    InstallerSha256: {win_x64}
-    InstallerType: portable
-    Commands:
-      - tmd
-ManifestType: singleton
+ManifestType: defaultLocale
 ManifestVersion: 1.6.0
 """
-        winget_file.write_text(content, encoding="utf-8")
-        print("Updated Winget manifest (version + url + sha256).")
+        version_file.write_text(version_content, encoding="utf-8")
+        installer_file.write_text(installer_content, encoding="utf-8")
+        locale_file.write_text(locale_content, encoding="utf-8")
+        print("Updated Winget multi-file manifests (version + installer + defaultLocale).")
 
     # 4. Chocolatey (tmd.nuspec + chocolateyinstall.ps1)
     choco_nuspec = MANIFESTS / "chocolatey" / "tmd.nuspec"

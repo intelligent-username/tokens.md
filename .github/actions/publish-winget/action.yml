@@ -6,9 +6,9 @@ inputs:
     description: "GitHub Personal Access Token with public_repo scope"
     required: true
   manifest_path:
-    description: "Path to winget manifest file"
+    description: "Path to winget manifest file or directory"
     required: false
-    default: "manifests/winget/tmd.yaml"
+    default: "manifests/winget"
 
 runs:
   using: "composite"

@@ -1,11 +1,11 @@
-# yaml-language-server: $schema=https://aka.ms/winget-manifest.singleton.1.6.0.schema.json
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
 
 PackageIdentifier: intelligent-username.tmd
-PackageVersion: 0.0.18
+PackageVersion: "0.0.18"
 PackageLocale: en-US
-PackageName: tmd
 Publisher: intelligent-username
 PublisherUrl: https://github.com/intelligent-username
+PackageName: tmd
 PackageUrl: https://github.com/intelligent-username/tokens.md
 License: AGPL-3.0-only
 LicenseUrl: https://github.com/intelligent-username/tokens.md/blob/main/LICENSE
@@ -22,12 +22,5 @@ Tags:
   - cli
   - pdf
   - converter
-Installers:
-  - Architecture: x64
-    InstallerUrl: https://github.com/intelligent-username/tokens.md/releases/download/v0.0.18/tmd-windows-x64.exe
-    InstallerSha256: e611517b030eb0e2a3d03e802d818f53643e4569683f0a39900e2c8efbdbea36
-    InstallerType: portable
-    Commands:
-      - tmd
-ManifestType: singleton
+ManifestType: defaultLocale
 ManifestVersion: 1.6.0
