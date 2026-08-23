@@ -1,0 +1,20 @@
+name: "Publish to WinGet"
+description: "Submits/updates package manifest in microsoft/winget-pkgs repository."
+
+inputs:
+  winget_token:
+    description: "GitHub Personal Access Token with public_repo scope"
+    required: true
+  identifier:
+    description: "Package identifier"
+    required: false
+    default: "intelligent-username.tmd"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Submit to Microsoft WinGet Repository
+      uses: vedantmgoyal2009/winget-releaser@v2
+      with:
+        identifier: ${{ inputs.identifier }}
+        token: ${{ inputs.winget_token }}

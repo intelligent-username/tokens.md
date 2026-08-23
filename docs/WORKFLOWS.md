@@ -27,6 +27,7 @@ Execution pipeline:
 4. **PyPI Publishing**: Builds wheels and source distributions and publishes them to PyPI.
 5. **Chocolatey Publishing**: Packs and pushes `tmd.nupkg` directly to `community.chocolatey.org` (runs after GitHub Release is published and manifests are updated).
 6. **Homebrew Publishing**: Syncs the updated formula `manifests/homebrew/tmd.rb` to `intelligent-username/homebrew-tap` (runs when `HOMEBREW_TAP_TOKEN` is configured).
+7. **WinGet Publishing**: Automatically submits a pull request to `microsoft/winget-pkgs` for Windows users (`winget install intelligent-username.tmd`, runs when `WINGET_TOKEN` is configured).
 
 ## Reusable Workflows & Actions
 
@@ -35,6 +36,7 @@ Execution pipeline:
 - `.github/actions/publish-pypi`: Builds wheels/sdist and publishes to PyPI with token authentication.
 - `.github/actions/publish-chocolatey`: Packages and pushes `.nupkg` to Chocolatey using `CHOCOLATEY_API_KEY`.
 - `.github/actions/publish-homebrew`: Pushes `manifests/homebrew/tmd.rb` to `intelligent-username/homebrew-tap` using `HOMEBREW_TAP_TOKEN`.
+- `.github/actions/publish-winget`: Submits PRs to `microsoft/winget-pkgs` using `WINGET_TOKEN`.
 
 ### Manual PyPI Re-Publish (`.github/workflows/republish-pypi.yml`)
 
@@ -59,6 +61,13 @@ Execution pipeline:
 **Trigger**: Manual only (`workflow_dispatch`).
 
 **Purpose**: Directly sync `manifests/homebrew/tmd.rb` from `main` into `intelligent-username/homebrew-tap` using `HOMEBREW_TAP_TOKEN`.
+
+### Manual WinGet Re-Publish (`.github/workflows/republish-winget.yml`)
+
+**Trigger**: Manual only (`workflow_dispatch`).
+
+**Purpose**: Directly submit a release update PR to `microsoft/winget-pkgs` using `WINGET_TOKEN`.
+
 
 
 

@@ -82,4 +82,21 @@ jobs:
         with:
           tap_token: ${{ secrets.HOMEBREW_TAP_TOKEN || secrets.TAP_GITHUB_TOKEN }}
 
+  # 7. Publish to WinGet
+  winget:
+    name: Publish to WinGet
+    needs: github-release
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: ./.github/actions/publish-winget
+        if: ${{ env.WINGET_TOKEN != '' }}
+        env:
+          WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+        with:
+          winget_token: ${{ secrets.WINGET_TOKEN }}
+
+
 
