@@ -38,9 +38,6 @@ runs:
         BRANCH_NAME="tmd-$VERSION"
         PR_TITLE="tmd: add version $VERSION"
 
-        echo "Authenticating gh CLI..."
-        echo "$GH_TOKEN" | gh auth login --with-token
-
         echo "Forking $TARGET_REPO (if not already forked)..."
         gh repo fork "$TARGET_REPO" --clone=false || true
 
