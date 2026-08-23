@@ -168,6 +168,7 @@ PackageLocale: en-US
 PackageName: tmd
 Publisher: intelligent-username
 PublisherUrl: https://github.com/intelligent-username
+PackageUrl: https://github.com/intelligent-username/tokens.md
 License: AGPL-3.0-only
 LicenseUrl: https://github.com/intelligent-username/tokens.md/blob/main/LICENSE
 ShortDescription: Convert files to token-efficient Markdown for LLM prompts
@@ -176,7 +177,6 @@ Description: >-
   LaTeX, e-mail, subtitles, Jupyter notebooks, and whole code repositories
   into clean, token-efficient Markdown for LLM context windows.
   Includes token counting, budget pruning, hot-folder watching, and a web UI.
-Homepage: https://github.com/intelligent-username/tokens.md
 Tags:
   - markdown
   - llm
@@ -188,12 +188,6 @@ Installers:
   - Architecture: x64
     InstallerUrl: https://github.com/intelligent-username/tokens.md/releases/download/v{version}/tmd-windows-x64.exe
     InstallerSha256: {win_x64}
-    InstallerType: portable
-    Commands:
-      - tmd
-  - Architecture: arm64
-    InstallerUrl: https://github.com/intelligent-username/tokens.md/releases/download/v{version}/tmd-windows-arm64.exe
-    InstallerSha256: {win_arm64}
     InstallerType: portable
     Commands:
       - tmd
