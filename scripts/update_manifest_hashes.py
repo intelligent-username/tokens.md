@@ -131,17 +131,26 @@ end
   "architecture": {{
     "64bit": {{
       "url": "https://github.com/intelligent-username/tokens.md/releases/download/v{version}/tmd-windows-x64.exe",
-      "hash": "{win_x64}"
+      "hash": "{win_x64}",
+      "bin": [
+        [
+          "tmd-windows-x64.exe",
+          "tmd"
+        ]
+      ]
     }},
     "arm64": {{
       "url": "https://github.com/intelligent-username/tokens.md/releases/download/v{version}/tmd-windows-arm64.exe",
-      "hash": "{win_arm64}"
+      "hash": "{win_arm64}",
+      "bin": [
+        [
+          "tmd-windows-arm64.exe",
+          "tmd"
+        ]
+      ]
     }}
   }},
-  "bin": "tmd.exe",
-  "checkver": {{
-    "github": "https://github.com/intelligent-username/tokens.md"
-  }},
+  "checkver": "github",
   "autoupdate": {{
     "architecture": {{
       "64bit": {{

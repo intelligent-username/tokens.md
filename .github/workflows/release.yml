@@ -98,5 +98,21 @@ jobs:
         with:
           winget_token: ${{ secrets.WINGET_TOKEN }}
 
+  # 8. Publish to Scoop Bucket
+  scoop:
+    name: Publish to Scoop Bucket
+    needs: github-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: ./.github/actions/publish-scoop
+        if: ${{ env.SCOOP_TOKEN != '' }}
+        env:
+          SCOOP_TOKEN: ${{ secrets.SCOOP_BUCKET_TOKEN || secrets.HOMEBREW_TAP_TOKEN || secrets.WINGET_TOKEN }}
+        with:
+          scoop_token: ${{ secrets.SCOOP_BUCKET_TOKEN || secrets.HOMEBREW_TAP_TOKEN || secrets.WINGET_TOKEN }}
+
 
 

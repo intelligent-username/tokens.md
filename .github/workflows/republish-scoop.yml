@@ -1,0 +1,33 @@
+# ==============================================================================
+# WORKFLOW: Manual Scoop (ScoopInstaller/Main) PR Submit / Fallback Sync
+# ==============================================================================
+# PURPOSE:
+#   Directly submits or updates the Scoop manifest PR to ScoopInstaller/Main.
+#
+# HOW TO RUN:
+#   1. Go to "Actions" -> "Manual Re-Publish to Scoop (Fallback / Recovery)"
+#   2. Click "Run workflow".
+# ==============================================================================
+
+name: "Manual Re-Publish to Scoop (Fallback / Recovery)"
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  republish-scoop:
+    name: "Submit PR to ScoopInstaller/Main"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - name: Publish to Scoop Bucket
+        uses: ./.github/actions/publish-scoop
+        with:
+          scoop_token: ${{ secrets.SCOOP_BUCKET_TOKEN || secrets.HOMEBREW_TAP_TOKEN || secrets.WINGET_TOKEN }}

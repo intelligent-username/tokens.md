@@ -1,0 +1,88 @@
+name: "Submit / Update Scoop Manifest (ScoopInstaller/Main)"
+description: "Forks ScoopInstaller/Main, syncs manifests/scoop/tmd.json, and opens/updates a Pull Request."
+
+inputs:
+  scoop_token:
+    description: "GitHub Personal Access Token with public_repo scope"
+    required: true
+  target_repo:
+    description: "Target Scoop repository (ScoopInstaller/Main or ScoopInstaller/Extras)"
+    required: false
+    default: "ScoopInstaller/Main"
+  manifest_path:
+    description: "Path to local scoop manifest"
+    required: false
+    default: "manifests/scoop/tmd.json"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Submit Pull Request to ScoopInstaller
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.scoop_token }}
+        TARGET_REPO: ${{ inputs.target_repo }}
+        MANIFEST_PATH: ${{ inputs.manifest_path }}
+      run: |
+        if [ -z "$GH_TOKEN" ]; then
+          echo "::error::GitHub token with public_repo scope is required."
+          exit 1
+        fi
+
+        if [ ! -f "$MANIFEST_PATH" ]; then
+          echo "::error::Manifest not found at $MANIFEST_PATH"
+          exit 1
+        fi
+
+        VERSION=$(grep -o '"version": "[^"]*"' "$MANIFEST_PATH" | cut -d'"' -f4)
+        BRANCH_NAME="tmd-$VERSION"
+        PR_TITLE="tmd: add version $VERSION"
+
+        echo "Authenticating gh CLI..."
+        echo "$GH_TOKEN" | gh auth login --with-token
+
+        echo "Forking $TARGET_REPO (if not already forked)..."
+        gh repo fork "$TARGET_REPO" --clone=false || true
+
+        FORK_OWNER=$(gh api user --jq .login)
+        FORK_URL="https://x-access-token:${GH_TOKEN}@github.com/${FORK_OWNER}/Main.git"
+
+        TMP_DIR=$(mktemp -d)
+        echo "Cloning fork from ${FORK_OWNER}/Main..."
+        git clone "$FORK_URL" "$TMP_DIR"
+        cd "$TMP_DIR"
+
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        # Checkout upstream master first
+        git remote add upstream "https://github.com/${TARGET_REPO}.git"
+        git fetch upstream master
+        git checkout -B "$BRANCH_NAME" upstream/master
+
+        mkdir -p bucket
+        cp "$GITHUB_WORKSPACE/$MANIFEST_PATH" bucket/tmd.json
+
+        git add bucket/tmd.json
+        if git diff --staged --quiet; then
+          echo "Manifest in $TARGET_REPO is already identical. No changes needed."
+          exit 0
+        fi
+
+        git commit -m "$PR_TITLE"
+        git push -u origin "$BRANCH_NAME" --force
+
+        echo "Checking for existing PR..."
+        EXISTING_PR=$(gh pr list --repo "$TARGET_REPO" --head "${FORK_OWNER}:${BRANCH_NAME}" --json number --jq '.[0].number')
+
+        if [ -n "$EXISTING_PR" ]; then
+          echo "Pull Request #$EXISTING_PR already exists and has been updated."
+        else
+          echo "Creating new Pull Request to $TARGET_REPO..."
+          gh pr create \
+            --repo "$TARGET_REPO" \
+            --base master \
+            --head "${FORK_OWNER}:${BRANCH_NAME}" \
+            --title "$PR_TITLE" \
+            --body "Adds \`tmd\` version $VERSION to the Scoop Main bucket. Includes automated version checking (\`checkver\`) and auto-update configuration."
+        fi

@@ -13,8 +13,9 @@ Comprehensive operational manual for distributing and maintaining the `tmd` CLI 
 5. [Platform 2: Chocolatey (Windows)](#5-platform-2-chocolatey-windows)
 6. [Platform 3: Homebrew Tap (macOS & Linux)](#6-platform-3-homebrew-tap-macos--linux)
 7. [Platform 4: WinGet (Windows Package Manager)](#7-platform-4-winget-windows-package-manager)
-8. [End-to-End Release Runbook](#8-end-to-end-release-runbook)
-9. [Emergency Recovery & Troubleshooting Guide](#9-emergency-recovery--troubleshooting-guide)
+8. [Platform 5: Scoop (Windows)](#8-platform-5-scoop-windows)
+9. [End-to-End Release Runbook](#9-end-to-end-release-runbook)
+10. [Emergency Recovery & Troubleshooting Guide](#10-emergency-recovery--troubleshooting-guide)
 
 ---
 
@@ -44,13 +45,13 @@ The `tmd` distribution strategy provides OS-native, zero-dependency command line
                                |  (SHA256SUMS + release)|
                                +------------+-----------+
                                             |
-           +-----------------+--------------+-----------------+-----------------+
-           |                 |                                |                 |
-           v                 v                                v                 v
-    +--------------+  +--------------+                 +--------------+  +--------------+
-    |     PyPI     |  |  Chocolatey  |                 | Homebrew Tap |  |    WinGet    |
-    | (pip / pipx) |  |   (Windows)  |                 | (macOS/Linux)|  |  (winget-pkgs|
-    +--------------+  +--------------+                 +--------------+  +--------------+
+           +-----------------+--------------+-----------------+-----------------+-----------------+
+           |                 |                                |                 |                 |
+           v                 v                                v                 v                 v
+    +--------------+  +--------------+                 +--------------+  +--------------+  +--------------+
+    |     PyPI     |  |  Chocolatey  |                 | Homebrew Tap |  |    WinGet    |  | Scoop Bucket |
+    | (pip / pipx) |  |   (Windows)  |                 | (macOS/Linux)|  | (winget-pkgs)|  |  (Windows)   |
+    +--------------+  +--------------+                 +--------------+  +--------------+  +--------------+
 ```
 
 ### Supported Binary Targets
@@ -70,8 +71,9 @@ Configure the following secrets in GitHub (**Settings** > **Secrets and variable
 | Secret Name | Platform | Description | Scope / Permissions |
 | :--- | :--- | :--- | :--- |
 | `CHOCOLATEY_API_KEY` | Chocolatey | API key generated on `community.chocolatey.org` | Package Push / Publish |
-| `HOMEBREW_TAP_TOKEN` | Homebrew | Personal Access Token (Classic) | `public_repo` (to push to `intelligent-username/homebrew-tap`) |
+| `HOMEBREW_TAP_TOKEN` | Homebrew | Personal Access Token (Classic or Fine-Grained) | `public_repo` (to push to `intelligent-username/homebrew-tap`) |
 | `WINGET_TOKEN` | WinGet | Personal Access Token (Classic) | `public_repo` (to fork and submit PRs to `microsoft/winget-pkgs`) |
+| `SCOOP_BUCKET_TOKEN` | Scoop | Personal Access Token *(can reuse `HOMEBREW_TAP_TOKEN`)* | `public_repo` (to push to `intelligent-username/scoop-bucket`) |
 | *(OIDC / Environment)* | PyPI | Configured via PyPI Trusted Publisher (or `PYPI_API_TOKEN`) | `pypi` GitHub Environment with claim to repository |
 
 ---
@@ -327,7 +329,75 @@ Invoke-WebRequest -Uri "https://github.com/microsoft/winget-create/releases/down
 
 ---
 
-## 8. End-to-End Release Runbook
+## 8. Platform 5: Scoop (Windows)
+
+### Overview
+- **Manifest Name**: `tmd.json`
+- **Target Repository**: `ScoopInstaller/Main` (official default Scoop bucket)
+- **Installation Command**:
+  ```powershell
+  scoop install tmd
+  ```
+- **Manifest Location**: `manifests/scoop/tmd.json`
+
+### Initial Setup & Authentication
+1. Uses your existing GitHub PAT (`WINGET_TOKEN` or `HOMEBREW_TAP_TOKEN`) with `public_repo` scope.
+2. The workflow will automatically fork `ScoopInstaller/Main` to your account, create branch `tmd-<version>`, add `bucket/tmd.json`, and open a Pull Request.
+
+### Manifest Architecture (`manifests/scoop/tmd.json`)
+The manifest configures native shims for both `64bit` (x64) and `arm64` executables, plus Scoop's automated version checker:
+```json
+{
+  "version": "0.0.18",
+  "description": "Convert files to token-efficient Markdown for LLM prompts",
+  "homepage": "https://github.com/intelligent-username/tokens.md",
+  "license": "AGPL-3.0-only",
+  "architecture": {
+    "64bit": {
+      "url": "https://github.com/intelligent-username/tokens.md/releases/download/v0.0.18/tmd-windows-x64.exe",
+      "hash": "...",
+      "bin": [["tmd-windows-x64.exe", "tmd"]]
+    },
+    "arm64": {
+      "url": "https://github.com/intelligent-username/tokens.md/releases/download/v0.0.18/tmd-windows-arm64.exe",
+      "hash": "...",
+      "bin": [["tmd-windows-arm64.exe", "tmd"]]
+    }
+  },
+  "checkver": "github",
+  "autoupdate": {
+    "architecture": {
+      "64bit": {
+        "url": "https://github.com/intelligent-username/tokens.md/releases/download/v$version/tmd-windows-x64.exe"
+      },
+      "arm64": {
+        "url": "https://github.com/intelligent-username/tokens.md/releases/download/v$version/tmd-windows-arm64.exe"
+      }
+    }
+  }
+}
+```
+
+### Automation & Auto-Update Mechanism
+- **Automated Initial PR**: Handled by `.github/actions/publish-scoop/action.yml` using `gh` CLI.
+- **Continuous Auto-Updates**: Once merged into `ScoopInstaller/Main`, Scoop's central **Excavator bot** automatically polls `https://github.com/intelligent-username/tokens.md` for new GitHub releases, computes SHA-256 hashes, and commits updates to `ScoopInstaller/Main` automatically on every release.
+
+### Manual Re-Publishing (Recovery Workflow)
+1. Go to **Actions** > **Manual Re-Publish to Scoop (Fallback / Recovery)**.
+2. Click **Run workflow** on `main`.
+
+### Verification
+- Check the PR at `https://github.com/ScoopInstaller/Main/pulls?q=is%3Apr+tmd`.
+- Once merged:
+  ```powershell
+  scoop update
+  scoop install tmd
+  tmd --version
+  ```
+
+---
+
+## 9. End-to-End Release Runbook
 
 Follow these steps for every new version release:
 
@@ -363,10 +433,11 @@ git push origin v0.0.19
    - `publish-chocolatey`
    - `publish-homebrew`
    - `publish-winget`
+   - `publish-scoop`
 
 ---
 
-## 9. Emergency Recovery & Troubleshooting Guide
+## 10. Emergency Recovery & Troubleshooting Guide
 
 | Symptom / Error | Root Cause | Remediation |
 | :--- | :--- | :--- |
@@ -376,4 +447,6 @@ git push origin v0.0.19
 | WinGet `Manifest type not supported: singleton` | WinGet community repo deprecated single-file format | Use multi-file manifests (`version`, `installer`, `defaultLocale`). |
 | WinGet `Unknown field: Homepage` | Invalid schema property | Use `PackageUrl` instead of `Homepage`. |
 | WinGet PR stuck on `Needs-CLA` | Microsoft CLA unsigned | Post `@microsoft-github-policy-service agree` on the PR. |
+| Scoop shim error (`tmd.exe not found`) | Manifest top-level `bin` did not map renamed artifact | Use per-architecture `bin: [["tmd-windows-x64.exe", "tmd"]]`. |
 | Automated job fails on one platform | Network or API rate limit | Use the corresponding **Manual Re-Publish to <Platform>** workflow without re-running binary compilation. |
+

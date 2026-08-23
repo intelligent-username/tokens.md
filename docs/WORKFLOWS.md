@@ -33,6 +33,7 @@ Execution pipeline:
 5. **Chocolatey Publishing**: Packs and pushes `tmd.nupkg` directly to `community.chocolatey.org` (runs after GitHub Release is published and manifests are updated).
 6. **Homebrew Publishing**: Syncs the updated formula `manifests/homebrew/tmd.rb` to `intelligent-username/homebrew-tap` (runs when `HOMEBREW_TAP_TOKEN` is configured).
 7. **WinGet Publishing**: Automatically submits a pull request to `microsoft/winget-pkgs` for Windows users (`winget install intelligent-username.tmd`, runs when `WINGET_TOKEN` is configured).
+8. **Scoop Publishing**: Syncs `manifests/scoop/tmd.json` into `intelligent-username/scoop-bucket` (runs when `SCOOP_BUCKET_TOKEN` or `HOMEBREW_TAP_TOKEN` is configured).
 
 ## Reusable Workflows & Actions
 
@@ -42,6 +43,7 @@ Execution pipeline:
 - `.github/actions/publish-chocolatey`: Packages and pushes `.nupkg` to Chocolatey using `CHOCOLATEY_API_KEY`.
 - `.github/actions/publish-homebrew`: Pushes `manifests/homebrew/tmd.rb` to `intelligent-username/homebrew-tap` using `HOMEBREW_TAP_TOKEN`.
 - `.github/actions/publish-winget`: Submits PRs to `microsoft/winget-pkgs` using `WINGET_TOKEN`.
+- `.github/actions/publish-scoop`: Pushes `manifests/scoop/tmd.json` to `intelligent-username/scoop-bucket` using `SCOOP_BUCKET_TOKEN`.
 
 ### Manual PyPI Re-Publish (`.github/workflows/republish-pypi.yml`)
 
@@ -73,8 +75,11 @@ Execution pipeline:
 
 **Purpose**: Directly submit a release update PR to `microsoft/winget-pkgs` using `WINGET_TOKEN`.
 
+### Manual Scoop Re-Publish (`.github/workflows/republish-scoop.yml`)
 
+**Trigger**: Manual only (`workflow_dispatch`).
 
+**Purpose**: Directly sync `manifests/scoop/tmd.json` from `main` into `intelligent-username/scoop-bucket` using `SCOOP_BUCKET_TOKEN` or `HOMEBREW_TAP_TOKEN`.
 
 ## Triggering a release
 
