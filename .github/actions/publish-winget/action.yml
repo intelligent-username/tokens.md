@@ -1,20 +1,44 @@
 name: "Publish to WinGet"
-description: "Submits/updates package manifest in microsoft/winget-pkgs repository."
+description: "Submits/updates package manifest in microsoft/winget-pkgs repository using Microsoft's official wingetcreate tool."
 
 inputs:
   winget_token:
     description: "GitHub Personal Access Token with public_repo scope"
     required: true
-  identifier:
-    description: "Package identifier"
+  manifest_path:
+    description: "Path to winget manifest file"
     required: false
-    default: "intelligent-username.tmd"
+    default: "manifests/winget/tmd.yaml"
 
 runs:
   using: "composite"
   steps:
-    - name: Submit to Microsoft WinGet Repository
-      uses: vedantmgoyal2009/winget-releaser@v2
-      with:
-        identifier: ${{ inputs.identifier }}
-        token: ${{ inputs.winget_token }}
+    - name: Submit Manifest to Microsoft WinGet Repository
+      shell: pwsh
+      env:
+        WINGET_TOKEN: ${{ inputs.winget_token }}
+        MANIFEST_PATH: ${{ inputs.manifest_path }}
+      run: |
+        if (-not $env:WINGET_TOKEN) {
+          Write-Error "WINGET_TOKEN is not configured."
+          exit 1
+        }
+
+        if (-not (Test-Path $env:MANIFEST_PATH)) {
+          Write-Error "Manifest file not found at $env:MANIFEST_PATH"
+          exit 1
+        }
+
+        Write-Host "Downloading latest Microsoft wingetcreate CLI..."
+        $release = Invoke-RestMethod -Uri "https://api.github.com/repos/microsoft/winget-create/releases/latest"
+        $asset = $release.assets | Where-Object { $_.name -like "*wingetcreate.exe" -or $_.name -like "*.exe" } | Select-Object -First 1
+        if (-not $asset) {
+          Write-Error "Could not find wingetcreate.exe in latest release assets."
+          exit 1
+        }
+        
+        Write-Host "Downloading from $($asset.browser_download_url)..."
+        Invoke-WebRequest -Uri $asset.browser_download_url -OutFile "wingetcreate.exe"
+
+        Write-Host "Submitting $env:MANIFEST_PATH to microsoft/winget-pkgs..."
+        .\wingetcreate.exe submit "$env:MANIFEST_PATH" --token "$env:WINGET_TOKEN"
