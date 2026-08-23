@@ -46,26 +46,8 @@ runs:
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
 
-        # Create README if the repo is empty
         if [ ! -f "README.md" ]; then
-          cat << 'EOF' > README.md
-# Homebrew Tap for tmd
-
-Official Homebrew tap for [`tmd`](https://github.com/intelligent-username/tokens.md).
-
-## Installation
-
-```bash
-brew install intelligent-username/tap/tmd
-```
-
-## Update
-
-```bash
-brew update
-brew upgrade tmd
-```
-EOF
+          printf "# Homebrew Tap for tmd\n\nOfficial Homebrew tap for [\`tmd\`](https://github.com/intelligent-username/tokens.md).\n\n## Installation\n\n\`\`\`bash\nbrew install intelligent-username/tap/tmd\n\`\`\`\n\n## Update\n\n\`\`\`bash\nbrew update\nbrew upgrade tmd\n\`\`\`\n" > README.md
           git add README.md
         fi
 
