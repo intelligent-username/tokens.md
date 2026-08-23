@@ -36,7 +36,6 @@ Execution pipeline:
 
 ### Manual PyPI Re-Publish (`.github/workflows/republish-pypi.yml`)
 
-
 **Trigger**: Manual only (`workflow_dispatch`).
 
 **Purpose**: An emergency recovery workflow executed when automated PyPI publishing fails during a release run (e.g., due to OIDC token exchange glitches, network drops, or permission issues).
@@ -46,6 +45,13 @@ Execution pipeline:
 - Accepts an optional `tag` input (defaults to the latest release if blank).
 - Fetches the tagged release, prepares distribution archives (`.whl` and `.tar.gz`), and syncs them to PyPI using Trusted Publishing (`environment: pypi`).
 - Skips packages that already exist on PyPI (`skip_existing: true`) by default.
+
+### Manual Chocolatey Re-Publish (`.github/workflows/republish-chocolatey.yml`)
+
+**Trigger**: Manual only (`workflow_dispatch`).
+
+**Purpose**: Directly pack and publish `manifests/chocolatey` from `main` to `community.chocolatey.org` using `CHOCOLATEY_API_KEY`.
+
 
 ## Triggering a release
 

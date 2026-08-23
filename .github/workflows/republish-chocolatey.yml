@@ -1,0 +1,34 @@
+# ==============================================================================
+# WORKFLOW: Manual Chocolatey Re-Publish / Fallback Sync
+# ==============================================================================
+# PURPOSE:
+#   Directly pack and publish the existing Chocolatey manifest in main to
+#   community.chocolatey.org.
+#
+# HOW TO RUN:
+#   1. Go to "Actions" -> "Manual Re-Publish to Chocolatey (Fallback / Recovery)"
+#   2. Click "Run workflow".
+# ==============================================================================
+
+name: "Manual Re-Publish to Chocolatey (Fallback / Recovery)"
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  republish-chocolatey:
+    name: "Manual Re-Publish to Chocolatey"
+    runs-on: windows-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - name: Publish to Chocolatey
+        uses: ./.github/actions/publish-chocolatey
+        with:
+          api_key: ${{ secrets.CHOCOLATEY_API_KEY }}
