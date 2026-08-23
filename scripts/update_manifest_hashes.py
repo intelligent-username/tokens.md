@@ -164,6 +164,7 @@ end
 
 PackageIdentifier: intelligent-username.tmd
 PackageVersion: {version}
+PackageLocale: en-US
 PackageName: tmd
 Publisher: intelligent-username
 PublisherUrl: https://github.com/intelligent-username

@@ -2,6 +2,7 @@
 
 PackageIdentifier: intelligent-username.tmd
 PackageVersion: 0.0.18
+PackageLocale: en-US
 PackageName: tmd
 Publisher: intelligent-username
 PublisherUrl: https://github.com/intelligent-username
