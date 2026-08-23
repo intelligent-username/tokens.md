@@ -1,0 +1,33 @@
+# ==============================================================================
+# WORKFLOW: Manual Homebrew Tap Re-Publish / Fallback Sync
+# ==============================================================================
+# PURPOSE:
+#   Directly sync the Homebrew formula in main to intelligent-username/homebrew-tap.
+#
+# HOW TO RUN:
+#   1. Go to "Actions" -> "Manual Re-Publish to Homebrew (Fallback / Recovery)"
+#   2. Click "Run workflow".
+# ==============================================================================
+
+name: "Manual Re-Publish to Homebrew (Fallback / Recovery)"
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  republish-homebrew:
+    name: "Manual Re-Publish to Homebrew Tap"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - name: Publish to Homebrew Tap
+        uses: ./.github/actions/publish-homebrew
+        with:
+          tap_token: ${{ secrets.HOMEBREW_TAP_TOKEN || secrets.TAP_GITHUB_TOKEN }}

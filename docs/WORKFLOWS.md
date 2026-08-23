@@ -26,6 +26,7 @@ Execution pipeline:
 3. **GitHub Release & Manifests**: Downloads build outputs, computes `SHA256SUMS.txt`, validates all 6 binaries are present, updates manifest versions and SHA-256 hashes via `update_manifest_hashes.py`, and creates the GitHub release.
 4. **PyPI Publishing**: Builds wheels and source distributions and publishes them to PyPI.
 5. **Chocolatey Publishing**: Packs and pushes `tmd.nupkg` directly to `community.chocolatey.org` (runs after GitHub Release is published and manifests are updated).
+6. **Homebrew Publishing**: Syncs the updated formula `manifests/homebrew/tmd.rb` to `intelligent-username/homebrew-tap` (runs when `HOMEBREW_TAP_TOKEN` is configured).
 
 ## Reusable Workflows & Actions
 
@@ -33,6 +34,7 @@ Execution pipeline:
 - `.github/actions/github-release`: Bundles artifacts, creates GitHub Release, and updates manifest hashes.
 - `.github/actions/publish-pypi`: Builds wheels/sdist and publishes to PyPI with token authentication.
 - `.github/actions/publish-chocolatey`: Packages and pushes `.nupkg` to Chocolatey using `CHOCOLATEY_API_KEY`.
+- `.github/actions/publish-homebrew`: Pushes `manifests/homebrew/tmd.rb` to `intelligent-username/homebrew-tap` using `HOMEBREW_TAP_TOKEN`.
 
 ### Manual PyPI Re-Publish (`.github/workflows/republish-pypi.yml`)
 
@@ -51,6 +53,13 @@ Execution pipeline:
 **Trigger**: Manual only (`workflow_dispatch`).
 
 **Purpose**: Directly pack and publish `manifests/chocolatey` from `main` to `community.chocolatey.org` using `CHOCOLATEY_API_KEY`.
+
+### Manual Homebrew Re-Publish (`.github/workflows/republish-homebrew.yml`)
+
+**Trigger**: Manual only (`workflow_dispatch`).
+
+**Purpose**: Directly sync `manifests/homebrew/tmd.rb` from `main` into `intelligent-username/homebrew-tap` using `HOMEBREW_TAP_TOKEN`.
+
 
 
 ## Triggering a release

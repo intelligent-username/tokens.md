@@ -66,3 +66,20 @@ jobs:
         with:
           api_key: ${{ secrets.CHOCOLATEY_API_KEY }}
 
+  # 6. Publish to Homebrew Tap
+  homebrew:
+    name: Publish to Homebrew Tap
+    needs: github-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: ./.github/actions/publish-homebrew
+        if: ${{ env.HOMEBREW_TAP_TOKEN != '' }}
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN || secrets.TAP_GITHUB_TOKEN }}
+        with:
+          tap_token: ${{ secrets.HOMEBREW_TAP_TOKEN || secrets.TAP_GITHUB_TOKEN }}
+
+
