@@ -12,9 +12,6 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <tags>markdown llm tokens cli pdf docx converter</tags>
     <releaseNotes>https://github.com/intelligent-username/tokens.md/releases/tag/v0.0.18</releaseNotes>
-    <packageTypes>
-      <packageType name="Portable" />
-    </packageTypes>
   </metadata>
   <files>
     <file src="tools\**" target="tools" />
