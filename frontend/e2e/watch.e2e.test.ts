@@ -10,7 +10,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { watchStart, watchStatus, watchStop } from "@/lib/api/endpoints";
 import { createWs } from "@/lib/api/ws";
-import type { WsMessage } from "@/lib/api/types";
+import type { WsEnvelope } from "@/lib/api/types";
 
 describe("E2E Watcher & Streaming Pipeline", () => {
   beforeEach(() => {
@@ -23,7 +23,7 @@ describe("E2E Watcher & Streaming Pipeline", () => {
 
   it("orchestrates watch lifecycle: start -> ws event dispatch -> status -> stop", async () => {
     const sessionId = "watch-session-303";
-    const events: WsMessage[] = [];
+    const events: WsEnvelope[] = [];
 
     // Mock REST endpoints
     global.fetch = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
@@ -31,7 +31,7 @@ describe("E2E Watcher & Streaming Pipeline", () => {
         return {
           ok: true,
           status: 200,
-          json: () => Promise.resolve({ watch_id: "w_123", source_dir: "inbox/", running: true }),
+          json: () => Promise.resolve({ watch_id: "w_123", source: "inbox/", output: "outbox/" }),
           text: () => Promise.resolve(""),
         } as Response;
       }
@@ -41,11 +41,10 @@ describe("E2E Watcher & Streaming Pipeline", () => {
           status: 200,
           json: () =>
             Promise.resolve({
-              watch_id: "w_123",
               running: true,
-              converted_count: 3,
-              total_source_tokens: 4500,
-              total_target_tokens: 1200,
+              files_processed: 3,
+              source_tokens: 4500,
+              target_tokens: 1200,
             }),
           text: () => Promise.resolve(""),
         } as Response;
@@ -54,7 +53,7 @@ describe("E2E Watcher & Streaming Pipeline", () => {
         return {
           ok: true,
           status: 200,
-          json: () => Promise.resolve({ ok: true, watch_id: "w_123", running: false }),
+          json: () => Promise.resolve({ stopped: true }),
           text: () => Promise.resolve(""),
         } as Response;
       }
@@ -62,7 +61,8 @@ describe("E2E Watcher & Streaming Pipeline", () => {
     });
 
     // Mock WebSocket for realtime event stream
-    let currentSocket: MockSocket | null = null;
+    // Cast stops TS narrowing this to `null`; it is only assigned inside the constructor.
+    let currentSocket = null as MockSocket | null;
 
     class MockSocket {
       readyState = 1; // OPEN
@@ -84,37 +84,36 @@ describe("E2E Watcher & Streaming Pipeline", () => {
     // 1. Start Watcher
     const startRes = await watchStart({
       session_id: sessionId,
-      source_dir: "inbox/",
-      options: { budget: 2000, recursive: true },
+      options: { poll_interval: 1, once: false },
     });
-    expect(startRes.running).toBe(true);
+    expect(startRes.watch_id).toBe("w_123");
 
     // 2. Connect WebSocket and subscribe
     const ws = createWs(sessionId);
     ws.connect();
     const unsubscribe = ws.subscribe((msg) => {
-      events.push(msg as unknown as WsMessage);
+      events.push(msg);
     });
 
     // Simulate incoming stream events
     currentSocket?.onmessage?.({
-      data: JSON.stringify({ type: "watch_event", path: "inbox/doc1.pdf", status: "converted", source_tokens: 1200, target_tokens: 300 }),
+      data: JSON.stringify({ type: "watch.file", data: { file: "inbox/doc1.pdf", status: "done", source_tokens: 1200, target_tokens: 300 } }),
     });
     currentSocket?.onmessage?.({
-      data: JSON.stringify({ type: "watch_event", path: "inbox/doc2.docx", status: "converted", source_tokens: 3300, target_tokens: 900 }),
+      data: JSON.stringify({ type: "watch.file", data: { file: "inbox/doc2.docx", status: "done", source_tokens: 3300, target_tokens: 900 } }),
     });
 
     expect(events).toHaveLength(2);
-    expect(events[0]).toMatchObject({ status: "converted", path: "inbox/doc1.pdf" });
+    expect(events[0]).toMatchObject({ type: "watch.file", data: { status: "done", file: "inbox/doc1.pdf" } });
 
     // 3. Query watcher status
     const statusRes = await watchStatus(sessionId);
     expect(statusRes.running).toBe(true);
-    expect(statusRes.converted_count).toBe(3);
+    expect(statusRes.files_processed).toBe(3);
 
     // 4. Terminate watcher session
     const stopRes = await watchStop(sessionId);
-    expect(stopRes.running).toBe(false);
+    expect(stopRes.stopped).toBe(true);
 
     unsubscribe();
     ws.close();

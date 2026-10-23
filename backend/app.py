@@ -89,6 +89,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
         @app.get("/", response_class=HTMLResponse)
         async def not_built() -> HTMLResponse:
-            return HTMLResponse("<html><body><h1>Frontend not built</h1><p>Run <code>cd frontend && npm run build</code> and restart <code>tmd ui</code>.</p></body></html>")
+            return HTMLResponse("<html><body><h1>Frontend not built</h1><p>Run <code>cd frontend && pnpm run build</code> and restart <code>tmd ui</code>.</p><p>Other package managers (npm, yarn) work too.</p></body></html>")
 
     return app

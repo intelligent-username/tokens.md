@@ -220,8 +220,9 @@ export function useConvertRunner({ activeMode, inputUrl, files, setFiles, mergeE
   const handleCopyAll = async (convertedItems: ConvertItemWithSession[]) => {
     if (mergeResult && sessionId) {
       try {
-        await copyMergedOutput(sessionId, mergeResult, copyText);
-        toast("Merged Markdown copied to clipboard", "success");
+        const result = await copyMergedOutput(sessionId, mergeResult, copyText);
+        if (result === "ok") toast("Merged Markdown copied to clipboard", "success");
+        else toast(copy.clipBlocked, "error");
       } catch {
         toast(copy.clipBlocked, "error");
       }
@@ -231,8 +232,9 @@ export function useConvertRunner({ activeMode, inputUrl, files, setFiles, mergeE
     if (convertedItems.length === 0) return;
 
     try {
-      await copyConvertedOutputs(convertedItems, sessionId, copyText);
-      toast("All converted Markdown copied to clipboard", "success");
+      const result = await copyConvertedOutputs(convertedItems, sessionId, copyText);
+      if (result === "ok") toast("All converted Markdown copied to clipboard", "success");
+      else toast(copy.clipBlocked, "error");
     } catch {
       toast(copy.clipBlocked, "error");
     }

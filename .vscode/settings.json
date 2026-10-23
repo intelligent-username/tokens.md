@@ -1,0 +1,5 @@
+{
+  // Makes new integrated terminals activate .venv so `tmd` is on PATH (needs the Python extension)
+  "python.defaultInterpreterPath": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+  "python.terminal.activateEnvironment": true
+}

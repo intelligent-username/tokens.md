@@ -50,7 +50,7 @@ describe("E2E Merge & Budget Pipeline", () => {
                 fits: true,
                 removed_tokens: 4500,
                 removed_blocks: 8,
-                budget: 4000,
+                original_tokens: 8500,
                 final_tokens: 4000,
               },
             }),
@@ -76,7 +76,7 @@ describe("E2E Merge & Budget Pipeline", () => {
       options: {
         budget: 4000,
         dedup: true,
-        toc: true,
+        no_toc: false,
       },
     });
 

@@ -3,13 +3,15 @@ import type { MergeResponse } from "@/lib/api/types";
 import type { ConvertItemWithSession } from "./ResultClipButton";
 import { CLIPBOARD_MARKDOWN_SEPARATOR } from "./runnerConstants";
 
-export async function copyMergedOutput(sessionId: string, mergeResult: MergeResponse, copyText: (text: string) => Promise<boolean>): Promise<void> {
+export type CopyResult = "ok" | "blocked";
+
+export async function copyMergedOutput(sessionId: string, mergeResult: MergeResponse, copyText: (text: string) => Promise<CopyResult>): Promise<CopyResult> {
   const res = await fetch(downloadUrl(sessionId, mergeResult.output_file_id));
   const text = await res.text();
-  await copyText(text);
+  return copyText(text);
 }
 
-export async function copyConvertedOutputs(convertedItems: ConvertItemWithSession[], fallbackSessionId: string | null, copyText: (text: string) => Promise<boolean>): Promise<void> {
+export async function copyConvertedOutputs(convertedItems: ConvertItemWithSession[], fallbackSessionId: string | null, copyText: (text: string) => Promise<CopyResult>): Promise<CopyResult> {
   const texts = await Promise.all(
     convertedItems.map(async (item) => {
       const sid = item.session_id || fallbackSessionId;
@@ -18,5 +20,5 @@ export async function copyConvertedOutputs(convertedItems: ConvertItemWithSessio
       return res.text();
     })
   );
-  await copyText(texts.filter(Boolean).join(CLIPBOARD_MARKDOWN_SEPARATOR));
+  return copyText(texts.filter(Boolean).join(CLIPBOARD_MARKDOWN_SEPARATOR));
 }
