@@ -3,7 +3,7 @@
  *
  * Exercises the complete multi-file convert user journey:
  * 1. File creation & multipart upload with progress tracking.
- * 2. Convert batch dispatch with custom conversion options (strip headers, keep boilerplate).
+ * 2. Convert batch dispatch with custom conversion options (strip headers/footers).
  * 3. Token flow calculation & savings percentage verification.
  * 4. Error handling & triage when encountering unsupported formats or oversized payloads.
  */
@@ -78,8 +78,8 @@ describe("E2E Convert Workflow", () => {
           json: () =>
             Promise.resolve({
               files: [
-                { file_id: "f_pdf_1_out", name: "annual_report.md", size: 12400, is_output: true },
-                { file_id: "f_docx_2_out", name: "meeting_notes.md", size: 3100, is_output: true },
+                { file_id: "f_pdf_1_out", name: "annual_report.md", size: 12400 },
+                { file_id: "f_docx_2_out", name: "meeting_notes.md", size: 3100 },
               ],
             }),
           text: () => Promise.resolve(""),
@@ -102,7 +102,6 @@ describe("E2E Convert Workflow", () => {
       file_ids: uploadRes.files.map((f) => f.file_id),
       options: {
         strip_headers_footers: true,
-        keep_boilerplate: false,
       },
     });
 
@@ -120,7 +119,7 @@ describe("E2E Convert Workflow", () => {
 
     // Step 4: Verify output listing
     const sessionFiles = await listFiles(sessionId);
-    expect(sessionFiles.files.filter((f) => f.is_output)).toHaveLength(2);
+    expect(sessionFiles.files.filter((f) => f.name.endsWith(".md"))).toHaveLength(2);
   });
 
   it("handles unsupported format errors with proper UI classification and triage", async () => {

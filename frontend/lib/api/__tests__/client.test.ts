@@ -28,6 +28,16 @@ function mockFetchReject(err: Error) {
   global.fetch = vi.fn().mockRejectedValue(err);
 }
 
+// Resolves with the rejection value; fails the test if the promise resolves instead.
+function rejection(promise: Promise<unknown>): Promise<ApiError> {
+  return promise.then(
+    () => {
+      throw new Error("expected promise to reject");
+    },
+    (e: unknown) => e as ApiError
+  );
+}
+
 // ---------------------------------------------------------------------------
 // ApiError
 // ---------------------------------------------------------------------------
@@ -163,7 +173,7 @@ describe("fetchJson", () => {
   it("throws ApiError on 4xx responses", async () => {
     mockFetch(422, { code: "unsupported_format", message: "bad file" }, false);
 
-    const err = await fetchJson("/api/convert").catch((e: unknown) => e as ApiError);
+    const err = await rejection(fetchJson("/api/convert"));
     expect(err).toBeInstanceOf(ApiError);
     expect(err.status).toBe(422);
     expect(err.kind).toBe("unsupported_format");
@@ -173,7 +183,7 @@ describe("fetchJson", () => {
   it("throws ApiError on 500 responses", async () => {
     mockFetch(500, { code: "internal_error", message: "server exploded" }, false);
 
-    const err = await fetchJson("/api/convert").catch((e: unknown) => e as ApiError);
+    const err = await rejection(fetchJson("/api/convert"));
     expect(err).toBeInstanceOf(ApiError);
     expect(err.status).toBe(500);
   });
@@ -181,7 +191,7 @@ describe("fetchJson", () => {
   it("throws ApiError on 413 too_large", async () => {
     mockFetch(413, { code: "too_large", message: "file exceeds limit" }, false);
 
-    const err = await fetchJson("/api/uploads").catch((e: unknown) => e as ApiError);
+    const err = await rejection(fetchJson("/api/uploads"));
     expect(err.kind).toBe("too_large");
     expect(err.status).toBe(413);
   });
@@ -276,7 +286,7 @@ describe("fetchSample", () => {
   it("throws ApiError on non-2xx status", async () => {
     mockFetch(404, { code: "not_found", message: "no sample" }, false);
 
-    const err = await fetchSample("missing.pdf").catch((e: unknown) => e as ApiError);
+    const err = await rejection(fetchSample("missing.pdf"));
     expect(err).toBeInstanceOf(ApiError);
     expect(err.status).toBe(404);
   });

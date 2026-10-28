@@ -216,7 +216,7 @@ tmd ui --no-browser      # don't auto-open the browser
 When `tmd ui` runs, it resolves the frontend interface in the following order:
 1. **Bundled Static Assets**: Checks for pre-packaged `tmd_ui_static/` inside the installed package directory.
 2. **Local Static Export**: Checks for `frontend/out/` in your workspace. If found, `tmd ui` serves both the API and UI directly on `http://127.0.0.1:8642`.
-3. **Frontend Not Built Warning**: If neither static folder is built, navigating to `http://127.0.0.1:8642` displays instructions on how to build the frontend (`cd frontend && npm run build`).
+3. **Frontend Not Built Warning**: If neither static folder is built, navigating to `http://127.0.0.1:8642` displays instructions on how to build the frontend (`cd frontend && pnpm run build`; npm and yarn work too).
 
 To build the static UI for single-process hosting on `http://127.0.0.1:8642`, run:
 ```bash

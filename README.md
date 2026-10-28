@@ -44,27 +44,48 @@ First, make sure you have Python 3.13+, uv, and TypeScript support on your machi
 git clone https://github.com/intelligent-username/tokens.md
 ```
 
-And create the environment using uv:
+### Create the environment
+
+With uv (recommended):
 
 ```bash
-uv sync
-
+uv sync                # creates .venv and installs the project
+uv sync --extra web    # also installs the web UI dependencies (needed for `tmd ui`)
 ```
 
-Or work with the virtual environment manually:
+Or manually:
 
 ```bash
-
 python3 -m venv --python=3.13 .venv
+```
 
-# On Linux or Mac
+### Activate the environment
+
+`uv sync` does not activate the environment, so `tmd` will not be found until you do one of the following:
+
+```bash
+# Windows (PowerShell)
+.venv\Scripts\Activate.ps1
+
+# Linux or Mac
 source .venv/bin/activate
+```
 
-# On Windows
-.venv\Scripts\activate
+In VS Code, the bundled `.vscode/settings.json` activates `.venv` automatically in every new integrated terminal.
 
-# Install editable package
+To skip activation entirely, prefix commands with `uv run`:
+
+```bash
+uv run tmd --help
+```
+
+### Install (manual venv only)
+
+If you created the venv manually, install the package once it is active:
+
+```bash
 pip install -e .               # editable install (provides `tmd`)
+pip install -e ".[web]"        # with the web UI extras
 ```
 
 ## Running
@@ -95,11 +116,21 @@ Both bare `tmd` and `python src/main.py` automatically resolve default `input/` 
 The single-page web interface wraps all `tmd` capabilities into an intuitive side-by-side visual workbench featuring drag-and-drop file upload, URL fetching, clipboard copying, and token budgeting.
 
 **Method A: Single CLI Command (`tmd ui`)**
+
+Build the frontend once, from `frontend/` (the repo root has no `package.json`):
 ```bash
-uv pip install -e ".[web]"
+cd frontend
+pnpm install       # first time only
+pnpm run build
+cd ..
+```
+
+Then launch the UI:
+```bash
+uv sync --extra web   # or: uv pip install -e ".[web]"
 tmd ui
 ```
-This launches the backend server on `http://127.0.0.1:8642` and opens your browser.
+This launches the backend server on `http://127.0.0.1:8642` and opens your browser. `npm` or `yarn` work in place of `pnpm`.
 
 > **Note**: `tmd ui` automatically looks for built static assets inside `tmd_ui_static/` (installed package source) or `frontend/out/` (local repository source). If found, it serves both the REST API and the frontend directly on `http://127.0.0.1:8642` as a single unified process.
 
@@ -113,8 +144,8 @@ If you are developing or modifying the React/Next.js interface and want hot-relo
 2. In a separate terminal, start the Next.js development server:
    ```bash
    cd frontend
-   npm install
-   npm run dev
+   pnpm install
+   pnpm run dev
    ```
 3. Open `http://localhost:3000` in your web browser. (The Next.js dev server proxies API calls to `http://127.0.0.1:8642`).
 

@@ -48,9 +48,12 @@ describe("E2E Fetch, Repo & Samples Pipeline", () => {
             Promise.resolve({
               url: "https://example.com/article",
               title: "Example Article",
-              file_id: "f_url_1",
-              tokens: 450,
-              markdown: "# Example Article\n\nContent extracted cleanly.",
+              output_file_id: "f_url_1",
+              output_name: "example_article.md",
+              source_tokens: 2000,
+              target_tokens: 450,
+              percent: -77.5,
+              text: "# Example Article\n\nContent extracted cleanly.",
             }),
           text: () => Promise.resolve(""),
         } as Response;
@@ -61,11 +64,12 @@ describe("E2E Fetch, Repo & Samples Pipeline", () => {
           status: 200,
           json: () =>
             Promise.resolve({
-              repo: "owner/cool-project",
-              file_id: "f_repo_1",
-              file_count: 14,
-              total_tokens: 12500,
+              output_file_id: "f_repo_1_out",
               output_name: "cool-project.md",
+              source_tokens: 50000,
+              target_tokens: 12500,
+              percent: -75,
+              file_count: 14,
             }),
           text: () => Promise.resolve(""),
         } as Response;
@@ -107,17 +111,16 @@ describe("E2E Fetch, Repo & Samples Pipeline", () => {
       url: "https://example.com/article",
       session_id: sessionId,
     });
-    expect(urlRes.tokens).toBe(450);
-    expect(urlRes.markdown).toContain("# Example Article");
+    expect(urlRes.target_tokens).toBe(450);
+    expect(urlRes.text).toContain("# Example Article");
 
     // 3. Ingest Git repo
     const repoRes = await repo({
-      repo: "owner/cool-project",
       session_id: sessionId,
-      options: { budget: 15000 },
+      file_ids: ["f_repo_src"],
     });
     expect(repoRes.file_count).toBe(14);
-    expect(repoRes.total_tokens).toBe(12500);
+    expect(repoRes.target_tokens).toBe(12500);
 
     // 4. Discover and fetch sample
     const sampleList = await getSamples();

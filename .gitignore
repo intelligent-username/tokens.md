@@ -30,3 +30,9 @@ coverage/
 dist/
 build/
 *.egg-info/
+
+node_modules/
+package-lock.json
+pnpm-lock.yaml
+!frontend/package-lock.json
+!frontend/pnpm-lock.yaml
