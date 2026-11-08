@@ -49,7 +49,7 @@ jobs:
             --assume-yes-for-downloads \
             --jobs=4 \
             --linux-onefile-icon=assets/tmd.png \
-            tmd_runner.py
+            src/main.py
 
       - name: Smoke test
         shell: bash

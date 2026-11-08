@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from src.budget import prune_to_budget
+from src.support.budget import prune_to_budget
 from src.budget_support.fuzzy import hamming, is_immutable_block, simhash
 from src.budget_support.passes import _pass1_collapse_duplicates
 

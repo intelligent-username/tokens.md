@@ -8,7 +8,7 @@ from typing import Any
 
 from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
 
-from src.registry import DEFAULT_REGISTRY
+from src.support.registry import DEFAULT_REGISTRY
 from src.tokenizer import count_raw_file_tokens, count_tokens_in_file, delta_percent
 from src.watcher import run_watcher
 

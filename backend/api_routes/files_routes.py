@@ -10,7 +10,7 @@ from fastapi import APIRouter, File, Form, Request, UploadFile
 from fastapi.responses import FileResponse
 
 from src import __version__
-from src.registry import DEFAULT_REGISTRY
+from src.support.registry import DEFAULT_REGISTRY
 from src.tokenizer import DEFAULT_ENCODING, count_raw_file_tokens
 
 from ..schemas import FileMeta, FilesResponse, OutputFile, SampleInfo, SamplesResponse, SessionCloseRequest, SessionCloseResponse, UploadResponse

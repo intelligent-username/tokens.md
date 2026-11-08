@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from src.registry import Converter, Registry, UnsupportedFormatError, convert_file
+from src.support.registry import Converter, Registry, UnsupportedFormatError, convert_file
 
 
 class _FakeConverter(Converter):
@@ -51,7 +51,7 @@ def test_convert_file_uses_default_registry(tmp_path: Path) -> None:
 
 
 def test_default_registry_has_builtin_handlers() -> None:
-    from src.registry import DEFAULT_REGISTRY
+    from src.support.registry import DEFAULT_REGISTRY
 
     exts = DEFAULT_REGISTRY.extensions()
     assert ".pdf" in exts
@@ -61,7 +61,7 @@ def test_default_registry_has_builtin_handlers() -> None:
 
 
 def test_default_registry_has_new_formats() -> None:
-    from src.registry import DEFAULT_REGISTRY
+    from src.support.registry import DEFAULT_REGISTRY
 
     exts = DEFAULT_REGISTRY.extensions()
     for ext in (".docx", ".pptx", ".xlsx", ".odt", ".ods", ".odp", ".rtf", ".msg", ".eml", ".azw3", ".azw4", ".srt", ".vtt", ".tex"):

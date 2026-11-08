@@ -14,7 +14,7 @@ from fastapi.staticfiles import StaticFiles
 
 from src import __version__
 from src.deps import MissingDependencyError
-from src.registry import UnsupportedFormatError
+from src.support.registry import UnsupportedFormatError
 
 from . import routes
 from .config import Settings

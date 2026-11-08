@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 
 from src.fetch import fetch_url
-from src.registry import UnsupportedFormatError
+from src.support.registry import UnsupportedFormatError
 
 
 def test_fetch_url_writes_markdown(tmp_path: Path) -> None:

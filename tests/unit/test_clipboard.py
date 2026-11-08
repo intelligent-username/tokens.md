@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from src.clipboard import copy_to_clipboard
+from src.support.clipboard import copy_to_clipboard
 
 
 def test_copy_to_clipboard_calls_pyperclip() -> None:

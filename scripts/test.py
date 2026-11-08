@@ -203,6 +203,33 @@ def _parse_coverage_pct(output: str) -> str | None:
     return None
 
 
+def _count_pytest_results(output: str) -> dict:
+    """Count passed, failed, errored, skipped tests from pytest -v output."""
+    passed = len(re.findall(r"PASSED", output))
+    failed = len(re.findall(r"FAILED", output))
+    errored = len(re.findall(r"ERROR", output))
+    skipped = len(re.findall(r"SKIPPED", output))
+    return {"passed": passed, "failed": failed, "errored": errored, "skipped": skipped}
+
+
+def _count_vitest_results(output: str) -> dict:
+    """Count passed/failed tests from vitest summary lines."""
+    # vitest summary looks like:
+    #   Test Files  11 passed (11)
+    #   Tests       160 passed (160)
+    # Output contains both unit and e2e runs, so find ALL matches and sum.
+    # First strip ANSI codes since vitest output includes color formatting.
+    clean = _strip_ansi(output)
+    passed = 0
+    failed = 0
+    for m in re.finditer(r"(?:Test Files|Tests)\s+(\d+)\s+passed\s*\(\s*(\d+)", clean, re.IGNORECASE):
+        passed_in_line = int(m.group(1))
+        total_in_line = int(m.group(2))
+        passed += passed_in_line
+        failed += (total_in_line - passed_in_line)
+    return {"passed": passed, "failed": failed}
+
+
 def _cleanup_coverage_files() -> None:
     """Clean up temporary coverage files and directories after test execution."""
     for cov_path in [TEMP_DIR / ".coverage", ROOT_DIR / ".coverage"]:
@@ -303,8 +330,63 @@ def run_tests(verbose: bool = False, coverage: bool = False) -> int:
 
         elapsed = time.perf_counter() - start_time
         overall = max(be_code, fe_code)
+
+        if verbose:
+            if be_combined.strip():
+                console.print("[bold]=== Backend test output ===[/bold]")
+                console.print(be_combined.strip())
+            if fe_combined.strip():
+                console.print("\n[bold]=== Frontend test output ===[/bold]")
+                console.print(fe_combined.strip())
+
+        # ---- summary stats (at the very end) ----
+        be_stats = _count_pytest_results(be_combined)
+        fe_stats = _count_vitest_results(fe_combined)
+
+        be_total = be_stats["passed"] + be_stats["failed"] + be_stats["errored"] + be_stats["skipped"]
+        be_pct = (be_stats["passed"] / be_total * 100) if be_total else 0
+
+        fe_total = fe_stats["passed"] + fe_stats["failed"]
+        fe_pct = (fe_stats["passed"] / fe_total * 100) if fe_total else 0
+
+        # Build a nice summary table
+        from rich.table import Table
+        from rich.panel import Panel
+
+        summary_table = Table(show_header=True, header_style="bold cyan", box=None, padding=(0, 1))
+        summary_table.add_column("Suite", style="bold", width=14)
+        summary_table.add_column("Passed", justify="right", style="green")
+        summary_table.add_column("Failed", justify="right", style="red")
+        summary_table.add_column("Errored", justify="right", style="yellow")
+        summary_table.add_column("Skipped", justify="right", style="dim")
+        summary_table.add_column("Total", justify="right", style="bold")
+        summary_table.add_column("Pass %", justify="right", style="bold magenta")
+
+        summary_table.add_row(
+            "Backend",
+            str(be_stats["passed"]),
+            str(be_stats["failed"]),
+            str(be_stats["errored"]),
+            str(be_stats["skipped"]),
+            str(be_total),
+            f"{be_pct:.1f}%"
+        )
+        summary_table.add_row(
+            "Frontend",
+            str(fe_stats["passed"]),
+            str(fe_stats["failed"]),
+            "—",
+            "—",
+            str(fe_total),
+            f"{fe_pct:.1f}%"
+        )
+
+        console.print()
+        # Use Panel.fit to size the border to content width, not terminal width
+        console.print(Panel.fit(summary_table, title="[bold]Test Summary[/bold]", border_style="cyan", padding=(1, 2)))
+
         if overall != 0:
-            console.print(f"[bold red]One or more test suites failed in {elapsed:.2f}s.[/bold red]")
+            console.print(f"[bold]All tests ran in {elapsed:.2f}s.[/bold]")
             if not verbose:
                 console.print("▫ Run [bold cyan]tmd test -v[/bold cyan] for full output.")
         else:

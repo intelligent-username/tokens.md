@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from src.registry import DEFAULT_REGISTRY, convert_file
+from src.support.registry import DEFAULT_REGISTRY, convert_file
 
 DUMMIES_DIR = Path(__file__).resolve().parent.parent / "dummies"
 FORMATS_DIR = DUMMIES_DIR / "formats"

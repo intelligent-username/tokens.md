@@ -6,11 +6,14 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./lib/api/__tests__/setup.ts"],
-    include: ["lib/**/__tests__/**/*.test.ts"],
+    include: [
+      "lib/**/__tests__/**/*.test.ts",
+      "lib/hooks/__tests__/**/*.test.ts"
+    ],
     coverage: {
       provider: "v8",
-      include: ["lib/api/**/*.ts", "lib/errors.ts"],
-      exclude: ["lib/api/types/**", "lib/api/__tests__/**"],
+      include: ["lib/api/**/*.ts", "lib/hooks/**/*.ts", "lib/errors.ts"],
+      exclude: ["lib/api/types/**", "lib/api/__tests__/**", "lib/hooks/__tests__/**"],
       reporter: ["text", "text-summary"],
       thresholds: {
         lines: 80,

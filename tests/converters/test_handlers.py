@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from src.registry import DEFAULT_REGISTRY, UnsupportedFormatError
+from src.support.registry import DEFAULT_REGISTRY, UnsupportedFormatError
 
 
 def _convert(sample: Path, tmp_path: Path) -> Path:

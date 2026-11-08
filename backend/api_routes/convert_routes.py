@@ -9,12 +9,12 @@ from pathlib import Path
 
 from fastapi import APIRouter, Request
 
-from src.budget import prune_to_budget
+from src.support.budget import prune_to_budget
 from src.delta import compute_delta_summary
 from src.fetch import fetch_url
 from src.handlers.repo import RepoConverter
 from src.merger import merge_files, resolve_to_markdown
-from src.registry import UnsupportedFormatError, convert_file
+from src.support.registry import UnsupportedFormatError, convert_file
 from src.tokenizer import DEFAULT_ENCODING, count_raw_file_tokens, count_tokens, count_tokens_in_file, delta_percent
 
 from ..schemas import BudgetRequest, BudgetResponse, ClipRequest, ClipResponse, ConvertItem, ConvertRequest, ConvertResponse, DeltaEntry, DeltaRequest, DeltaResponse, FetchRequest, FetchResponse, MergeRequest, MergeResponse, PruneResult, RepoRequest, RepoResponse

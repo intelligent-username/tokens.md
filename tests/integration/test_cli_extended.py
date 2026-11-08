@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from typer.testing import CliRunner
 
-from src.cli import app
+from src.support.cli import app
 
 runner = CliRunner()
 

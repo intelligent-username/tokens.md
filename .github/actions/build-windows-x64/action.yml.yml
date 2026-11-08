@@ -50,7 +50,7 @@ jobs:
             --assume-yes-for-downloads `
             --jobs=4 `
             --windows-icon-from-ico=assets/tmd.ico `
-            tmd_runner.py
+            src/main.py
 
       - name: Smoke test
         shell: bash
