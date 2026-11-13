@@ -44,18 +44,18 @@
 
   /* ---- Shadows ---- */
   --shadow-card: 0 20px 40px -20px rgba(0, 0, 0, 0.6);
-  --shadow-glow-soft: 0 0 80px -30px rgba(22, 222, 129, 0.35);
-  --shadow-glow: 0 0 24px -8px rgba(22, 222, 129, 0.6);
+  --shadow-glow-soft: none;
+  --shadow-glow: none;
 
   /* ---- Semantic tokens, light mode (modern muted slate + soft emerald accents) ----
      Every background token is paired with a foreground token. */
-  --color-background: #d6deeb;
+  --color-background: #f1f3f2;
   --color-foreground: #1e293b;
-  --color-card: rgba(228, 235, 244, 0.85);
+  --color-card: #ffffff;
   --color-card-foreground: #1e293b;
   --color-muted: #cbd5e1;
   --color-muted-foreground: #475569;
-  --color-primary: #059669;
+  --color-primary: #047857;
   --color-primary-foreground: #ffffff;
   --color-secondary: #c4d0e1;
   --color-secondary-foreground: #1e293b;
@@ -64,17 +64,17 @@
   --color-destructive: #dc2626;
   --color-destructive-foreground: #fdfbfa;
   --color-border: rgba(100, 116, 139, 0.28);
-  --color-ring: #059669;
+  --color-ring: #047857;
 }
 
 /* ---- Semantic tokens, dark mode (default theme) ---- */
 .dark {
-  --color-background: var(--color-navy-950);
+  --color-background: #171d1d;
   --color-foreground: #e9f6ee;
-  --color-card: rgba(255, 255, 255, 0.06);
+  --color-card: #222a29;
   --color-card-foreground: #e9f6ee;
   --color-muted: rgba(255, 255, 255, 0.04);
-  --color-muted-foreground: var(--color-navy-300);
+  --color-muted-foreground: #aabbb5;
   --color-primary: var(--color-emerald-500);
   --color-primary-foreground: var(--color-navy-950);
   --color-secondary: rgba(255, 255, 255, 0.08);
@@ -111,22 +111,16 @@
   --backdrop-grid: rgba(255, 255, 255, 0.035);
 }
 
-/* ---- Glass utility: frosted panel over the canvas ---- */
+/* ---- Shared panel surface ---- */
 @utility glass {
   background-color: var(--color-card);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
   border: 1px solid var(--color-border);
-  box-shadow:
-    inset 0 1px 0 var(--glass-catchlight),
-    inset 0 -1px 0 var(--glass-depth),
-    0 20px 40px -20px var(--glass-drop);
 }
 
 /* Fallback: drop the blur when the user asks for less transparency */
 @media (prefers-reduced-transparency: reduce) {
   .glass {
-    background-color: var(--card-solid);
+    background-color: var(--color-card);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }

@@ -48,7 +48,7 @@ describe("useUpload", () => {
     const { result } = renderHook(() => useUpload(files));
 
     await act(async () => {
-      await result.current.upload((r) => {
+      await result.current.upload(async (r) => {
         r.start(0, 100);
         r.advance(0, 50);
         r.advance(0, 100);
@@ -77,7 +77,7 @@ describe("useUpload", () => {
     const { result } = renderHook(() => useUpload(files));
 
     await act(async () => {
-      await result.current.upload((r) => {
+      await result.current.upload(async (r) => {
         r.start(0, 100);
         r.fail(0, "network error");
       });

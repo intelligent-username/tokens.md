@@ -50,7 +50,7 @@ describe("useWatchStream", () => {
     wsInstances.clear();
     wsId = 0;
     (fetchJson as any).mockResolvedValue({});
-    (wsUrl as any).mockImplementation((sid) => `ws://localhost/api/ws?session_id=${sid}`);
+    vi.mocked(wsUrl).mockImplementation((sid) => `ws://localhost/api/ws?session_id=${sid}`);
   });
 
   afterEach(() => {

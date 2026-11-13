@@ -160,8 +160,8 @@ export function DropZone({ label, sublabel, accept, multiple = true, allowFolder
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={cn(
-        "group relative flex min-h-[280px] sm:min-h-[340px] cursor-pointer flex-col items-center justify-center gap-4 rounded-card border-2 border-dashed border-border/80 glass p-10 sm:p-14 text-center transition-all",
-        dragging ? "border-solid border-emerald-500 bg-emerald-500/10 shadow-glow" : "hover:border-emerald-500 hover:shadow-glow-soft",
+        "group relative flex min-h-[280px] sm:min-h-[340px] cursor-pointer flex-col items-center justify-center gap-4 rounded-card border-2 border-dashed border-border/80 glass p-10 sm:p-14 text-center transition-colors",
+        dragging ? "border-solid border-primary bg-accent" : "hover:border-primary",
         disabled && "cursor-not-allowed opacity-50"
       )}
     >
@@ -172,13 +172,13 @@ export function DropZone({ label, sublabel, accept, multiple = true, allowFolder
       {busy ? (
         <Spinner size={28} weight="regular" className="animate-spin text-emerald-500" aria-hidden="true" />
       ) : (
-        <span className="glyph-glow text-emerald-500" aria-hidden="true">
+        <span className="text-primary" aria-hidden="true">
           {allowFolders ? <FolderOpen size={32} weight="regular" /> : <CloudArrowUp size={32} weight="regular" />}
         </span>
       )}
 
       <div className="flex flex-col gap-1">
-        <span className="font-display text-lg font-bold text-foreground">{heading}</span>
+        <span className="font-display text-lg font-medium text-foreground">{heading}</span>
         <span className="text-sm text-muted-foreground">{body}</span>
         {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
       </div>

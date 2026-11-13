@@ -34,7 +34,7 @@ export function TopBar({ health, onRetry }: TopBarProps) {
   const isOffline = health === "offline" || (showOffline && health !== "online");
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border/80 bg-background/80 backdrop-blur-md">
+    <header className="sticky top-0 z-30 border-b border-border bg-background">
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6">
         <a href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
           <img src="/logo.svg" alt="tokens.md logo" className="h-9 w-auto object-contain glyph-glow" />
@@ -48,7 +48,7 @@ export function TopBar({ health, onRetry }: TopBarProps) {
         <div className="flex items-center gap-3.5">
           {isOffline ? (
             <div className="flex items-center gap-2 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1 text-xs font-semibold text-destructive">
-              <span className="h-2 w-2 rounded-full bg-destructive animate-pulse" />
+              <span className="h-2 w-2 rounded-full bg-destructive" />
               <span>API offline</span>
               {onRetry && (
                 <button type="button" onClick={onRetry} title="Retry backend connection" aria-label="Retry backend connection" className="ml-0.5 inline-flex items-center justify-center rounded-full p-0.5 hover:bg-destructive/20 transition-colors text-destructive">

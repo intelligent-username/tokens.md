@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "motion/react";
 import { CloudArrowUp, Link as LinkIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils/cn";
 
@@ -12,29 +11,27 @@ export interface ModeSelectorProps {
 /** Top segmented mode selector component (Upload vs Input). */
 export function ModeSelector({ activeMode, onChange }: ModeSelectorProps) {
   return (
-    <div className="relative flex items-center gap-1 rounded-full bg-card/80 p-1 border border-border/60 w-full max-w-sm mx-auto mb-4">
-      <motion.button
+    <div className="relative mx-auto mb-4 flex w-full max-w-sm items-center gap-1 rounded-control border border-border bg-card p-1">
+      <button
         type="button"
         onClick={() => onChange("upload")}
-        whileTap={{ scale: 0.96 }}
-        className={cn("relative flex-1 flex items-center justify-center gap-2 rounded-full py-1.5 px-3 text-xs font-semibold transition-colors z-10 select-none cursor-pointer", activeMode === "upload" ? "text-primary-foreground font-bold" : "text-muted-foreground hover:text-foreground")}
+        aria-pressed={activeMode === "upload"}
+        className={cn("relative z-10 flex flex-1 cursor-pointer select-none items-center justify-center gap-2 rounded-chip px-3 py-2 text-sm font-medium transition-colors", activeMode === "upload" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
       >
-        {activeMode === "upload" && <motion.div layoutId="activeModePill" className="absolute inset-0 rounded-full bg-primary shadow-glow" transition={{ type: "spring", stiffness: 450, damping: 32 }} />}
         <span className="relative z-10 flex items-center gap-2">
           <CloudArrowUp size={16} /> Upload
         </span>
-      </motion.button>
-      <motion.button
+      </button>
+      <button
         type="button"
         onClick={() => onChange("input")}
-        whileTap={{ scale: 0.96 }}
-        className={cn("relative flex-1 flex items-center justify-center gap-2 rounded-full py-1.5 px-3 text-xs font-semibold transition-colors z-10 select-none cursor-pointer", activeMode === "input" ? "text-primary-foreground font-bold" : "text-muted-foreground hover:text-foreground")}
+        aria-pressed={activeMode === "input"}
+        className={cn("relative z-10 flex flex-1 cursor-pointer select-none items-center justify-center gap-2 rounded-chip px-3 py-2 text-sm font-medium transition-colors", activeMode === "input" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
       >
-        {activeMode === "input" && <motion.div layoutId="activeModePill" className="absolute inset-0 rounded-full bg-emerald-500 shadow-glow" transition={{ type: "spring", stiffness: 450, damping: 32 }} />}
         <span className="relative z-10 flex items-center gap-2">
           <LinkIcon size={16} /> Input
         </span>
-      </motion.button>
+      </button>
     </div>
   );
 }

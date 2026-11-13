@@ -97,7 +97,7 @@ export function ConvertWorkspace() {
           )}
         </AnimatePresence>
 
-        <MergeButton onClick={run} disabled={(activeMode === "upload" && files.length === 0) || (activeMode === "input" && !inputUrl.trim()) || running} loading={running} label={getButtonLabel()} />
+        <MergeButton onClick={run} disabled={(activeMode === "upload" && files.length === 0) || (activeMode === "input" && !inputUrl.trim()) || running} label={getButtonLabel()} />
       </div>
 
       {error ? <ErrorState message={error} onRetry={run} /> : null}

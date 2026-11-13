@@ -80,7 +80,7 @@ export function FileMatrixRow({ file, fileKey, resultItem, meta, isConverting, i
               </div>
             </>
           ) : isConverting ? (
-            <span className="font-mono text-xs text-amber-400 animate-pulse">Converting...</span>
+            <span className="sr-only">Converting...</span>
           ) : (
             <span className="font-mono text-xs text-muted-foreground/60 italic">Awaiting convert</span>
           )}

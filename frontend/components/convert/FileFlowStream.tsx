@@ -2,7 +2,7 @@
 
 import { type Ref, type CSSProperties } from "react";
 import { motion } from "motion/react";
-import { Check, Sparkle, ArrowRight } from "@phosphor-icons/react";
+import { Check, Spinner, ArrowRight } from "@phosphor-icons/react";
 import { useReducedMotion } from "@/lib/hooks/useReducedMotion";
 import { cn } from "@/lib/utils/cn";
 
@@ -14,48 +14,27 @@ export interface FileFlowStreamProps {
   barRef?: Ref<HTMLDivElement>;
 }
 
-/** Ultra-fancy particle beam stream connecting Before file directly to After file. */
+/** Connects the source and converted file states. */
 export function FileFlowStream({ converting, done, percent, merged = false, barRef }: FileFlowStreamProps) {
   const reduced = useReducedMotion();
 
   return (
     <div ref={barRef} className="relative flex items-center justify-center w-full px-2 sm:px-4 select-none">
-      {/* Laser connector line / progress bar */}
-      <div className="relative h-3.5 w-full rounded-full bg-muted/80 overflow-hidden border border-border/60">
-        <div className={cn("absolute inset-y-0 left-0 w-full rounded-full transition-all duration-500", done ? "bg-gradient-to-r from-emerald-500/40 via-emerald-400 to-emerald-500" : converting ? "bg-emerald-500/30" : "bg-muted/50")} />
-
-        {/* Dynamic traveling particle beam FX while converting */}
-        {converting && !reduced ? (
-          <>
-            {[0, 1, 2, 3].map((i) => (
-              <motion.span
-                key={i}
-                className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-emerald-400 shadow-[0_0_12px_#16DE81]"
-                initial={{ left: "0%", opacity: 0 }}
-                animate={{ left: "100%", opacity: [0, 1, 1, 0] }}
-                transition={{
-                  duration: 1.2,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: i * 0.25,
-                }}
-              />
-            ))}
-          </>
-        ) : null}
+      <div className="relative h-1 w-full overflow-hidden rounded-full bg-muted">
+        <div className={cn("absolute inset-0 transition-colors duration-200", done ? "bg-primary/70" : converting ? "bg-primary/30" : "bg-border")} />
       </div>
 
       {/* Center Flow Badge */}
       <div className="absolute inset-auto flex items-center justify-center">
         {done && percent !== undefined && !merged ? (
-          <span className="inline-flex items-center gap-0.5 rounded-full bg-card/95 border border-border px-2.5 py-0.5 text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 shadow-glow backdrop-blur-md">−{Math.abs(percent).toFixed(1)}%</span>
+          <span className="inline-flex items-center rounded-chip border border-border bg-background px-2 py-1 font-mono text-xs font-medium tabular-nums text-emerald-700 dark:text-emerald-300">−{Math.abs(percent).toFixed(1)}%</span>
         ) : done && merged ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-card/95 border border-border px-2.5 py-0.5 text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 shadow-glow backdrop-blur-md">
+          <span className="inline-flex items-center gap-1 rounded-chip border border-border bg-background px-2 py-1 font-mono text-xs font-medium text-emerald-700 dark:text-emerald-300">
             <Check size={12} /> merged
           </span>
         ) : converting ? (
-          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shadow-[0_0_10px_#16DE81] border border-emerald-500/40">
-            <Sparkle size={14} className="animate-spin" />
+          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-border bg-background text-emerald-700 dark:text-emerald-300" aria-label="Converting">
+            <Spinner size={16} className={reduced ? undefined : "animate-spin"} aria-hidden="true" />
           </span>
         ) : (
           <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-muted/90 text-muted-foreground text-xs border border-border">
