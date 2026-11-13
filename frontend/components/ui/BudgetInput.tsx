@@ -36,14 +36,14 @@ export function BudgetInput({ value, unit, onChange, disabled = false, className
   const stepSlider = unit === "MB" ? 1 : unit === "KB" ? 100 : 1000;
 
   return (
-    <div className={cn("flex flex-col gap-2.5 rounded-card bg-card/60 p-4 border border-border/60", className)}>
-      <div className="flex items-center justify-between gap-2">
-        <label htmlFor="budget-number-input" className="text-xs font-semibold text-foreground">
-          Target Size Budget
+    <div className={cn("flex flex-col gap-3 rounded-card bg-card/60 p-4 border border-border/60", className)}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <label htmlFor="budget-number-input" className="text-xs font-medium text-foreground">
+          Target size budget
         </label>
-        <div className="flex items-center gap-1 rounded-full bg-muted/60 p-0.5 border border-border/40">
+        <div className="flex items-center gap-1 rounded-chip bg-secondary/30 p-1 border border-border/40">
           {(["KB", "MB", "Tokens"] as BudgetUnit[]).map((u) => (
-            <button key={u} type="button" disabled={disabled} onClick={() => handleUnitChange(u)} className={cn("rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition-colors", unit === u ? "bg-emerald-500 text-zinc-950 font-bold shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+            <button key={u} type="button" disabled={disabled} aria-pressed={unit === u} onClick={() => handleUnitChange(u)} className={cn("rounded-chip px-2 py-1 text-xs font-medium transition-colors", unit === u ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground")}>
               {u}
             </button>
           ))}
@@ -60,11 +60,11 @@ export function BudgetInput({ value, unit, onChange, disabled = false, className
           disabled={disabled}
           onChange={handleNumberChange}
           placeholder="Set ceiling (e.g. 100)"
-          className="w-full rounded-chip border border-border bg-input px-3 py-1.5 font-mono text-sm text-foreground focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 disabled:opacity-50"
+          className="w-full rounded-chip border border-border bg-input px-3 py-2 font-mono text-sm tabular-nums text-foreground focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
         />
       </div>
 
-      <input type="range" min={10} max={maxSlider} step={stepSlider} value={value} disabled={disabled} onChange={handleSliderChange} className="w-full accent-emerald-500 cursor-pointer disabled:opacity-50" />
+      <input type="range" aria-label={`Target size budget (${unit})`} min={10} max={maxSlider} step={stepSlider} value={value} disabled={disabled} onChange={handleSliderChange} className="w-full accent-primary cursor-pointer disabled:opacity-50" />
     </div>
   );
 }

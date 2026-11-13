@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import { Info } from "@phosphor-icons/react";
 
 export interface SettingLabelProps {
@@ -18,7 +17,7 @@ export function SettingLabel({ htmlFor, label, tooltip }: SettingLabelProps) {
     <div
       tabIndex={0}
       aria-describedby={showHover ? tooltipId : undefined}
-      className="relative flex items-center gap-1.5 cursor-help w-fit select-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none rounded-sm px-0.5"
+      className="relative flex items-center gap-1 cursor-help w-fit select-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded-sm px-0.5"
       onMouseEnter={() => setShowHover(true)}
       onMouseLeave={() => setShowHover(false)}
       onFocus={() => setShowHover(true)}
@@ -27,29 +26,23 @@ export function SettingLabel({ htmlFor, label, tooltip }: SettingLabelProps) {
         if (e.key === "Escape") setShowHover(false);
       }}
     >
-      <label htmlFor={htmlFor} className="text-xs font-semibold text-foreground cursor-pointer">
+      <label htmlFor={htmlFor} className="text-xs font-medium text-foreground cursor-pointer">
         {label}
       </label>
-      <Info size={14} className="text-muted-foreground/60 hover:text-emerald-400 transition-colors shrink-0" />
+      <Info size={16} className="text-muted-foreground transition-colors shrink-0" aria-hidden="true" />
 
-      <AnimatePresence>
-        {showHover ? (
-          <motion.div
-            id={tooltipId}
-            role="tooltip"
-            initial={{ opacity: 0, y: 4, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.96 }}
-            transition={{ duration: 0.15 }}
-            className="absolute bottom-full left-0 mb-2 z-50 w-72 rounded-card border border-border bg-card/95 p-3 text-xs text-card-foreground shadow-2xl backdrop-blur-md pointer-events-none"
-          >
-            <div className="font-bold text-emerald-600 dark:text-emerald-400 mb-1 flex items-center gap-1.5">
-              <Info size={14} /> {label}
-            </div>
-            <p className="text-[11px] leading-relaxed text-muted-foreground">{tooltip}</p>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      {showHover ? (
+        <div
+          id={tooltipId}
+          role="tooltip"
+          className="fixed bottom-4 left-4 right-4 z-50 rounded-control border border-border bg-card p-3 text-xs text-card-foreground shadow-md pointer-events-none sm:left-auto sm:w-72 sm:max-w-[calc(100vw-2rem)]"
+        >
+          <div className="font-medium text-foreground mb-1 flex items-center gap-1">
+            <Info size={16} aria-hidden="true" /> {label}
+          </div>
+          <p className="text-xs leading-relaxed text-muted-foreground">{tooltip}</p>
+        </div>
+      ) : null}
     </div>
   );
 }

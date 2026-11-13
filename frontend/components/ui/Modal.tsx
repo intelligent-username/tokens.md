@@ -46,13 +46,17 @@ const headerStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "space-between",
   gap: "12px",
+  minWidth: 0,
 };
 
 const titleStyle: CSSProperties = {
   fontFamily: "var(--font-display)",
   fontSize: "18px",
-  fontWeight: 700,
+  fontWeight: 600,
   color: "var(--color-foreground)",
+  overflowWrap: "anywhere",
+  maxHeight: "min(30vh, 120px)",
+  overflowY: "auto",
 };
 
 const closeStyle: CSSProperties = {
@@ -61,6 +65,7 @@ const closeStyle: CSSProperties = {
   justifyContent: "center",
   width: "28px",
   height: "28px",
+  flexShrink: 0,
   borderRadius: "var(--radius-control)",
   border: "1px solid var(--color-border)",
   background: "transparent",
@@ -90,7 +95,7 @@ function trapFocus(e: KeyboardEvent, panel: HTMLElement | null) {
 }
 
 /**
- * Centered glass modal. Esc closes, backdrop click closes, focus is trapped,
+ * Centered modal. Esc closes, backdrop click closes, focus is trapped,
  * and body scroll locks while open. aria-modal="true".
  */
 export function Modal({ open, onClose, title, children }: ModalProps) {
@@ -132,16 +137,12 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
         left: 0,
         right: 0,
         bottom: 0,
-        width: "100vw",
-        height: "100vh",
         zIndex: 99999,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         padding: "24px",
-        backgroundColor: "rgba(5, 10, 20, 0.65)",
-        backdropFilter: "blur(4px)",
-        WebkitBackdropFilter: "blur(4px)",
+        backgroundColor: "rgba(0, 0, 0, 0.55)",
       }}
       onClick={onClose}
     >
@@ -154,18 +155,16 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
         onClick={(e) => e.stopPropagation()}
         style={{
           position: "relative",
-          width: "60vw",
-          maxWidth: "1000px",
-          height: "80vh",
+          width: "min(100%, 1000px)",
+          height: "min(80vh, 100%)",
           display: "flex",
           flexDirection: "column",
           gap: "16px",
           padding: "24px",
           borderRadius: "16px",
-          border: "1px solid rgba(255, 255, 255, 0.15)",
-          backgroundColor: "#0B1220",
-          color: "#E9F6EE",
-          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.95)",
+          border: "1px solid var(--color-border)",
+          backgroundColor: "var(--color-card)",
+          color: "var(--color-foreground)",
           overflow: "hidden",
         }}
       >

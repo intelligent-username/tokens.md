@@ -18,16 +18,16 @@ export function InputUrlResultCard({ inputResult, inputUrl, sessionId }: InputUr
   if (!item) return null;
 
   return (
-    <div className="flex items-center justify-between gap-4 rounded-card bg-card/60 p-4 border border-border/60">
-      <div className="flex flex-col min-w-0">
+    <div className="flex min-w-0 flex-wrap items-center justify-between gap-4 rounded-card border border-border/60 bg-card/60 p-4">
+      <div className="flex min-w-0 basis-40 grow flex-col">
         <span className="truncate font-mono text-sm font-semibold text-foreground">{(item.output_name ?? item.name) || inputUrl}</span>
-        <span className="font-mono text-xs text-emerald-400 font-semibold">{formatTokens(item.target_tokens ?? 0)} tokens</span>
+        <span className="font-mono text-xs tabular-nums text-muted-foreground">{formatTokens(item.target_tokens ?? 0)} tokens</span>
       </div>
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex flex-wrap items-center gap-2">
         <ResultClipButton file={item} sessionId={sessionId} />
         {item.output_file_id ? (
           <>
-            <a href={downloadUrl(sessionId, item.output_file_id)} download className="inline-flex items-center gap-1.5 rounded-chip bg-emerald-500/20 px-3 py-1.5 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/30 transition-colors border border-emerald-500/30">
+            <a href={downloadUrl(sessionId, item.output_file_id)} download className="inline-flex items-center gap-1 rounded-chip border border-border bg-muted px-3 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary">
               <DownloadSimple size={14} /> Download
             </a>
             <MarkdownPreviewButton

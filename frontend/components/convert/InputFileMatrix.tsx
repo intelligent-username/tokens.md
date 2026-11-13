@@ -31,21 +31,37 @@ export function InputFileMatrix({ files, convertedMap, uploadMetaMap, unconverte
     if (!mergeMode || files.length === 0) return;
     const container = rowsContainerRef.current;
     if (!container) return;
-    const bars = rowBarRefs.current.map((el) => el?.getBoundingClientRect()).filter((r): r is DOMRect => Boolean(r));
-    if (bars.length === 0) return;
-    const containerRect = container.getBoundingClientRect();
-    setFunnelGeom({
-      x0: bars[0].left - containerRect.left,
-      x1: bars[0].right - containerRect.left,
-      y0s: bars.map((r) => r.top + r.height / 2 - containerRect.top),
-      midY: bars.reduce((a, r) => a + (r.top + r.height / 2), 0) / bars.length - containerRect.top,
-      height: containerRect.height,
+    const measure = () => {
+      const bars = rowBarRefs.current.slice(0, files.length).map((el) => el?.getBoundingClientRect()).filter((r): r is DOMRect => Boolean(r));
+      if (bars.length === 0) return;
+      const containerRect = container.getBoundingClientRect();
+      setFunnelGeom({
+        x0: bars[0].left - containerRect.left,
+        x1: bars[0].right - containerRect.left,
+        y0s: bars.map((r) => r.top + r.height / 2 - containerRect.top),
+        midY: bars.reduce((a, r) => a + (r.top + r.height / 2), 0) / bars.length - containerRect.top,
+        height: containerRect.height,
+      });
+    };
+    measure();
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    observer?.observe(container);
+    rowBarRefs.current.slice(0, files.length).forEach((bar) => {
+      if (bar) {
+        observer?.observe(bar);
+        if (bar.parentElement) observer?.observe(bar.parentElement);
+      }
     });
-  }, [mergeMode, files.length, mergeResult, running]);
+    window.addEventListener("resize", measure);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", measure);
+    };
+  }, [mergeMode, files, mergeResult, running]);
 
   return (
     <div ref={rowsContainerRef} className="relative flex flex-col gap-3">
-      <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-muted-foreground px-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-medium text-muted-foreground">
         <div className="flex items-center gap-3">
           {files.length > 0 && (
             <button

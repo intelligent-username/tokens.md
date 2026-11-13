@@ -160,7 +160,7 @@ export function DropZone({ label, sublabel, accept, multiple = true, allowFolder
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={cn(
-        "group relative flex min-h-[280px] sm:min-h-[340px] cursor-pointer flex-col items-center justify-center gap-4 rounded-card border-2 border-dashed border-border/80 glass p-10 sm:p-14 text-center transition-colors",
+        "group relative flex min-h-[280px] sm:min-h-[340px] cursor-pointer flex-col items-center justify-center gap-4 rounded-card border-2 border-dashed border-border/80 glass p-8 sm:p-12 text-center transition-colors",
         dragging ? "border-solid border-primary bg-accent" : "hover:border-primary",
         disabled && "cursor-not-allowed opacity-50"
       )}
@@ -172,7 +172,7 @@ export function DropZone({ label, sublabel, accept, multiple = true, allowFolder
       {busy ? (
         <Spinner size={28} weight="regular" className="animate-spin text-emerald-500" aria-hidden="true" />
       ) : (
-        <span className="text-primary" aria-hidden="true">
+        <span className="text-muted-foreground" aria-hidden="true">
           {allowFolders ? <FolderOpen size={32} weight="regular" /> : <CloudArrowUp size={32} weight="regular" />}
         </span>
       )}
@@ -184,8 +184,8 @@ export function DropZone({ label, sublabel, accept, multiple = true, allowFolder
       </div>
 
       {skipped.length > 0 ? (
-        <span className="inline-flex items-center gap-1.5 rounded-chip bg-destructive/10 px-2 py-1 text-xs text-destructive">
-          <WarningCircle size={14} weight="regular" aria-hidden="true" />
+        <span className="inline-flex items-center gap-1 rounded-chip bg-destructive/10 px-2 py-1 text-xs text-destructive">
+          <WarningCircle size={16} weight="regular" aria-hidden="true" />
           {copy.skippedUnsupported(skipped.length)}
         </span>
       ) : null}

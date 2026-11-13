@@ -13,33 +13,32 @@ interface ErrorStateProps {
 const containerStyle: CSSProperties = {
   display: "flex",
   flexDirection: "column",
-  gap: "10px",
-  padding: "18px 20px",
+  gap: "8px",
+  padding: "16px 20px",
   borderRadius: "var(--radius-card)",
   border: "1px solid color-mix(in srgb, var(--color-destructive) 45%, transparent)",
   background: "color-mix(in srgb, var(--color-destructive) 10%, transparent)",
-  color: "var(--color-destructive-foreground)",
+  color: "var(--color-foreground)",
 };
 
 const headerStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   gap: "8px",
-  fontWeight: 700,
+  fontWeight: 600,
 };
 
 const messageStyle: CSSProperties = {
   fontSize: "13px",
   lineHeight: "1.5",
-  opacity: 0.92,
+  overflowWrap: "anywhere",
 };
 
 const retryStyle: CSSProperties = {
   alignSelf: "flex-start",
-  padding: "6px 14px",
+  padding: "8px 12px",
   borderRadius: "var(--radius-control)",
   border: "1px solid color-mix(in srgb, var(--color-destructive) 50%, transparent)",
-  background: "transparent",
   color: "inherit",
   fontSize: "13px",
   fontWeight: 600,
@@ -58,7 +57,7 @@ export function ErrorState({ title, message, onRetry }: ErrorStateProps) {
       </div>
       <div style={messageStyle}>{message}</div>
       {onRetry ? (
-        <button type="button" onClick={onRetry} style={retryStyle}>
+        <button type="button" onClick={onRetry} style={retryStyle} className="bg-transparent transition-colors hover:bg-muted">
           {copy.retry}
         </button>
       ) : null}

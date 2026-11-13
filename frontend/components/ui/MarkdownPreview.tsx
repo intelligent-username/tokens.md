@@ -50,12 +50,13 @@ export function MarkdownPreview({ content, loading, error, className }: Markdown
         display: "flex",
         flexDirection: "column",
         height: "100%",
-        minHeight: "400px",
+        minHeight: 0,
+        minWidth: 0,
         padding: "24px",
         borderRadius: "12px",
-        border: "1px solid rgba(255, 255, 255, 0.12)",
-        backgroundColor: "#070C15",
-        color: "#E2E8F0",
+        border: "1px solid var(--color-border)",
+        backgroundColor: "var(--color-background)",
+        color: "var(--color-foreground)",
         overflow: "hidden",
       }}
     >

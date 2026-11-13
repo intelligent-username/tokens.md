@@ -16,20 +16,20 @@ export function ModeSelector({ activeMode, onChange }: ModeSelectorProps) {
         type="button"
         onClick={() => onChange("upload")}
         aria-pressed={activeMode === "upload"}
-        className={cn("relative z-10 flex flex-1 cursor-pointer select-none items-center justify-center gap-2 rounded-chip px-3 py-2 text-sm font-medium transition-colors", activeMode === "upload" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+        className={cn("relative z-10 flex flex-1 cursor-pointer select-none items-center justify-center gap-2 rounded-chip px-3 py-2 text-sm font-medium transition-colors", activeMode === "upload" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground")}
       >
         <span className="relative z-10 flex items-center gap-2">
-          <CloudArrowUp size={16} /> Upload
+          <CloudArrowUp size={16} className={activeMode === "upload" ? "text-primary" : undefined} /> Upload
         </span>
       </button>
       <button
         type="button"
         onClick={() => onChange("input")}
         aria-pressed={activeMode === "input"}
-        className={cn("relative z-10 flex flex-1 cursor-pointer select-none items-center justify-center gap-2 rounded-chip px-3 py-2 text-sm font-medium transition-colors", activeMode === "input" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}
+        className={cn("relative z-10 flex flex-1 cursor-pointer select-none items-center justify-center gap-2 rounded-chip px-3 py-2 text-sm font-medium transition-colors", activeMode === "input" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground")}
       >
         <span className="relative z-10 flex items-center gap-2">
-          <LinkIcon size={16} /> Input
+          <LinkIcon size={16} className={activeMode === "input" ? "text-primary" : undefined} /> Input
         </span>
       </button>
     </div>

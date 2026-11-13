@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
 import copy from "@/lib/copy";
 import { DropZone } from "@/components/ui/DropZone";
 import { MergeButton } from "@/components/ui/MergeButton";
@@ -85,17 +84,11 @@ export function ConvertWorkspace() {
 
       {/* Top Upload/Input Control Section */}
       <div className="flex flex-col gap-4">
-        <AnimatePresence mode="wait" initial={false}>
-          {activeMode === "upload" ? (
-            <motion.div key="upload" initial={{ opacity: 0, y: 10, scale: 0.99 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.99 }} transition={{ duration: 0.2, ease: "easeOut" }}>
-              <DropZone onFiles={onFiles} multiple allowFolders disabled={running} />
-            </motion.div>
-          ) : (
-            <motion.div key="input" initial={{ opacity: 0, y: 10, scale: 0.99 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -10, scale: 0.99 }} transition={{ duration: 0.2, ease: "easeOut" }}>
-              <UrlInputCard value={inputUrl} onChange={setInputUrl} onSubmit={run} />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {activeMode === "upload" ? (
+          <DropZone onFiles={onFiles} multiple allowFolders disabled={running} />
+        ) : (
+          <UrlInputCard value={inputUrl} onChange={setInputUrl} onSubmit={run} />
+        )}
 
         <MergeButton onClick={run} disabled={(activeMode === "upload" && files.length === 0) || (activeMode === "input" && !inputUrl.trim()) || running} label={getButtonLabel()} />
       </div>

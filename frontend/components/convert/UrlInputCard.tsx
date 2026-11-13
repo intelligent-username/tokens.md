@@ -1,8 +1,6 @@
 "use client";
 
-import { useState, useEffect, type ChangeEvent } from "react";
-
-const URL_EXAMPLES = ["https://example.com/article", "https://github.com/intelligent-username/tokens.md", "https://docs.python.org/3/"];
+import { type ChangeEvent } from "react";
 
 export interface UrlInputCardProps {
   value: string;
@@ -12,17 +10,6 @@ export interface UrlInputCardProps {
 
 /** Unified link input box for Web Page URLs and Git Repository links. */
 export function UrlInputCard({ value, onChange, onSubmit }: UrlInputCardProps) {
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setIndex((prev) => (prev + 1) % URL_EXAMPLES.length);
-    }, 3000);
-    return () => clearInterval(timer);
-  }, []);
-
-  const currentExample = URL_EXAMPLES[index];
-
   return (
     <form
       onSubmit={(e) => {
@@ -41,8 +28,8 @@ export function UrlInputCard({ value, onChange, onSubmit }: UrlInputCardProps) {
         type="text"
         value={value}
         onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
-        placeholder={currentExample}
-        className="w-full rounded-chip border border-border bg-input px-3.5 py-2 font-mono text-sm text-foreground focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all placeholder:transition-opacity placeholder:duration-500"
+        placeholder="https://example.com/article"
+        className="w-full rounded-chip border border-border bg-input px-3 py-2 font-mono text-sm text-foreground focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring transition-colors"
       />
     </form>
   );

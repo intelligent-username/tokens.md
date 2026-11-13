@@ -35,7 +35,7 @@ export function ResultClipButton({ file, sessionId }: { file: ConvertItemWithSes
   };
 
   return (
-    <button type="button" onClick={handleClip} className={cn("inline-flex items-center gap-1 rounded-chip px-2 py-1 text-xs font-semibold transition-colors", copied ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40" : "bg-muted text-muted-foreground hover:text-foreground")}>
+    <button type="button" onClick={handleClip} className={cn("inline-flex items-center gap-1 rounded-chip border border-border bg-muted px-2 py-1 text-xs font-medium transition-colors hover:bg-secondary", copied ? "text-primary" : "text-foreground")}>
       {copied ? <Check size={14} /> : <Copy size={14} />}
       {copied ? "Copied" : "Clip"}
     </button>
@@ -76,25 +76,25 @@ export function TotalCompressionPill({
         background: "var(--color-card)",
         width: "100%",
       }}
-      className="flex-wrap transition-all"
+      className="min-w-0 flex-wrap"
     >
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total Compression</span>
-        <div className="flex items-baseline gap-1.5 font-mono text-xs sm:text-sm">
+      <div className="flex min-w-0 flex-wrap items-center gap-3">
+        <span className="text-xs font-medium text-muted-foreground">Total Compression</span>
+        <div className="flex items-baseline gap-2 font-mono text-xs tabular-nums sm:text-sm">
           <span className="text-muted-foreground">{formatTokens(sourceTokens)}</span>
           <span className="text-muted-foreground/60">→</span>
-          <span className="font-bold text-emerald-400">{formatTokens(targetTokens)}</span>
+          <span className="font-medium text-foreground">{formatTokens(targetTokens)}</span>
         </div>
         {isMerge ? (
-          <span title="Merged output token count." className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 font-mono text-xs font-bold text-emerald-400 border border-emerald-500/30">
+          <span title="Merged output token count." className="font-mono text-xs tabular-nums text-foreground">
             output ≈ {formatTokens(targetTokens)} tokens
           </span>
         ) : (
-          <span className="rounded-full bg-emerald-500/20 px-2.5 py-0.5 font-mono text-xs font-bold text-emerald-400 border border-emerald-500/30">−{Math.abs(percent).toFixed(1)}% saved</span>
+          <span className="font-mono text-xs tabular-nums text-foreground">−{Math.abs(percent).toFixed(1)}% saved</span>
         )}
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         {!isMerge ? (
           <DownloadAllButton sessionId={sessionId} />
         ) : mergeOutputFileId ? (
@@ -104,13 +104,13 @@ export function TotalCompressionPill({
               href={downloadUrl(sessionId, mergeOutputFileId)}
               download
               aria-label="Download merged Markdown file"
-              className="inline-flex items-center gap-1.5 rounded-chip bg-emerald-500/20 px-2.5 py-1 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/30 transition-colors border border-emerald-500/30"
+              className="inline-flex items-center gap-1 rounded-chip border border-border bg-muted px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary"
             >
               <DownloadSimple size={14} /> Download
             </a>
           </>
         ) : null}
-        <button type="button" onClick={onCopyAll} className="inline-flex items-center gap-1.5 rounded-chip bg-emerald-500/20 px-2.5 py-1 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/30 transition-colors border border-emerald-500/30">
+        <button type="button" onClick={onCopyAll} className="inline-flex items-center gap-1 rounded-chip border border-border bg-muted px-2 py-1 text-xs font-medium text-foreground transition-colors hover:bg-secondary">
           <Copy size={14} /> Copy All
         </button>
       </div>

@@ -10,7 +10,7 @@ const containerStyle: CSSProperties = {
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  gap: "10px",
+  gap: "8px",
   minHeight: "80px",
   padding: "16px 24px",
   borderRadius: "var(--radius-card)",

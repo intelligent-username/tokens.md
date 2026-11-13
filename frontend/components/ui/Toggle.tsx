@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Info } from "@phosphor-icons/react";
-import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils/cn";
 
 interface ToggleProps {
@@ -27,7 +26,8 @@ export function Toggle({ checked, onChange, label, description, tooltip, disable
       role="switch"
       aria-checked={checked}
       aria-label={label}
-      aria-describedby={tooltip ? tooltipId : undefined}
+      aria-describedby={showHover && tooltip ? tooltipId : undefined}
+      aria-disabled={disabled || undefined}
       onMouseEnter={() => setShowHover(true)}
       onMouseLeave={() => setShowHover(false)}
       onFocus={() => setShowHover(true)}
@@ -41,38 +41,32 @@ export function Toggle({ checked, onChange, label, description, tooltip, disable
         }
       }}
       onClick={() => !disabled && onChange(!checked)}
-      className="relative flex items-center justify-between gap-3 p-2.5 rounded-control bg-secondary/30 hover:bg-secondary/60 border border-border/40 hover:border-border/80 focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:outline-none transition-all cursor-pointer select-none group w-full"
+      className="relative flex items-center justify-between gap-3 p-3 rounded-control bg-secondary/30 hover:bg-secondary/60 border border-border/40 hover:border-border/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none transition-colors cursor-pointer select-none group w-full"
     >
       <div className="flex flex-col min-w-0 flex-1">
-        <span className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+        <span className="flex items-center gap-1 text-xs font-medium text-foreground">
           <span className="truncate">{label}</span>
-          {tooltip ? <Info size={13} className="text-muted-foreground/60 group-hover:text-emerald-400 group-focus-visible:text-emerald-400 transition-colors shrink-0" /> : null}
+          {tooltip ? <Info size={16} className="text-muted-foreground transition-colors shrink-0" aria-hidden="true" /> : null}
         </span>
         {description ? <span className="text-[11px] text-muted-foreground leading-tight mt-0.5">{description}</span> : null}
       </div>
 
-      <div className={cn("relative flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-all border", checked ? "bg-emerald-500 border-emerald-400/60 shadow-[0_0_10px_rgba(22,222,129,0.35)]" : "bg-muted border-border/80", disabled && "opacity-50 cursor-not-allowed")}>
-        <span className={cn("h-3.5 w-3.5 rounded-full transition-transform transform shadow-sm", checked ? "translate-x-[16px] bg-primary-foreground font-bold" : "translate-x-0 bg-muted-foreground/80")} />
+      <div className={cn("relative flex h-5 w-9 shrink-0 items-center rounded-full p-0.5 transition-colors border", checked ? "bg-primary border-primary" : "bg-muted border-muted-foreground", disabled && "opacity-50 cursor-not-allowed")}>
+        <span className={cn("h-3.5 w-3.5 rounded-full transition-transform", checked ? "translate-x-[16px] bg-primary-foreground" : "translate-x-0 bg-muted-foreground")} />
       </div>
 
-      <AnimatePresence>
-        {showHover && tooltip ? (
-          <motion.div
-            id={tooltipId}
-            role="tooltip"
-            initial={{ opacity: 0, y: 4, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 4, scale: 0.96 }}
-            transition={{ duration: 0.15 }}
-            className="absolute bottom-full left-0 mb-2 z-50 w-72 rounded-card border border-border bg-card/95 p-3 text-xs text-card-foreground shadow-2xl backdrop-blur-md pointer-events-none"
-          >
-            <div className="font-bold text-emerald-600 dark:text-emerald-400 mb-1 flex items-center gap-1.5">
-              <Info size={14} /> {label}
-            </div>
-            <p className="text-[11px] leading-relaxed text-muted-foreground">{tooltip}</p>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+      {showHover && tooltip ? (
+        <div
+          id={tooltipId}
+          role="tooltip"
+          className="fixed bottom-4 left-4 right-4 z-50 rounded-control border border-border bg-card p-3 text-xs text-card-foreground shadow-md pointer-events-none sm:left-auto sm:w-72 sm:max-w-[calc(100vw-2rem)]"
+        >
+          <div className="font-medium text-foreground mb-1 flex items-center gap-1">
+            <Info size={16} aria-hidden="true" /> {label}
+          </div>
+          <p className="text-xs leading-relaxed text-muted-foreground">{tooltip}</p>
+        </div>
+      ) : null}
     </div>
   );
 }

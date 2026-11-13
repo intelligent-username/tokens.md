@@ -24,7 +24,7 @@ export function MarkdownPreviewButton({ output, fetcher, className }: MarkdownPr
         onClick={openPreview}
         aria-label={copy.preview}
         title={copy.preview}
-        className={cn("inline-flex items-center gap-1 rounded-chip bg-emerald-500/20 px-2 py-1 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/30 transition-colors border border-emerald-500/30", className)}
+        className={cn("inline-flex items-center gap-1 rounded-chip border border-border bg-muted px-2 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground", className)}
       >
         <Eye size={14} aria-hidden="true" />
       </button>

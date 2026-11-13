@@ -53,6 +53,7 @@
   --color-foreground: #1e293b;
   --color-card: #ffffff;
   --color-card-foreground: #1e293b;
+  --color-input: var(--color-card);
   --color-muted: #cbd5e1;
   --color-muted-foreground: #475569;
   --color-primary: #047857;
@@ -73,6 +74,7 @@
   --color-foreground: #e9f6ee;
   --color-card: #222a29;
   --color-card-foreground: #e9f6ee;
+  --color-input: var(--color-card);
   --color-muted: rgba(255, 255, 255, 0.04);
   --color-muted-foreground: #aabbb5;
   --color-primary: var(--color-emerald-500);

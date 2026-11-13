@@ -38,14 +38,14 @@ export function TopBar({ health, onRetry }: TopBarProps) {
       <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6">
         <a href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
           <img src="/logo.svg" alt="tokens.md logo" className="h-9 w-auto object-contain glyph-glow" />
-          <span className="font-display text-xl font-bold tracking-tight">
+          <span className="font-display text-xl font-semibold">
             <span className="text-foreground">tokens</span>
-            <span className="text-emerald-400">.md</span>
+            <span className="text-primary">.md</span>
           </span>
         </a>
 
         {/* Right Status Controls */}
-        <div className="flex items-center gap-3.5">
+        <div className="flex items-center gap-4">
           {isOffline ? (
             <div className="flex items-center gap-2 rounded-full border border-destructive/40 bg-destructive/10 px-3 py-1 text-xs font-semibold text-destructive">
               <span className="h-2 w-2 rounded-full bg-destructive" />

@@ -63,7 +63,7 @@ export function CodeBlock({ text, children }: { text: string; children: ReactNod
           alignItems: "center",
           justifyContent: "space-between",
           gap: "8px",
-          padding: "6px 10px",
+          padding: "8px 12px",
           borderBottom: "1px solid var(--color-border)",
         }}
       >
@@ -71,12 +71,10 @@ export function CodeBlock({ text, children }: { text: string; children: ReactNod
           style={{
             fontFamily: "var(--font-mono)",
             fontSize: "11px",
-            textTransform: "uppercase",
-            letterSpacing: "0.06em",
             color: "var(--color-muted-foreground)",
           }}
         >
-          code
+          Code
         </span>
         <button
           type="button"
@@ -85,8 +83,8 @@ export function CodeBlock({ text, children }: { text: string; children: ReactNod
           style={{
             display: "inline-flex",
             alignItems: "center",
-            gap: "5px",
-            padding: "3px 8px",
+            gap: "4px",
+            padding: "4px 8px",
             borderRadius: "var(--radius-chip)",
             border: "1px solid var(--color-border)",
             background: "transparent",

@@ -3,12 +3,12 @@ import { ArrowCounterClockwise, X } from "@phosphor-icons/react";
 import { formatTokens } from "@/lib/utils/format";
 import { cn } from "@/lib/utils/cn";
 
-/** Compact human-readable byte size (e.g. "1.2 MB"). */
+/** Compact decimal byte size: 1,000 KB = 1 MB (e.g. "1.2 MB"). */
 export function formatBytes(bytes: number): string {
   if (bytes <= 0) return "0 B";
   const units = ["B", "KB", "MB", "GB"];
-  const exp = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
-  const value = bytes / Math.pow(1024, exp);
+  const exp = Math.min(Math.floor(Math.log10(bytes) / 3), units.length - 1);
+  const value = bytes / Math.pow(1000, exp);
   return `${value >= 10 || exp === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[exp]}`;
 }
 

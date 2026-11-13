@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, type ChangeEvent } from "react";
-import { motion, AnimatePresence } from "motion/react";
+import { useId, useState, type ChangeEvent } from "react";
 import { CaretDown, CaretUp } from "@phosphor-icons/react";
 import { SettingLabel } from "./SettingLabel";
 import { Toggle } from "@/components/ui/Toggle";
@@ -54,20 +53,20 @@ export function OptionsPanel({
   setIncludeToc,
 }: OptionsPanelProps) {
   const [showSettings, setShowSettings] = useState(false);
+  const panelId = useId();
 
   return (
     <div className="rounded-card border border-border/60 bg-card/40 p-4">
-      <button type="button" onClick={() => setShowSettings(!showSettings)} className="flex w-full items-center justify-between text-sm font-bold text-foreground hover:text-emerald-400 transition-colors">
+      <button type="button" onClick={() => setShowSettings(!showSettings)} aria-expanded={showSettings} aria-controls={panelId} className="flex w-full items-center justify-between text-sm font-medium text-foreground hover:text-primary transition-colors">
         <span>Settings</span>
         {showSettings ? <CaretUp size={18} /> : <CaretDown size={18} />}
       </button>
 
-      <AnimatePresence initial={false}>
+      <div id={panelId} hidden={!showSettings}>
         {showSettings ? (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.25, ease: "easeInOut" }} className="overflow-visible">
-            <div className="mt-5 flex flex-col gap-4 border-t border-border/40 pt-6">
+            <div className="mt-4 flex flex-col gap-4 border-t border-border/40 pt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-2">
                   <SettingLabel htmlFor="extensions-input" label="Extensions (comma-separated)" tooltip="Filter input files by extension (e.g. pdf, docx, py). Only matching files will be converted." />
                   <input
                     id="extensions-input"
@@ -75,19 +74,19 @@ export function OptionsPanel({
                     value={extensions}
                     onChange={(e: ChangeEvent<HTMLInputElement>) => setExtensions(e.target.value)}
                     placeholder="pdf, docx, md, py"
-                    className="rounded-chip border border-border bg-input px-3 py-2 text-xs text-foreground focus:border-emerald-500 focus:outline-none"
+                    className="rounded-chip border border-border bg-input px-3 py-2 text-xs text-foreground focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
 
-                <div className="flex flex-col gap-1.5">
-                  <SettingLabel htmlFor="pages-input" label="Pages Selection" tooltip="Convert specific page ranges for PDFs and documents (e.g. '1-5, 8, 10-12'). Leave blank to convert all pages." />
+                <div className="flex flex-col gap-2">
+                  <SettingLabel htmlFor="pages-input" label="Pages selection" tooltip="Convert specific page ranges for PDFs and documents (e.g. '1-5, 8, 10-12'). Leave blank to convert all pages." />
                   <input
                     id="pages-input"
                     type="text"
                     value={pages}
                     onChange={(e: ChangeEvent<HTMLInputElement>) => setPages(e.target.value)}
                     placeholder="0,2,4 or 1-10"
-                    className="rounded-chip border border-border bg-input px-3 py-2 text-xs text-foreground focus:border-emerald-500 focus:outline-none"
+                    className="rounded-chip border border-border bg-input px-3 py-2 text-xs text-foreground focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
               </div>
@@ -103,7 +102,7 @@ export function OptionsPanel({
                 />
               ) : null}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 w-full rounded-card bg-card/60 p-4 border border-border/60">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full rounded-card bg-card/60 p-4 border border-border/60">
                 {[
                   {
                     id: "budget",
@@ -142,7 +141,7 @@ export function OptionsPanel({
                     subToggle: mergeEnabled
                       ? {
                           id: "toc",
-                          label: "Include Table of Contents",
+                          label: "Include table of contents",
                           checked: includeToc,
                           onChange: setIncludeToc,
                           tooltip: "Generate an automated Table of Contents with jump links at the top of the merged document.",
@@ -161,9 +160,8 @@ export function OptionsPanel({
                 ))}
               </div>
             </div>
-          </motion.div>
         ) : null}
-      </AnimatePresence>
+      </div>
     </div>
   );
 }
