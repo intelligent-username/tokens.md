@@ -7,7 +7,6 @@ import json
 import subprocess
 import sys
 from collections import Counter
-from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import quote
 
@@ -64,32 +63,42 @@ def main() -> int:
     parser.add_argument(
         "--state", choices=("open", "dismissed", "fixed", "all"), default="open"
     )
+    parser.add_argument(
+        "--overwrite", action="store_true", help="Replace existing alert report files."
+    )
     args = parser.parse_args()
     repo = args.repo or "{owner}/{repo}"
     endpoint = f"repos/{repo}/code-scanning/alerts?per_page=100&tool_name=CodeQL"
     if args.state != "all":
         endpoint += f"&state={args.state}"
     try:
+        print("Fetching CodeQL alerts...", flush=True)
         pages = github_api(endpoint, paginate=True)
         alerts = [alert for page in pages for alert in page]
+        output = Path(__file__).resolve().parent.parent / "output" / "sec"
+        existing = [output / f"{alert['number']}.json" for alert in alerts if (output / f"{alert['number']}.json").exists()]
+        if existing and not args.overwrite:
+            print(f"Reports already exist in {output}; use --overwrite to replace them.", file=sys.stderr)
+            return 1
         details = []
         source_cache = {}
-        for alert in alerts:
+        print(f"Found {len(alerts)} alerts; fetching details, instances, and source snippets...", flush=True)
+        for index, alert in enumerate(alerts, 1):
             number = alert["number"]
-            detail = github_api(f"repos/{repo}/code-scanning/alerts/{number}")
-            rule = detail["rule"]
+            base = f"repos/{repo}/code-scanning/alerts/{number}"
+            detail = github_api(base)
+            instance_pages = github_api(f"{base}/instances?per_page=100", paginate=True)
             instance = detail.get("most_recent_instance") or {}
             details.append(
                 {
-                    "number": number,
-                    "title": rule.get("description"),
-                    "description": {
-                        "rule": rule.get("full_description"),
-                        "finding": (instance.get("message") or {}).get("text"),
-                    },
+                    "alert": detail,
+                    "instances": [item for page in instance_pages for item in page],
                     "code_snippet": code_snippet(repo, instance, source_cache),
                 }
             )
+            print(f"\rProcessed {index}/{len(alerts)} alerts", end="", flush=True)
+        if alerts:
+            print()
     except FileNotFoundError:
         print("GitHub CLI (gh) was not found. Install and authenticate it first.", file=sys.stderr)
         return 1
@@ -97,17 +106,13 @@ def main() -> int:
         print(f"Could not fetch CodeQL alerts: {exc.stderr.strip()}", file=sys.stderr)
         return 1
 
-    output = Path(__file__).resolve().parent.parent / "output"
-    output.mkdir(exist_ok=True)
-    ignore = output / ".gitignore"
-    if not ignore.exists():
-        ignore.write_text("*\n", encoding="utf-8")
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
-    report = output / f"codeql-alerts-{timestamp}.json"
-    with report.open("x", encoding="utf-8") as file:
-        json.dump(details, file, indent=2, ensure_ascii=False)
-        file.write("\n")
-    print(f"Condensed alert report: {report}")
+    output.mkdir(parents=True, exist_ok=True)
+    for detail in details:
+        report = output / f"{detail['alert']['number']}.json"
+        with report.open("w" if args.overwrite else "x", encoding="utf-8") as file:
+            json.dump(detail, file, indent=2, ensure_ascii=False)
+            file.write("\n")
+    print(f"Alert reports: {output}")
     print(f"CodeQL alerts ({args.state}): {len(alerts)}")
     groups = (
         ("Security severity", Counter((a["rule"].get("security_severity_level") or "not specified") for a in alerts)),
