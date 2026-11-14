@@ -85,15 +85,15 @@ export function InputFileMatrix({ files, convertedMap, uploadMetaMap, unconverte
         const key = getFileKey(file);
         const resultItem = convertedMap[key];
         const meta = uploadMetaMap[key];
-        const isConverting = running && !resultItem && (unconvertedFiles.includes(file) || mergeMode);
-        const isDone = Boolean(resultItem || mergeResult);
+        const isConverting = running && (mergeMode || unconvertedFiles.length === 0 || unconvertedFiles.includes(file));
+        const isDone = !isConverting && Boolean(resultItem || mergeResult);
 
         return (
           <FileMatrixRow
             key={key}
             file={file}
             fileKey={key}
-            resultItem={resultItem}
+            resultItem={isConverting ? undefined : resultItem}
             meta={meta}
             isConverting={isConverting}
             isDone={isDone}

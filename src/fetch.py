@@ -120,7 +120,7 @@ def _slugify(text: str) -> str:
 
 def _extract_meta_markdown(html: str) -> str:
     """Extract title and meta description for minimal SPA HTML shells."""
-    title_match = re.search(r"<title[^>]*>([^<]*)</title>", html, re.IGNORECASE)
+    title_match = re.search(r"<title[^<>]*>([^<]*)</title>", html, re.IGNORECASE)
     desc_match: re.Match[str] | None = None
     # Evaluate attributes per <meta> tag to keep matching linear (ReDoS-safe).
     for meta_tag in re.finditer(r"<meta\b[^>]*>", html, re.IGNORECASE):

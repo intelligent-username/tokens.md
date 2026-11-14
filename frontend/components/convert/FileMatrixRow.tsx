@@ -24,40 +24,57 @@ export interface FileMatrixRowProps {
   barRef?: Ref<HTMLDivElement>;
 }
 
+function FileName({ name, className }: { name: string; className?: string }) {
+  const dot = name.lastIndexOf(".");
+  const hasExtension = dot > 0 && dot < name.length - 1;
+
+  return (
+    <span title={name} className={cn("flex min-w-0 items-baseline font-mono text-xs font-semibold text-foreground sm:text-sm", className)}>
+      <span className="sr-only">{name}</span>
+      <span aria-hidden="true" className="truncate">{hasExtension ? name.slice(0, dot) : name}</span>
+      {hasExtension ? <span aria-hidden="true" className="shrink-0">{name.slice(dot)}</span> : null}
+    </span>
+  );
+}
+
 export function FileMatrixRow({ file, fileKey, resultItem, meta, isConverting, isDone, mergeMode, sessionId, onRemoveFile, barRef }: FileMatrixRowProps) {
   return (
-    <div key={fileKey} className={cn("relative grid min-w-0 items-center gap-4 rounded-card border border-border/60 bg-card/60 p-4", mergeMode ? "grid-cols-[minmax(0,1fr)_64px] sm:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]" : "grid-cols-1 md:grid-cols-[minmax(0,1.4fr)_minmax(0,3fr)_minmax(0,1.4fr)]")}>
+    <div key={fileKey} className={cn("relative grid min-w-0 items-center gap-4 rounded-card border border-border/60 bg-card/60 p-4", mergeMode ? "grid-cols-[minmax(0,1fr)_64px] sm:grid-cols-[minmax(0,1fr)_minmax(0,3fr)]" : "grid-cols-1 md:grid-cols-3")}>
       {/* Left Card: Input File with clean accessible remove button */}
-      <div className="grid min-w-0 grid-cols-[24px_minmax(0,1fr)] items-center gap-x-2 gap-y-2 self-start">
-        <span title={file.name} className="col-start-2 truncate font-mono text-xs sm:text-sm font-semibold text-foreground">{file.name}</span>
+      <div className={cn("grid min-w-0 grid-cols-[24px_minmax(0,1fr)] grid-rows-[20px_28px_16px] items-center gap-x-2 gap-y-2 self-start", !mergeMode && "md:col-start-1 md:row-start-1")}>
+        <FileName name={file.name} className="col-start-2 row-start-1" />
         <button
           type="button"
           onClick={onRemoveFile}
           aria-label={`Remove ${file.name}`}
-          className="row-start-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted/60 text-muted-foreground hover:bg-destructive/15 hover:text-destructive transition-colors"
+          className="row-start-2 -ml-2 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted/60 text-muted-foreground hover:bg-destructive/15 hover:text-destructive transition-colors"
         >
           <X size={12} weight="bold" />
         </button>
         <div className="col-start-2 row-start-2 flex min-w-0 items-center gap-2">
           <span className={cn("h-2 w-2 shrink-0 rounded-full", isDone ? "bg-primary" : isConverting ? "bg-primary/60" : "bg-muted-foreground/60")} aria-hidden="true" />
           <span className="sr-only">{isDone ? "Converted" : isConverting ? "Converting" : "Awaiting convert"}</span>
-          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 font-mono text-[11px] tabular-nums text-muted-foreground">
-            <span className="whitespace-nowrap">{formatBytes(file.size)}</span>
-            {meta?.source_tokens ? <span className="whitespace-nowrap">{formatTokens(meta.source_tokens)} tokens</span> : null}
-          </div>
+          {mergeMode && isConverting ? <span className="text-xs text-muted-foreground">Converting…</span> : null}
         </div>
-        {mergeMode && isConverting ? <span className="col-start-2 text-xs text-muted-foreground">Converting…</span> : null}
+        <div className="col-start-2 row-start-3 flex items-baseline gap-2 whitespace-nowrap font-mono text-[11px] tabular-nums text-muted-foreground">
+          <span>{formatBytes(file.size)}</span>
+          {meta?.source_tokens ? <span>{formatTokens(meta.source_tokens)} tokens</span> : null}
+        </div>
       </div>
 
-      {mergeMode ? <div ref={barRef} className="h-4 w-full" /> : <FileFlowStream converting={isConverting} done={isDone} percent={resultItem?.percent} barRef={barRef} />}
+      {mergeMode ? <div ref={barRef} className="h-4 w-full" /> : (
+        <div className="flex h-7 items-center md:col-span-3 md:col-start-1 md:row-start-1 md:ml-12 md:mr-30">
+          <FileFlowStream converting={isConverting} done={isDone} percent={resultItem?.percent} barRef={barRef} />
+        </div>
+      )}
 
       {/* Right Card: Output Converted Result */}
       {!mergeMode ? (
-        <div className="flex min-h-[52px] min-w-0 flex-col items-start gap-2 self-start">
+        <div className="grid min-w-0 grid-rows-[20px_28px_16px] items-center gap-y-2 self-start md:col-start-3 md:row-start-1">
           {resultItem ? (
             <>
-              <span title={resultItem.output_name ?? resultItem.name} className="w-full truncate font-mono text-xs sm:text-sm font-semibold text-foreground">{resultItem.output_name ?? resultItem.name}</span>
-              <div className="flex flex-wrap items-center gap-2">
+              <FileName name={resultItem.output_name ?? resultItem.name} className="row-start-1 w-full justify-end" />
+              <div className="row-start-2 flex w-full items-center justify-end gap-2">
                 <ResultClipButton file={resultItem} sessionId={resultItem.session_id || sessionId || ""} />
                 {resultItem.output_file_id ? (
                   <>
@@ -79,7 +96,7 @@ export function FileMatrixRow({ file, fileKey, resultItem, meta, isConverting, i
                   </>
                 ) : null}
               </div>
-              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 font-mono text-[11px] tabular-nums text-muted-foreground">
+              <div className="row-start-3 flex items-baseline justify-end gap-2 whitespace-nowrap font-mono text-[11px] tabular-nums text-muted-foreground">
                 {resultItem.output_size ? <span className="whitespace-nowrap">{formatBytes(resultItem.output_size)}</span> : null}
                 <span className="whitespace-nowrap">{formatTokens(resultItem.target_tokens)} tokens</span>
               </div>

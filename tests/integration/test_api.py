@@ -7,6 +7,7 @@ import zipfile
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
 from fastapi.testclient import TestClient
 
 from backend.config import Settings
@@ -270,6 +271,21 @@ def test_local_path_outside_root(tmd_workspace: Path, tmp_path: Path, _shared_fa
     outside.write_text('{"x": 1}', encoding="utf-8")
     client = _client_with(_shared_fastapi_app, allow_local_paths=True, local_paths_root=tmp_path)
     resp = client.post("/api/convert", json={"session_id": "s", "path": str(outside)})
+    assert resp.status_code == 403
+    assert resp.json()["code"] == "local_paths_disallowed"
+
+
+def test_local_directory_rejects_symlink_outside_root(tmd_workspace: Path, tmp_path: Path, _shared_fastapi_app) -> None:
+    root = tmp_path / "allowed"
+    root.mkdir()
+    outside = tmp_path / "outside.json"
+    outside.write_text('{"private": true}', encoding="utf-8")
+    try:
+        (root / "linked.json").symlink_to(outside)
+    except (OSError, NotImplementedError):
+        pytest.skip("Creating symbolic links is unavailable")
+    client = _client_with(_shared_fastapi_app, allow_local_paths=True, local_paths_root=root)
+    resp = client.post("/api/convert", json={"session_id": "s", "path": str(root)})
     assert resp.status_code == 403
     assert resp.json()["code"] == "local_paths_disallowed"
 

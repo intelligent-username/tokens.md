@@ -176,4 +176,9 @@ def test_extract_meta_markdown_hostile_input_is_fast() -> None:
     start = time.perf_counter()
     assert _extract_meta_markdown("<meta" * 10000) == ""
     assert _extract_meta_markdown("<title>" + "a" * 100000) == ""
+    assert _extract_meta_markdown("<title" * 100000) == ""
     assert time.perf_counter() - start < 5.0
+
+
+def test_extract_meta_markdown_title_after_malformed_title() -> None:
+    assert _extract_meta_markdown("<title<title>Valid</title>") == "## Valid"

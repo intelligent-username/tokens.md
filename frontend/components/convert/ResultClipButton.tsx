@@ -35,9 +35,8 @@ export function ResultClipButton({ file, sessionId }: { file: ConvertItemWithSes
   };
 
   return (
-    <button type="button" onClick={handleClip} className={cn("inline-flex items-center gap-1 rounded-chip border border-border bg-muted px-2 py-1 text-xs font-medium transition-colors hover:bg-secondary", copied ? "text-primary" : "text-foreground")}>
-      {copied ? <Check size={14} /> : <Copy size={14} />}
-      {copied ? "Copied" : "Clip"}
+    <button type="button" onClick={handleClip} aria-label={copied ? "Copied" : "Copy Markdown"} title={copied ? "Copied" : "Copy Markdown"} className={cn("inline-flex items-center gap-1 rounded-chip border border-border bg-muted px-2 py-1 text-xs font-medium transition-colors hover:bg-secondary", copied ? "text-primary" : "text-foreground")}>
+      {copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />}
     </button>
   );
 }
