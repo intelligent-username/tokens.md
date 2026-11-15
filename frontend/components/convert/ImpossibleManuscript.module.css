@@ -1,0 +1,228 @@
+.manuscript {
+  width: 100%;
+  max-width: 640px;
+  min-width: 0;
+  margin: 0 auto;
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  pointer-events: none;
+}
+
+/* Only this outer viewport clips. The camera, assembly and plane wrappers
+   must retain their 3D context: no opacity, filter, mask or hidden overflow. */
+.viewport {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 8 / 5;
+  overflow: hidden;
+  container-type: inline-size;
+}
+
+.templates {
+  position: absolute;
+}
+
+.scene {
+  --explosion: 1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 640px;
+  height: 400px;
+  perspective: var(--perspective);
+  perspective-origin: 50% 50%;
+  transform: scale(calc(100cqw / 640px));
+  transform-origin: 0 0;
+}
+
+.assembly {
+  position: absolute;
+  top: calc(50% - var(--sheet-height) / 2);
+  left: calc(50% - var(--sheet-width) / 2);
+  width: var(--sheet-width);
+  height: var(--sheet-height);
+  transform-style: preserve-3d;
+}
+
+.plane {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform-origin: 50% 50%;
+  transform: translate3d(var(--x), var(--y), var(--z)) rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+  transition: transform 480ms cubic-bezier(0.22, 0.68, 0, 1);
+}
+
+.manuscript[data-pose="exploded"] .plane {
+  transform:
+    translate3d(
+      calc(var(--x) + var(--open-x) * var(--explosion)),
+      calc(var(--y) + var(--open-y) * var(--explosion)),
+      calc(var(--z) + var(--open-z) * var(--explosion))
+    )
+    rotateX(calc(var(--tilt-x) * var(--explosion)))
+    rotateY(calc(var(--tilt-y) * var(--explosion)))
+    rotateZ(calc(var(--tilt-z) * var(--explosion)));
+}
+
+.backing {
+  position: absolute;
+  inset: calc(-1 * var(--edge-outset));
+  background: var(--color-primary);
+  transform: translate3d(var(--edge-offset), var(--edge-offset), var(--edge-depth));
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--color-foreground) var(--paper-tone), var(--color-card));
+  color: color-mix(in srgb, var(--color-foreground) 64%, var(--color-card));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-foreground) 30%, var(--color-card));
+}
+
+/* All six marks belong to the clipped face, including any ink crossing a
+   cutout. No surface, pseudo-element or text spans the transparent holes. */
+.face > span {
+  position: absolute;
+  display: block;
+  font-family: var(--font-mono);
+  font-weight: 400;
+  line-height: 1;
+}
+
+.headingMark {
+  top: 16px;
+  left: 24px;
+  font-size: 28px;
+}
+
+.headingRules {
+  top: 20px;
+  left: 64px;
+  width: 136px;
+  height: 20px;
+  border-top: 4px solid currentColor;
+  border-bottom: 1px solid currentColor;
+}
+
+.headingRules::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 0;
+  width: 72%;
+  border-top: 1px solid currentColor;
+}
+
+.tableMark {
+  top: 24px;
+  right: 28px;
+  width: 84px;
+  height: 40px;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  background-image:
+    repeating-linear-gradient(to right, currentColor 0 1px, transparent 1px 28px),
+    repeating-linear-gradient(to bottom, currentColor 0 1px, transparent 1px 13px);
+}
+
+.codeMark {
+  bottom: 24px;
+  left: 24px;
+  font-size: 28px;
+}
+
+.bodyRules {
+  bottom: 28px;
+  left: 112px;
+  width: 144px;
+  height: 24px;
+  border-top: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+}
+
+.bodyRules::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: 0;
+  width: 80%;
+  border-top: 1px solid currentColor;
+}
+
+.punctuationMark {
+  right: 28px;
+  bottom: 20px;
+  font-size: 32px;
+}
+
+.plane:nth-child(even) .headingRules {
+  width: 108px;
+}
+
+.plane:nth-child(even) .bodyRules {
+  width: 168px;
+}
+
+.caption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px 4px;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.captionTitle {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+
+.captionDetail {
+  color: var(--color-muted-foreground);
+  font-size: 12px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+}
+
+.sourceLabels {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  column-gap: 12px;
+  row-gap: 4px;
+  max-width: 100%;
+  margin-top: 4px;
+  color: var(--color-muted-foreground);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Scale the whole 640 × 400 camera, never its perspective or aperture math.
+   The narrow pose keeps a compact relief instead of spreading offscreen. */
+@container (max-width: 400px) {
+  .scene {
+    --explosion: 0.45;
+  }
+}
+
+@media (max-width: 480px) {
+  .caption {
+    padding-inline: 0;
+  }
+
+  .sourceLabels {
+    column-gap: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plane {
+    transition: none;
+  }
+}
