@@ -22,6 +22,68 @@ const EDGE_OFFSET = 0.75;
 const EDGE_DEPTH = 1;
 const APERTURE_CLEARANCE = 1.25;
 
+// Source-type hues, tinted into the stock rather than painted on it so the
+// cut letterforms keep their contrast in both themes.
+const SOURCE_HUES: Record<string, string> = {
+  pdf: "#e05252",
+  docx: "#4f6eda", doc: "#4f6eda", rtf: "#4f6eda", odt: "#4f6eda",
+  pptx: "#e08a3c", ppt: "#e08a3c", odp: "#e08a3c",
+  md: "#3aa0d8", markdown: "#3aa0d8", mdx: "#3aa0d8",
+  xlsx: "#3f9e6b", xls: "#3f9e6b", ods: "#3f9e6b", csv: "#3f9e6b",
+  epub: "#8b6bd0", azw3: "#8b6bd0", azw4: "#8b6bd0",
+  html: "#c9952f", htm: "#c9952f", xml: "#c9952f",
+  msg: "#2f9e9e", eml: "#2f9e9e", srt: "#2f9e9e", vtt: "#2f9e9e",
+  json: "#a68a2a", yaml: "#a68a2a", yml: "#a68a2a", py: "#a68a2a",
+  js: "#a68a2a", ts: "#a68a2a", jsx: "#a68a2a", tsx: "#a68a2a",
+  tex: "#a68a2a", ipynb: "#a68a2a",
+  zip: "#a5703f", tar: "#a5703f", gz: "#a5703f", tgz: "#a5703f", bz2: "#a5703f",
+  txt: "#8a93a6",
+};
+
+export function sourceHue(extension: string): string | undefined {
+  return SOURCE_HUES[extension.trim().toLowerCase().replace(/^\./, "")];
+}
+
+/**
+ * Front-to-back hues for the seven sheets. The first upload owns the front
+ * sheet, so few files tint only the nearest ones. Above seven the hues are
+ * apportioned by count (minimum one sheet each) while keeping upload order.
+ */
+export function manuscriptHues(extensions: readonly string[]): (string | undefined)[] {
+  if (extensions.length === 0) return [];
+  if (extensions.length <= PLANE_COUNT) return extensions.map(sourceHue);
+
+  const order: string[] = [];
+  const counts = new Map<string, number>();
+  for (const extension of extensions) {
+    const key = extension.trim().toLowerCase();
+    if (!counts.has(key)) order.push(key);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  // More distinct types than sheets: keep the most common, still in first-seen
+  // order, so every remaining type is represented at least once.
+  let groups = order.map((key) => ({ key, count: counts.get(key) ?? 0 }));
+  if (groups.length > PLANE_COUNT) {
+    const keep = new Set([...groups].sort((a, b) => b.count - a.count).slice(0, PLANE_COUNT).map((group) => group.key));
+    groups = groups.filter((group) => keep.has(group.key));
+  }
+
+  const total = groups.reduce((sum, group) => sum + group.count, 0);
+  const slots = groups.map(() => 1);
+  for (let free = PLANE_COUNT - groups.length; free > 0; free -= 1) {
+    let best = 0;
+    for (let index = 1; index < groups.length; index += 1) {
+      const score = (groups[index].count / total) * PLANE_COUNT - slots[index];
+      const bestScore = (groups[best].count / total) * PLANE_COUNT - slots[best];
+      if (score > bestScore) best = index;
+    }
+    slots[best] += 1;
+  }
+
+  return groups.flatMap((group, index) => Array.from({ length: slots[index] }, () => sourceHue(group.key)));
+}
+
+
 type Point = readonly [number, number];
 type Contour = readonly Point[];
 type GeometryStyle = CSSProperties & { [key: `--${string}`]: string | number };
@@ -165,6 +227,8 @@ export function ImpossibleManuscript({
   const sources = `${sourceCount} ${urlsOnly ? (sourceCount === 1 ? "URL" : "URLs") : (sourceCount === 1 ? "source" : "sources")}`;
   const exploded = phase === "converting" || phase === "error" || phase === "selected"
     || (engaged && !interaction.completedWhileEngaged);
+  // Front sheet first: the initial upload stays the most prominent.
+  const hues = manuscriptHues(sourceCount > 0 ? sourceExtensions : []);
 
   return (
     <figure
@@ -191,37 +255,42 @@ export function ImpossibleManuscript({
         </svg>
         <div className={styles.scene}>
           <div className={styles.assembly}>
-            {PLANES.map((plane) => (
-              <div
-                key={plane.index}
-                className={styles.plane}
-                style={plane.style}
-                data-manuscript-plane={plane.index}
-              >
+            {PLANES.map((plane) => {
+              // Plane 0 is the deepest sheet; the last plane faces the viewer.
+              const hue = hues[PLANE_COUNT - 1 - plane.index];
+              return (
                 <div
-                  className={styles.backing}
-                  style={{ clipPath: `url("#${id}-backing-${plane.index}")` }}
-                  data-manuscript-backing=""
-                />
-                <div
-                  className={styles.face}
-                  style={{ clipPath: `url("#${id}-face-${plane.index}")` }}
-                  data-manuscript-face=""
+                  key={plane.index}
+                  className={styles.plane}
+                  style={hue ? { ...plane.style, "--paper-hue": hue } : plane.style}
+                  data-manuscript-plane={plane.index}
+                  data-source-hue={hue}
                 >
-                  <span className={styles.headingMark} data-manuscript-mark="">#</span>
-                  <span className={styles.headingRules} data-manuscript-mark="" />
-                  <span className={styles.tableMark} data-manuscript-mark="" />
-                  <span className={styles.codeMark} data-manuscript-mark="">{"{ }"}</span>
-                  <span className={styles.bodyRules} data-manuscript-mark="" />
-                  <span className={styles.punctuationMark} data-manuscript-mark="">[]</span>
+                  <div
+                    className={styles.backing}
+                    style={{ clipPath: `url("#${id}-backing-${plane.index}")` }}
+                    data-manuscript-backing=""
+                  />
+                  <div
+                    className={styles.face}
+                    style={{ clipPath: `url("#${id}-face-${plane.index}")` }}
+                    data-manuscript-face=""
+                  >
+                    <span className={styles.headingMark} data-manuscript-mark="">#</span>
+                    <span className={styles.headingRules} data-manuscript-mark="" />
+                    <span className={styles.tableMark} data-manuscript-mark="" />
+                    <span className={styles.codeMark} data-manuscript-mark="">{"{ }"}</span>
+                    <span className={styles.bodyRules} data-manuscript-mark="" />
+                    <span className={styles.punctuationMark} data-manuscript-mark="">[]</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
       <figcaption className={styles.caption}>
-        <span className={styles.captionTitle}>{caption(phase, sources, outputCount)}</span>
+        <span className={phase === "idle" ? "sr-only" : styles.captionTitle}>{caption(phase, sources, outputCount)}</span>
         {phase !== "idle" ? (
           <span className={styles.captionDetail}>
             {phase === "complete" || phase === "error" ? `${sources} selected. ` : ""}

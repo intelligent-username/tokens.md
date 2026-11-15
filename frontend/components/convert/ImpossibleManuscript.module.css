@@ -68,17 +68,19 @@
 .backing {
   position: absolute;
   inset: calc(-1 * var(--edge-outset));
-  background: var(--color-primary);
+  background: var(--paper-hue, var(--color-primary));
   transform: translate3d(var(--edge-offset), var(--edge-offset), var(--edge-depth));
+  transition: background-color 240ms ease;
 }
 
 .face {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  background: color-mix(in srgb, var(--color-foreground) var(--paper-tone), var(--color-card));
+  background: color-mix(in srgb, var(--paper-hue, var(--color-foreground)) var(--paper-tone), var(--color-card));
   color: color-mix(in srgb, var(--color-foreground) 64%, var(--color-card));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-foreground) 30%, var(--color-card));
+  transition: background-color 240ms ease;
 }
 
 /* All six marks belong to the clipped face, including any ink crossing a

@@ -250,6 +250,7 @@
 }
 
 .outlineList {
+  list-style: decimal;
   max-height: 38rem;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -397,9 +398,24 @@
 .readingDocument ul { list-style: disc; }
 .readingDocument ol { list-style: decimal; }
 
-.readingDocument img {
+.imagePolicy {
+  margin: 0 0 16px;
+  color: var(--color-muted-foreground);
+  font-size: 13px;
+}
+
+.imagePlaceholder {
+  display: inline-block;
   max-width: 100%;
-  height: auto;
+  padding: 4px 8px;
+  border: 1px dashed var(--color-muted-foreground);
+  border-radius: var(--radius-chip);
+  overflow-wrap: anywhere;
+}
+
+.imageNotice {
+  color: var(--color-muted-foreground);
+  font-size: 0.875em;
 }
 
 .readingDocument pre {

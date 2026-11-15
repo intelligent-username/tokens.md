@@ -74,6 +74,18 @@ export function createPassageComponents(prefix: string): Components {
   const SharedTable = markdownComponents.table;
   return {
     ...markdownComponents,
+    // Reading mounts while hidden. Never forward an image URL to the DOM,
+    // including same-origin/localhost URLs; descriptions remain readable.
+    img: ({ alt }) => (
+      <span
+        className={styles.imagePlaceholder}
+        data-markdown-image="blocked"
+        role="img"
+        aria-label={alt ? `${alt} (image not loaded)` : "Image not loaded"}
+      >
+        {alt || "Image"} <span className={styles.imageNotice}>(image not loaded)</span>
+      </span>
+    ),
     h1: heading("h1"),
     h2: heading("h2"),
     h3: heading("h3"),
@@ -89,7 +101,7 @@ export function createPassageComponents(prefix: string): Components {
     ),
     table: ({ node, ...props }) => (
       <div {...passageAttributes(prefix, "table", node)}>
-        {SharedTable ? <SharedTable {...props} node={node} /> : <table {...props} />}
+        {typeof SharedTable === "function" ? <SharedTable {...props} node={node} /> : <table {...props} />}
       </div>
     ),
   };
@@ -299,6 +311,7 @@ function LoadedDocument({ content }: { content: string }) {
           <button type="button" className={styles.control} onClick={showStructure}>Outline</button>
           <span>Full document</span>
         </div>
+        <p className={styles.imagePolicy}>Images are not loaded automatically. Their alternative text is preserved.</p>
         <ReadingDocument content={content} prefix={prefix} rootRef={readingRef} />
       </div>
     </>
@@ -333,11 +346,11 @@ function OutputDocument({ output, fetcher }: { output: PreviewableOutput; fetche
   }, [fetcher, output.sessionId, output.fileId, retryVersion]);
 
   if (state.status === "loading") {
-    return <div className={styles.message} role="region" aria-label="Loading Markdown output" aria-busy="true">Loading Markdown…</div>;
+    return <div className={styles.message} role="region" aria-label="Loading Markdown output" aria-busy="true" aria-live="polite" aria-atomic="true">Loading Markdown…</div>;
   }
   if (state.status === "error") {
     return (
-      <div className={styles.message} role="region" aria-label="Markdown loading error">
+      <div className={styles.message} role="region" aria-label="Markdown loading error" aria-live="polite" aria-atomic="true">
         <strong>Markdown could not be loaded</strong>
         <p>{state.message}</p>
         <button

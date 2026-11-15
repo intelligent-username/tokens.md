@@ -15,6 +15,12 @@ import type { ConvertItemWithSession } from "./ResultClipButton";
 import { copyConvertedOutputs, copyMergedOutput } from "./runnerClipboard";
 import { calculateBudgetTokens, formatTargetUrl, getFileKey } from "./runnerUtils";
 
+/** Client-only ownership recorded by the request that produces a result. */
+export type SessionOwnedResult<T> = T & { session_id?: string };
+
+export type MergeRunResult = SessionOwnedResult<MergeResponse> & { sourceFiles?: File[] };
+export type InputRunResult = SessionOwnedResult<ConvertResponse> & { sourceUrl?: string };
+
 export interface UseConvertRunnerOptions {
   activeMode: "upload" | "input";
   inputUrl: string;
@@ -36,8 +42,8 @@ export function useConvertRunner({ activeMode, inputUrl, files, setFiles, mergeE
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [convertedMap, setConvertedMap] = useState<Record<string, ConvertItemWithSession>>({});
   const [uploadMetaMap, setUploadMetaMap] = useState<Record<string, FileMeta>>({});
-  const [mergeResult, setMergeResult] = useState<MergeResponse | null>(null);
-  const [inputResult, setInputResult] = useState<ConvertResponse | null>(null);
+  const [mergeResult, setMergeResult] = useState<MergeRunResult | null>(null);
+  const [inputResult, setInputResult] = useState<InputRunResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
 
@@ -50,11 +56,15 @@ export function useConvertRunner({ activeMode, inputUrl, files, setFiles, mergeE
 
   const { setQueue, run } = useWorkspaceState(files, {
     onRun: async () => {
+      // Keep request inputs alongside its eventual response, even if another
+      // request changes the workspace before this one finishes.
+      const sourceFiles = [...files];
+      const sourceUrl = inputUrl.trim();
       setRunning(true);
       setError(null);
       try {
-        if (activeMode === "input" && inputUrl.trim()) {
-          const targetUrl = formatTargetUrl(inputUrl);
+        if (activeMode === "input" && sourceUrl) {
+          const targetUrl = formatTargetUrl(sourceUrl);
           try {
             const res = await fetchUrl({
               url: targetUrl,
@@ -63,6 +73,8 @@ export function useConvertRunner({ activeMode, inputUrl, files, setFiles, mergeE
             const sid = res.session_id || "fetch-session";
             setSessionId(sid);
             setInputResult({
+              session_id: sid,
+              sourceUrl,
               results: [
                 {
                   file_id: "fetch-1",
@@ -92,8 +104,8 @@ export function useConvertRunner({ activeMode, inputUrl, files, setFiles, mergeE
           let up: UploadResponse | null = null;
           await upload(async (report) => {
             up = await uploadFiles(
-              files,
-              files.map((f) => f.name),
+              sourceFiles,
+              sourceFiles.map((f) => f.name),
               undefined,
               (loaded) => report.advance(0, loaded),
               report.signal
@@ -111,8 +123,8 @@ export function useConvertRunner({ activeMode, inputUrl, files, setFiles, mergeE
               budget: calculateBudgetTokens(budgetEnabled, budgetValue, budgetUnit),
             },
           });
-          setMergeResult(mres);
-          toast(copy.mergedNFiles(files.length), "success");
+          setMergeResult({ ...mres, session_id: sid, sourceFiles });
+          toast(copy.mergedNFiles(sourceFiles.length), "success");
         } else {
           const targetFiles = unconvertedFiles.length > 0 ? unconvertedFiles : files;
           if (targetFiles.length === 0) return;
@@ -218,9 +230,13 @@ export function useConvertRunner({ activeMode, inputUrl, files, setFiles, mergeE
   };
 
   const handleCopyAll = async (convertedItems: ConvertItemWithSession[]) => {
-    if (mergeResult && sessionId) {
+    if (mergeResult) {
+      if (!mergeResult.session_id?.trim()) {
+        toast(copy.clipBlocked, "error");
+        return;
+      }
       try {
-        const result = await copyMergedOutput(sessionId, mergeResult, copyText);
+        const result = await copyMergedOutput(mergeResult.session_id, mergeResult, copyText);
         if (result === "ok") toast("Merged Markdown copied to clipboard", "success");
         else toast(copy.clipBlocked, "error");
       } catch {

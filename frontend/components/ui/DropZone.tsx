@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type DragEvent, type KeyboardEvent } from "react";
+import { useRef, useState, type DragEvent, type KeyboardEvent, type ReactNode } from "react";
 import { CloudArrowUp, FolderOpen, Spinner, WarningCircle } from "@phosphor-icons/react";
 import copy from "@/lib/copy";
 import { isSupported } from "@/lib/utils/extensions";
@@ -14,6 +14,13 @@ export interface DropMeta {
   skipped?: string[];
 }
 
+export interface DropZoneVisualState {
+  dragging: boolean;
+  focused: boolean;
+  busy: boolean;
+  disabled: boolean;
+}
+
 export interface DropZoneProps {
   label?: string;
   sublabel?: string;
@@ -23,6 +30,8 @@ export interface DropZoneProps {
   disabled?: boolean;
   hint?: string;
   onFiles: (files: File[], meta?: DropMeta) => void;
+  /** Noninteractive content only: this slot lives inside the picker button. */
+  renderVisual?: (state: DropZoneVisualState) => ReactNode;
 }
 
 interface EntryItem {
@@ -68,9 +77,10 @@ async function collectEntry(entry: FileSystemEntry): Promise<EntryItem[]> {
  * client-side extension validation. Unsupported files surface as an inline
  * skipped note rather than being silently dropped.
  */
-export function DropZone({ label, sublabel, accept, multiple = true, allowFolders = false, disabled = false, hint, onFiles }: DropZoneProps) {
+export function DropZone({ label, sublabel, accept, multiple = true, allowFolders = false, disabled = false, hint, onFiles, renderVisual }: DropZoneProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [focused, setFocused] = useState(false);
   const [busy, setBusy] = useState(false);
   const [skipped, setSkipped] = useState<string[]>([]);
   const [announce, setAnnounce] = useState<string | null>(null);
@@ -156,11 +166,18 @@ export function DropZone({ label, sublabel, accept, multiple = true, allowFolder
       aria-label={heading}
       onClick={openPicker}
       onKeyDown={handleKeyDown}
+      onFocus={() => setFocused(true)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false);
+      }}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={cn(
-        "group relative flex min-h-[280px] sm:min-h-[340px] cursor-pointer flex-col items-center justify-center gap-4 rounded-card border-2 border-dashed border-border/80 glass p-8 sm:p-12 text-center transition-colors",
+        "group relative cursor-pointer rounded-card border-2 border-dashed border-border/80 glass transition-colors",
+        renderVisual
+          ? "grid min-w-0 grid-cols-1 items-center gap-4 p-4 sm:p-6 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] md:gap-8"
+          : "flex min-h-[280px] sm:min-h-[340px] flex-col items-center justify-center gap-4 p-8 sm:p-12 text-center",
         dragging ? "border-solid border-primary bg-accent" : "hover:border-primary",
         disabled && "cursor-not-allowed opacity-50"
       )}
@@ -169,7 +186,11 @@ export function DropZone({ label, sublabel, accept, multiple = true, allowFolder
         {announce}
       </span>
 
-      {busy ? (
+      {renderVisual ? (
+        <div className="min-w-0 w-full max-w-md justify-self-center">
+          {renderVisual({ dragging, focused, busy, disabled })}
+        </div>
+      ) : busy ? (
         <Spinner size={28} weight="regular" className="animate-spin text-emerald-500" aria-hidden="true" />
       ) : (
         <span className="text-muted-foreground" aria-hidden="true">
@@ -177,14 +198,20 @@ export function DropZone({ label, sublabel, accept, multiple = true, allowFolder
         </span>
       )}
 
-      <div className="flex flex-col gap-1">
+      <div className={cn("flex flex-col gap-1", renderVisual && "min-w-0 text-center md:text-left")}>
+        {renderVisual && busy ? (
+          <span className="mb-2 inline-flex items-center justify-center gap-2 text-sm text-muted-foreground md:justify-start">
+            <Spinner size={20} weight="regular" className="animate-spin text-primary" aria-hidden="true" />
+            Scanning folder…
+          </span>
+        ) : null}
         <span className="font-display text-lg font-medium text-foreground">{heading}</span>
         <span className="text-sm text-muted-foreground">{body}</span>
         {hint ? <span className="text-xs text-muted-foreground">{hint}</span> : null}
       </div>
 
       {skipped.length > 0 ? (
-        <span className="inline-flex items-center gap-1 rounded-chip bg-destructive/10 px-2 py-1 text-xs text-destructive">
+        <span className={cn("inline-flex items-center gap-1 rounded-chip bg-destructive/10 px-2 py-1 text-xs text-destructive", renderVisual && "justify-self-center md:col-span-2")}>
           <WarningCircle size={16} weight="regular" aria-hidden="true" />
           {copy.skippedUnsupported(skipped.length)}
         </span>
